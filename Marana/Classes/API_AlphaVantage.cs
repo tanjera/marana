@@ -11,8 +11,7 @@ namespace Marana {
 
     class API_AlphaVantage {
 
-        public static List<DailyValue> GetData_TimeSeriesDaily (string symbol, bool fulldata = false) {
-            string apiKey = Config.LoadKey_APIAlphaVantage();
+        public static List<DailyValue> GetData_TimeSeriesDaily (string apiKey, string symbol, bool fulldata = false) {
 
             HttpWebRequest request = WebRequest.Create (
                 String.Format ("https://www.alphavantage.co/query?function={0}&symbol={1}&outputsize={2}&apikey={3}",

@@ -1,0 +1,116 @@
+﻿<Window x:Class="Marana.Main"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Marana"
+        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
+        mc:Ignorable="d"
+        Title="Marana" Height="450" Width="800">
+
+    <Window.Resources>
+        <Style x:Key="lblConfig" TargetType="TextBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="tbConfig" TargetType="TextBox">
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinWidth" Value="200" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="btnConfig" TargetType="Button">
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Width" Value="20" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <TabControl TabStripPlacement="Left">
+            <TabItem Name="tabConfiguration" Header="Configuration">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30" />
+                            <RowDefinition Height="30" />
+                            <RowDefinition Height="30" />
+                            <RowDefinition Height="30" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Label Grid.Row="0" Grid.Column="0" Content="Alpha Vantage API Key:"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Name="txtAPIKey_AlphaVantage"
+                                  Text="{Binding Source=Config, Path=APIKey_AlphaVantage}"  Style="{StaticResource tbConfig}"/>
+
+                        <Label Grid.Row="1" Grid.Column="0" Content="Aggregator Workbook File Path:"/>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Width="Auto">
+                            <TextBox Name="txtFilePathWorkbook"
+                                     Text="{Binding Source=Config, Path=FilePath_Aggregator}" Style="{StaticResource tbConfig}"/>
+                            <Button Name="btnFilepathWorkbook_Picker"
+                                    Content="..." Style="{StaticResource btnConfig}"
+                                    Click="btnFilePathWorkbook_Click" />
+                        </StackPanel>
+
+                        <Label Grid.Row="2" Grid.Column="0" Content="Data Library Working Directory:"/>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Width="Auto">
+                            <TextBox Name="txtDirectoryLibrary"
+                                     Text="{Binding Path=Config.Directory_Library}" Style="{StaticResource tbConfig}"/>
+                            <Button Name="btnDirectoryLibrary_Picker"
+                                    Content="..." Style="{StaticResource btnConfig}"
+                                    Click="btnDirPathLibrary_Click" />
+                        </StackPanel>
+
+                        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                Name="btnSaveConfig" Height="20"
+                                Content="Save Configuration"
+                                Click="btnSaveConfig_Click"/>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+
+            <TabItem Name="tabCharts" Header="Charts">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <ListView Name="lvStocks" Grid.Row="0" Grid.Column="0">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Symbol" DisplayMemberBinding="{Binding Symbol}" />
+                                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" />
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <GridSplitter Grid.Row="0" Grid.Column="1"
+                      Width="5" HorizontalAlignment="Stretch" />
+
+                        <lvc:CartesianChart Name="lcChart" Grid.Row="0" Grid.Column="2"
+                                Series="{Binding Series}" LegendLocation="Right" >
+                            <lvc:CartesianChart.AxisX>
+                                <lvc:Axis Title="Date" LabelFormatter="{Binding XFormatter}"></lvc:Axis>
+                            </lvc:CartesianChart.AxisX>
+                            <lvc:CartesianChart.AxisY>
+                                <lvc:Axis Title="Price" LabelFormatter="{Binding YFormatter}"></lvc:Axis>
+                            </lvc:CartesianChart.AxisY>
+                        </lvc:CartesianChart>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+
+            <TabItem Name="tabAggregator" Header="Data Aggregator"> </TabItem>
+
+            <TabItem Name="tabLibrary" Header="Data Library"> </TabItem>
+        </TabControl>
+
+    </Grid>
+</Window>

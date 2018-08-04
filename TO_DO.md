@@ -3,9 +3,9 @@ TO_DO.txt
 
 
 
-
---> Combine all projects into one WPF form
-	- Use tabs for different functions (charts, library update, data aggregation)
+0.0.4
+- All projects/functions migrating to 1 WPF form (using TabView)
+- Configurations made in program, saved to config.cfg
 
 
 

@@ -8,14 +8,4 @@
   <PropertyGroup Label="Configuration">
     <Import_RootNamespace>_Marana</Import_RootNamespace>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)API_AlphaVantage.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)API_LiveCharts.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)API_NasdaqTrader.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Config.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Structures.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)TO_DO.txt" />
-  </ItemGroup>
 </Project>

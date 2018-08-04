@@ -8,7 +8,7 @@ using System.IO;
 using OfficeOpenXml;
 
 
-namespace Marana.Aggregator {
+namespace Marana {
 
     /* Symbol Key:
      * x̅ : Mean
