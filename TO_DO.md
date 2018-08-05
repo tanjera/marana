@@ -3,13 +3,6 @@ TO_DO.txt
 
 
 
-0.0.4
-- All projects/functions migrating to 1 WPF form (using TabView)
-- Configurations made in program, saved to config.cfg
-
-
-
-
 
 
 *** _Marana (Classes)

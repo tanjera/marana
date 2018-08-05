@@ -6,9 +6,13 @@
         xmlns:local="clr-namespace:Marana"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
-        Title="Marana" Height="450" Width="800">
+        Title="Marana: Market Analytic Tools" Height="450" Width="800">
 
     <Window.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Height" Value="30" />
+        </Style>
+
         <Style x:Key="lblConfig" TargetType="TextBox">
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
@@ -37,32 +41,30 @@
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
                         <Label Grid.Row="0" Grid.Column="0" Content="Alpha Vantage API Key:"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Name="txtAPIKey_AlphaVantage"
-                                  Text="{Binding Source=Config, Path=APIKey_AlphaVantage}"  Style="{StaticResource tbConfig}"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                                 Name="txtAPIKey_AlphaVantage"
+                                 Style="{StaticResource tbConfig}"/>
 
                         <Label Grid.Row="1" Grid.Column="0" Content="Aggregator Workbook File Path:"/>
-                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Width="Auto">
-                            <TextBox Name="txtFilePathWorkbook"
-                                     Text="{Binding Source=Config, Path=FilePath_Aggregator}" Style="{StaticResource tbConfig}"/>
-                            <Button Name="btnFilepathWorkbook_Picker"
-                                    Content="..." Style="{StaticResource btnConfig}"
-                                    Click="btnFilePathWorkbook_Click" />
-                        </StackPanel>
+                        <TextBox Name="txtFilePathWorkbook" Grid.Row="1" Grid.Column="1"
+                                Style="{StaticResource tbConfig}"/>
+                        <Button Name="btnFilepathWorkbook_Picker" Grid.Row="1" Grid.Column="2"
+                                Content="..." Style="{StaticResource btnConfig}"
+                                Click="btnFilePathWorkbook_Click" />
 
                         <Label Grid.Row="2" Grid.Column="0" Content="Data Library Working Directory:"/>
-                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Width="Auto">
-                            <TextBox Name="txtDirectoryLibrary"
-                                     Text="{Binding Path=Config.Directory_Library}" Style="{StaticResource tbConfig}"/>
-                            <Button Name="btnDirectoryLibrary_Picker"
-                                    Content="..." Style="{StaticResource btnConfig}"
-                                    Click="btnDirPathLibrary_Click" />
-                        </StackPanel>
+                        <TextBox Name="txtDirectoryLibrary" Grid.Row="2" Grid.Column="1"
+                                    Style="{StaticResource tbConfig}"/>
+                        <Button Name="btnDirectoryLibrary_Picker" Grid.Row="2" Grid.Column="2"
+                                Content="..." Style="{StaticResource btnConfig}"
+                                Click="btnDirPathLibrary_Click" />
 
-                        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
                                 Name="btnSaveConfig" Height="20"
                                 Content="Save Configuration"
                                 Click="btnSaveConfig_Click"/>

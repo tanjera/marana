@@ -34,12 +34,17 @@ namespace Marana
                 return new DirectoryInfo (GetConfigDirectory ());
         }
 
-        public void SaveConfig () {
-            using (StreamWriter sw = new StreamWriter (GetConfigPath ())) {
-                sw.WriteLine (String.Format ("APIKey_AlphaVantage: {0}", APIKey_AlphaVantage));
-                sw.WriteLine (String.Format ("FilePath_Aggregator: {0}", FilePath_Aggregator));
-                sw.WriteLine (String.Format ("Directory_Library: {0}", Directory_Library));
-                sw.Close ();
+        public bool SaveConfig () {
+            try {
+                using (StreamWriter sw = new StreamWriter (GetConfigPath ())) {
+                    sw.WriteLine (String.Format ("APIKey_AlphaVantage: {0}", APIKey_AlphaVantage.Trim ()));
+                    sw.WriteLine (String.Format ("FilePath_Aggregator: {0}", FilePath_Aggregator.Trim ()));
+                    sw.WriteLine (String.Format ("Directory_Library: {0}", Directory_Library.Trim ()));
+                    sw.Close ();
+                    return true;
+                }
+            } catch {
+                return false;
             }
         }
 
@@ -51,18 +56,19 @@ namespace Marana
                     if (line.Trim () == "" || line.IndexOf (':') == -1)
                         continue;
 
-                    string key = line.Substring (0, line.IndexOf (':'));
+                    string key = line.Substring (0, line.IndexOf (':')),
+                        value = line.Substring (line.IndexOf (':') + 1).Trim ();
 
                     switch (key) {
                         default: break;
                         case "APIKey_AlphaVantage":
-                            APIKey_AlphaVantage = line.Substring (line.IndexOf (':') + 1);
+                            APIKey_AlphaVantage = value;
                             break;
                         case "FilePath_Aggregator":
-                            FilePath_Aggregator = line.Substring (line.IndexOf (':') + 1);
+                            FilePath_Aggregator = value;
                             break;
                         case "Directory_Library":
-                            Directory_Library = line.Substring (line.IndexOf (':') + 1);
+                            Directory_Library = value;
                             break;
                     }
                 }

@@ -22,9 +22,10 @@ namespace Marana {
             InitializeComponent ();
 
             Config.Init ();
-
+            ConfigTab_Update ();
 
             Chart_Init ();
+
             lvStocks.ItemsSource = API_NasdaqTrader.GetSymbolPairs ();
         }
 
@@ -59,7 +60,16 @@ namespace Marana {
                 Directory_Library = txtDirectoryLibrary.Text
             };
 
-            Config.SaveConfig ();
+            if (Config.SaveConfig ())
+                MessageBox.Show ("Configuration updated successfully!", "Configuration Saved");
+            else
+                MessageBox.Show ("Error: failed to save configuration file.", "Configuration Not Saved");
+        }
+
+        private void ConfigTab_Update () {
+            txtAPIKey_AlphaVantage.Text = Config.APIKey_AlphaVantage;
+            txtFilePathWorkbook.Text = Config.FilePath_Aggregator;
+            txtDirectoryLibrary.Text = Config.Directory_Library;
         }
 
         private void Chart_Init() {
