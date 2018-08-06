@@ -2,17 +2,12 @@
 TO_DO.txt
 
 
-0.0.5
-- Httprequest repeats attempts indefinitely for API call overruns
-	- Background threaded!
-- Saves data library for data aggregation offline
 
 
 
 
 
-- error test httprequest for made up erroneous symbol
-
+- Progress bar for data aggregation
 * %^ values compare to this week’s mean?
 * add timespans for this -7 days, -30 days
 - Console.write # / total (1/3500) per symbol

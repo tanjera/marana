@@ -26,6 +26,10 @@ namespace Marana {
                     // API calls per minute exceeded... wait a minute then repeat request
                     Console.WriteLine ("Exceeded API calls per minute... waiting 1 minute...");
                     System.Threading.Thread.Sleep (15000);
+                } else if (rte == "{\n    \"Error Message\": \"Invalid API call. Please retry or visit the documentation (https://www.alphavantage.co/documentation/) for TIME_SERIES_DAILY.\"\n}") {
+                    response.Dispose ();
+                    reader.Dispose ();
+                    return "";
                 } else {
                     response.Dispose ();
                     reader.Dispose ();
@@ -33,7 +37,7 @@ namespace Marana {
                 }
             }
 
-            return null;
+            return "";
         }
 
         public static List<DailyValue> ProcessData_TimeSeriesDaily (string rawData) {

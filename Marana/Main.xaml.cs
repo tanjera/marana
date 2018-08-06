@@ -158,6 +158,8 @@ namespace Marana {
 
             for (int i = 0; i < files.Length; i++) {
 
+                Console.WriteLine (String.Format ("Processing {0} of {1}: {2}", i, files.Length - 1, files [i]));
+
                 IEnumerable<DailyValue> ldv;
                 using (StreamReader sr = new StreamReader(files[i]))
                     ldv = API_AlphaVantage.ProcessData_TimeSeriesDaily (sr.ReadToEnd ()).OrderBy (obj => obj.Timestamp); ;
