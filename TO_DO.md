@@ -2,23 +2,16 @@
 TO_DO.txt
 
 
+0.0.5
+- Httprequest repeats attempts indefinitely for API call overruns
+	- Background threaded!
+- Saves data library for data aggregation offline
 
 
 
-*** _Marana (Classes)
 
-- On httprequest instead of “if response ==“ for error catching, use “while response ==“ or for() and reattempt loop for X iterations
+
 - error test httprequest for made up erroneous symbol
-
-
-
-
-
-
-*** Aggregator
-
-Saves all daily data to a library folder (each JSON object to a different file)
-Can aggregate data without needing to download (unless library out of date).
 
 * %^ values compare to this week’s mean?
 * add timespans for this -7 days, -30 days
@@ -30,11 +23,5 @@ Can aggregate data without needing to download (unless library out of date).
 	- press 2 to select symbols
 - Add equations to aggregator comments by symbol key
 
-
-
-
-
-
-*** Visualizer
-	- Search functionality to ListView
-	- Select functionality to ListView (and request call, add to chart series)
+- Search functionality to ListView
+- Select functionality to ListView (and request call, add to chart series)

@@ -9,7 +9,6 @@ namespace Marana
     class Configuration {
 
         public string APIKey_AlphaVantage { get; set; }
-        public string FilePath_Aggregator { get; set; }
         public string Directory_Library { get; set; }
 
         public void Init() {
@@ -38,7 +37,6 @@ namespace Marana
             try {
                 using (StreamWriter sw = new StreamWriter (GetConfigPath ())) {
                     sw.WriteLine (String.Format ("APIKey_AlphaVantage: {0}", APIKey_AlphaVantage.Trim ()));
-                    sw.WriteLine (String.Format ("FilePath_Aggregator: {0}", FilePath_Aggregator.Trim ()));
                     sw.WriteLine (String.Format ("Directory_Library: {0}", Directory_Library.Trim ()));
                     sw.Close ();
                     return true;
@@ -63,9 +61,6 @@ namespace Marana
                         default: break;
                         case "APIKey_AlphaVantage":
                             APIKey_AlphaVantage = value;
-                            break;
-                        case "FilePath_Aggregator":
-                            FilePath_Aggregator = value;
                             break;
                         case "Directory_Library":
                             Directory_Library = value;

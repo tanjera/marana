@@ -50,21 +50,14 @@
                                  Name="txtAPIKey_AlphaVantage"
                                  Style="{StaticResource tbConfig}"/>
 
-                        <Label Grid.Row="1" Grid.Column="0" Content="Aggregator Workbook File Path:"/>
-                        <TextBox Name="txtFilePathWorkbook" Grid.Row="1" Grid.Column="1"
-                                Style="{StaticResource tbConfig}"/>
-                        <Button Name="btnFilepathWorkbook_Picker" Grid.Row="1" Grid.Column="2"
-                                Content="..." Style="{StaticResource btnConfig}"
-                                Click="btnFilePathWorkbook_Click" />
-
-                        <Label Grid.Row="2" Grid.Column="0" Content="Data Library Working Directory:"/>
-                        <TextBox Name="txtDirectoryLibrary" Grid.Row="2" Grid.Column="1"
+                        <Label Grid.Row="1" Grid.Column="0" Content="Data Library Working Directory:"/>
+                        <TextBox Name="txtDirectoryLibrary" Grid.Row="1" Grid.Column="1"
                                     Style="{StaticResource tbConfig}"/>
-                        <Button Name="btnDirectoryLibrary_Picker" Grid.Row="2" Grid.Column="2"
+                        <Button Name="btnDirectoryLibrary_Picker" Grid.Row="1" Grid.Column="2"
                                 Content="..." Style="{StaticResource btnConfig}"
                                 Click="btnDirPathLibrary_Click" />
 
-                        <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
                                 Name="btnSaveConfig" Height="20"
                                 Content="Save Configuration"
                                 Click="btnSaveConfig_Click"/>
@@ -94,7 +87,7 @@
                         </ListView>
 
                         <GridSplitter Grid.Row="0" Grid.Column="1"
-                      Width="5" HorizontalAlignment="Stretch" />
+                            Width="5" HorizontalAlignment="Stretch" />
 
                         <lvc:CartesianChart Name="lcChart" Grid.Row="0" Grid.Column="2"
                                 Series="{Binding Series}" LegendLocation="Right" >
@@ -109,9 +102,61 @@
                 </TabItem.Content>
             </TabItem>
 
-            <TabItem Name="tabAggregator" Header="Data Aggregator"> </TabItem>
+            <TabItem Name="tabAggregator" Header="Data Aggregator">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-            <TabItem Name="tabLibrary" Header="Data Library"> </TabItem>
+                        <Label Grid.Row="0" Grid.Column="0" Content="Output Spreadsheet for Data Aggregation:"/>
+                        <TextBox Name="txtFilepathAggregate" Grid.Row="0" Grid.Column="1"
+                                    Style="{StaticResource tbConfig}"/>
+                        <Button Name="btnFilepathAggregate_Picker" Grid.Row="0" Grid.Column="2"
+                                Content="..." Style="{StaticResource btnConfig}"
+                                Click="btnFilepathAggregate_Click" />
+
+                        <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Height="20"
+                                Name="btnAggregateData" Content="Aggregate Data to Spreadsheet"
+                                Click="btnAggregateData_Click"/>
+                    </Grid>
+                </TabItem.Content>
+
+            </TabItem>
+
+            <TabItem Name="tabLibrary" Header="Data Library">
+                <TabItem.Content>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Grid.Row="0" Height="20"
+                                Name="btnUpdateLibrary" Content="Update Library Data"
+                                Click="btnUpdateLibrary_Click"/>
+
+                        <RichTextBox Grid.Column="0" Grid.Row="1"
+                                     Name="rtbLibrary"
+                                     VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto">
+                            <RichTextBox.Resources>
+                                <Style TargetType="{x:Type Paragraph}">
+                                    <Setter Property="Margin" Value="0"/>
+                                </Style>
+                            </RichTextBox.Resources>
+                        </RichTextBox>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
         </TabControl>
 
     </Grid>
