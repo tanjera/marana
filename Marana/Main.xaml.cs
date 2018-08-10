@@ -23,6 +23,7 @@ namespace Marana {
 
         private Configuration Config = new Configuration ();
 
+
         public Main () {
             InitializeComponent ();
 
@@ -33,13 +34,15 @@ namespace Marana {
 
             LibraryTab_Init ();
 
-            lvStocks.ItemsSource = API_NasdaqTrader.GetSymbolPairs ();
+            //lvStocks.ItemsSource = API_NasdaqTrader.GetSymbolPairs ();
         }
+
 
         private void ConfigTab_Update () {
             txtAPIKey_AlphaVantage.Text = Config.APIKey_AlphaVantage;
             txtDirectoryLibrary.Text = Config.Directory_Library;
         }
+
 
         private void ChartTab_Init() {
             Series = new SeriesCollection ();
@@ -50,10 +53,13 @@ namespace Marana {
             DataContext = this;
         }
 
+
         private void LibraryTab_Init() {
             if (!String.IsNullOrEmpty(Config.Directory_Library))
                 Directory.CreateDirectory (Config.Directory_Library);
         }
+
+
 
         private string FileSelection_Dialog (bool directory, CommonFileDialogFilter [] filters) {
             var dlg = new CommonOpenFileDialog ();
@@ -69,8 +75,12 @@ namespace Marana {
                 return null;
         }
 
+
+
         private SeriesCollection Series { get; set; }
+
         private Func<double, string> XFormatter { get; set; }
+
         private Func<double, string> YFormatter { get; set; }
 
         private void Chart_DailyClose(string symbol) {
@@ -81,9 +91,12 @@ namespace Marana {
             });
         }
 
+
+
         private void btnDirPathLibrary_Click (object sender, RoutedEventArgs e) {
             txtDirectoryLibrary.Text = FileSelection_Dialog (true, null);
         }
+
 
         private void btnSaveConfig_Click (object sender, RoutedEventArgs e) {
             Config = new Configuration {
@@ -102,6 +115,7 @@ namespace Marana {
             txtFilepathAggregate.Text = FileSelection_Dialog (false,
                 new CommonFileDialogFilter[] { new CommonFileDialogFilter ("Excel Spreadsheets", "*.xlsx") });
         }
+
 
         private void btnAggregateData_Click (object sender, RoutedEventArgs e) {
 
@@ -223,15 +237,21 @@ namespace Marana {
             }
         }
 
+
         private void btnUpdateLibrary_Click (object sender, RoutedEventArgs e) {
 
-            List<SymbolPair> pairs = API_NasdaqTrader.GetSymbolPairs ();
+            List<SymbolPair> pairs = new List<SymbolPair>(API_NasdaqTrader.GetSymbolPairs ().OrderBy(obj => obj.Symbol).ToArray());
+            string updateAt = (rbUpdateAt.IsChecked == true) ? txtUpdateAt.Text.Trim () : null;
 
             BackgroundWorker bgw = new BackgroundWorker ();
             bgw.WorkerReportsProgress = true;
             bgw.DoWork += new DoWorkEventHandler (delegate (object o, DoWorkEventArgs args) {
-                for (int i = 0; i < pairs.Count; i++) {
 
+                int i = 0;
+                if (updateAt != null)
+                    i = Math.Max(0, pairs.FindIndex (obj => obj.Symbol == updateAt)) + 1;
+
+                for (; i < pairs.Count; i++) {
                     string output = "";
                     BackgroundWorker bgwo = o as BackgroundWorker;
                     output = API_AlphaVantage.GetData_TimeSeriesDaily (Config.APIKey_AlphaVantage, pairs [i].Symbol, true);

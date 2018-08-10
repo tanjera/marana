@@ -11,9 +11,13 @@ namespace Marana {
         public static string GetList () {
             FtpWebRequest request = WebRequest.Create ("ftp://ftp.nasdaqtrader.com/symboldirectory/nasdaqlisted.txt") as FtpWebRequest;
 
-            using (FtpWebResponse response = request.GetResponse () as FtpWebResponse) {
-                StreamReader reader = new StreamReader (response.GetResponseStream ());
-                return reader.ReadToEnd ();
+            try {
+                using (FtpWebResponse response = request.GetResponse () as FtpWebResponse) {
+                    StreamReader reader = new StreamReader (response.GetResponseStream ());
+                    return reader.ReadToEnd ();
+                }
+            } catch (InvalidOperationException) {
+                return "";
             }
         }
 
