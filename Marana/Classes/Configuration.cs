@@ -6,38 +6,44 @@ using System.Text;
 
 namespace Marana
 {
-    class Configuration {
+    public class Settings {
 
         public string APIKey_AlphaVantage { get; set; }
         public string Directory_Library { get; set; }
+    }
 
-        public void Init() {
+
+    public static class Configuration {
+
+        public static Settings Init() {
             CreateConfigDirectory ();
 
             if (File.Exists (GetConfigPath ()))
-                LoadConfig ();
+                return LoadConfig ();
+            else
+                return new Settings ();
         }
 
-        private string GetConfigDirectory () {
+        private static string GetConfigDirectory () {
             return String.Format (@"{0}\Marana", Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData));
         }
 
-        private string GetConfigPath () {
+        private static string GetConfigPath () {
             return String.Format (@"{0}\Marana\config.cfg", Environment.GetFolderPath (Environment.SpecialFolder.ApplicationData));
         }
 
-        private DirectoryInfo CreateConfigDirectory () {
+        private static DirectoryInfo CreateConfigDirectory () {
             if (!Directory.Exists(GetConfigDirectory()))
                 return Directory.CreateDirectory(GetConfigDirectory());
             else
                 return new DirectoryInfo (GetConfigDirectory ());
         }
 
-        public bool SaveConfig () {
+        public static bool SaveConfig (Settings inc) {
             try {
                 using (StreamWriter sw = new StreamWriter (GetConfigPath ())) {
-                    sw.WriteLine (String.Format ("APIKey_AlphaVantage: {0}", APIKey_AlphaVantage.Trim ()));
-                    sw.WriteLine (String.Format ("Directory_Library: {0}", Directory_Library.Trim ()));
+                    sw.WriteLine (String.Format ("APIKey_AlphaVantage: {0}", inc.APIKey_AlphaVantage.Trim ()));
+                    sw.WriteLine (String.Format ("Directory_Library: {0}", inc.Directory_Library.Trim ()));
                     sw.Close ();
                     return true;
                 }
@@ -46,7 +52,8 @@ namespace Marana
             }
         }
 
-        public void LoadConfig () {
+        public static Settings LoadConfig () {
+            Settings oc = new Settings ();
             using (StreamReader sr = new StreamReader (GetConfigPath())) {
                 string [] lines = sr.ReadToEnd ().Split ('\n', '\r');
 
@@ -60,14 +67,16 @@ namespace Marana
                     switch (key) {
                         default: break;
                         case "APIKey_AlphaVantage":
-                            APIKey_AlphaVantage = value;
+                            oc.APIKey_AlphaVantage = value;
                             break;
                         case "Directory_Library":
-                            Directory_Library = value;
+                            oc.Directory_Library = value;
                             break;
                     }
                 }
             }
+
+            return oc;
         }
     }
 }

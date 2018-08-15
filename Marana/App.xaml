@@ -4,6 +4,25 @@
              xmlns:local="clr-namespace:Marana"
              StartupUri="Main.xaml">
     <Application.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Height" Value="30" />
+        </Style>
 
+        <Style x:Key="lblConfig" TargetType="TextBox">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="tbConfig" TargetType="TextBox">
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinWidth" Value="200" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="btnConfig" TargetType="Button">
+            <Setter Property="Height" Value="20" />
+            <Setter Property="Width" Value="20" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="rbConfig" TargetType="RadioButton">
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
     </Application.Resources>
 </Application>

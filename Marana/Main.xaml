@@ -8,66 +8,11 @@
         mc:Ignorable="d"
         Title="Marana: Market Analytic Tools" Height="450" Width="800">
 
-    <Window.Resources>
-        <Style TargetType="TabItem">
-            <Setter Property="Height" Value="30" />
-        </Style>
 
-        <Style x:Key="lblConfig" TargetType="TextBox">
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="tbConfig" TargetType="TextBox">
-            <Setter Property="Height" Value="20" />
-            <Setter Property="MinWidth" Value="200" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="btnConfig" TargetType="Button">
-            <Setter Property="Height" Value="20" />
-            <Setter Property="Width" Value="20" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style x:Key="rbConfig" TargetType="RadioButton">
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-
-    </Window.Resources>
 
     <Grid>
         <TabControl TabStripPlacement="Left">
-            <TabItem Name="tabConfiguration" Header="Configuration">
-                <TabItem.Content>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="30" />
-                            <RowDefinition Height="30" />
-                            <RowDefinition Height="30" />
-                            <RowDefinition Height="30" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <Label Grid.Row="0" Grid.Column="0" Content="Alpha Vantage API Key:"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                                 Name="txtAPIKey_AlphaVantage"
-                                 Style="{StaticResource tbConfig}"/>
-
-                        <Label Grid.Row="1" Grid.Column="0" Content="Data Library Working Directory:"/>
-                        <TextBox Name="txtDirectoryLibrary" Grid.Row="1" Grid.Column="1"
-                                    Style="{StaticResource tbConfig}"/>
-                        <Button Name="btnDirectoryLibrary_Picker" Grid.Row="1" Grid.Column="2"
-                                Content="..." Style="{StaticResource btnConfig}"
-                                Click="btnDirPathLibrary_Click" />
-
-                        <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
-                                Name="btnSaveConfig" Height="20"
-                                Content="Save Configuration"
-                                Click="btnSaveConfig_Click"/>
-                    </Grid>
-                </TabItem.Content>
-            </TabItem>
+            <TabItem Name="tabConfiguration" Header="Configuration" />
 
             <TabItem Name="tabCharts" Header="Charts">
                 <TabItem.Content>

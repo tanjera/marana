@@ -101,14 +101,21 @@
     <Compile Include="Classes\API_AlphaVantage.cs" />
     <Compile Include="Classes\API_LiveCharts.cs" />
     <Compile Include="Classes\API_NasdaqTrader.cs" />
-    <Compile Include="Classes\Config.cs" />
+    <Compile Include="Classes\Configuration.cs" />
     <Compile Include="Classes\Structures.cs" />
     <Compile Include="Main.xaml.cs">
       <DependentUpon>Main.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Panels\TabConfig.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Panels\TabConfig.xaml.cs">
+      <DependentUpon>TabConfig.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -147,5 +154,6 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -21,14 +21,13 @@ namespace Marana {
 
     public partial class Main : Window {
 
-        private Configuration Config = new Configuration ();
-
+        public Settings Config = new Settings ();
 
         public Main () {
             InitializeComponent ();
 
-            Config.Init ();
-            ConfigTab_Update ();
+            Config = Configuration.Init ();
+            tabConfiguration.Content = new TabConfig (this);
 
             ChartTab_Init ();
 
@@ -38,10 +37,7 @@ namespace Marana {
         }
 
 
-        private void ConfigTab_Update () {
-            txtAPIKey_AlphaVantage.Text = Config.APIKey_AlphaVantage;
-            txtDirectoryLibrary.Text = Config.Directory_Library;
-        }
+
 
 
         private void ChartTab_Init() {
@@ -61,7 +57,7 @@ namespace Marana {
 
 
 
-        private string FileSelection_Dialog (bool directory, CommonFileDialogFilter [] filters) {
+        public static string FileSelection_Dialog (bool directory, CommonFileDialogFilter [] filters) {
             var dlg = new CommonOpenFileDialog ();
             if (filters != null)
                 foreach (CommonFileDialogFilter filter in filters)
@@ -93,22 +89,6 @@ namespace Marana {
 
 
 
-        private void btnDirPathLibrary_Click (object sender, RoutedEventArgs e) {
-            txtDirectoryLibrary.Text = FileSelection_Dialog (true, null);
-        }
-
-
-        private void btnSaveConfig_Click (object sender, RoutedEventArgs e) {
-            Config = new Configuration {
-                APIKey_AlphaVantage = txtAPIKey_AlphaVantage.Text,
-                Directory_Library = txtDirectoryLibrary.Text
-            };
-
-            if (Config.SaveConfig ())
-                MessageBox.Show ("Configuration updated successfully!", "Configuration Saved");
-            else
-                MessageBox.Show ("Error: failed to save configuration file.", "Configuration Not Saved");
-        }
 
 
         private void btnFilepathAggregate_Click (object sender, RoutedEventArgs e) {
