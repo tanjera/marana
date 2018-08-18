@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Marana"
-        xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
         mc:Ignorable="d"
         Title="Marana: Market Analytic Tools" Height="450" Width="800">
 
@@ -12,114 +11,44 @@
 
     <Grid>
         <TabControl TabStripPlacement="Left">
-            <TabItem Name="tabConfiguration" Header="Configuration" />
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Height" Value="35" />
+                </Style>
+            </TabControl.Resources>
 
-            <TabItem Name="tabCharts" Header="Charts">
+            <TabItem
+                Name="tabMarana"
+                Header="Marana">
                 <TabItem.Content>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="5" />
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <ListView Name="lvStocks" Grid.Row="0" Grid.Column="0">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn Header="Symbol" DisplayMemberBinding="{Binding Symbol}" />
-                                    <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" />
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-
-                        <GridSplitter Grid.Row="0" Grid.Column="1"
-                            Width="5" HorizontalAlignment="Stretch" />
-
-                        <lvc:CartesianChart Name="lcChart" Grid.Row="0" Grid.Column="2"
-                                Series="{Binding Series}" LegendLocation="Right" >
-                            <lvc:CartesianChart.AxisX>
-                                <lvc:Axis Title="Date" LabelFormatter="{Binding XFormatter}"></lvc:Axis>
-                            </lvc:CartesianChart.AxisX>
-                            <lvc:CartesianChart.AxisY>
-                                <lvc:Axis Title="Price" LabelFormatter="{Binding YFormatter}"></lvc:Axis>
-                            </lvc:CartesianChart.AxisY>
-                        </lvc:CartesianChart>
-                    </Grid>
+                    <StackPanel
+                        Orientation="Vertical" VerticalAlignment="Center">
+                        <Label
+                            HorizontalAlignment="Center" FontSize="28"
+                            Content="Marana" />
+                        <Label
+                            HorizontalAlignment="Center" FontSize="18"
+                            Content="Market Analysis Tools" />
+                        <Label
+                            HorizontalAlignment="Center" FontSize="18"
+                            Content="By Tanjera" />
+                    </StackPanel>
                 </TabItem.Content>
             </TabItem>
 
-            <TabItem Name="tabAggregator" Header="Data Aggregator">
-                <TabItem.Content>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
 
-                        <Label Grid.Row="0" Grid.Column="0" Content="Output Spreadsheet for Data Aggregation:"/>
-                        <TextBox Name="txtFilepathAggregate" Grid.Row="0" Grid.Column="1"
-                                    Style="{StaticResource tbConfig}"/>
-                        <Button Name="btnFilepathAggregate_Picker" Grid.Row="0" Grid.Column="2"
-                                Content="..." Style="{StaticResource btnConfig}"
-                                Click="btnFilepathAggregate_Click" />
-
-                        <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Height="20"
-                                Name="btnAggregateData" Content="Aggregate Data to Spreadsheet"
-                                Click="btnAggregateData_Click"/>
-                    </Grid>
-                </TabItem.Content>
-
-            </TabItem>
-
-            <TabItem Name="tabLibrary" Header="Data Library">
-                <TabItem.Content>
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Grid.Row="0"
-                                    Orientation="Horizontal">
-                            <Label Content="Update Starting At: " Margin="5,0"/>
-                            <RadioButton Name="rbUpdateAll" Content="All Symbols"
-                                         GroupName="rbgUpdateSymbols"
-                                         Style="{StaticResource rbConfig}" Margin="5,0"/>
-                            <RadioButton Name="rbUpdateAt" Content="At Symbol:"
-                                         GroupName="rbgUpdateSymbols"
-                                         Style="{StaticResource rbConfig}" Margin="5,0"/>
-                            <TextBox Name="txtUpdateAt" MinWidth="100" Margin="5,0" Style="{StaticResource tbConfig}"/>
-                        </StackPanel>
-
-                        <Button Grid.Column="0" Grid.Row="1" Height="20"
-                                Name="btnUpdateLibrary" Content="Update Library Data"
-                                Click="btnUpdateLibrary_Click"/>
-
-                        <RichTextBox Grid.Column="0" Grid.Row="2"
-                                     Name="rtbLibrary"
-                                     VerticalScrollBarVisibility="Visible" HorizontalScrollBarVisibility="Auto">
-                            <RichTextBox.Resources>
-                                <Style TargetType="{x:Type Paragraph}">
-                                    <Setter Property="Margin" Value="0"/>
-                                </Style>
-                            </RichTextBox.Resources>
-                        </RichTextBox>
-                    </Grid>
-                </TabItem.Content>
-            </TabItem>
+            <TabItem
+                Name="tabConfiguration"
+                Header="Configuration" />
+            <TabItem
+                Name="tabCharts"
+                Header="Charts" />
+            <TabItem
+                Name="tabAggregator"
+                Header="Data Aggregator" />
+            <TabItem
+                Name="tabLibrary"
+                Header="Data Library" />
         </TabControl>
-
     </Grid>
 </Window>

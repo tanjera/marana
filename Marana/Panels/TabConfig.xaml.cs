@@ -16,9 +16,7 @@ using System.Windows.Shapes;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace Marana {
-    /// <summary>
-    /// Interaction logic for Configuration.xaml
-    /// </summary>
+
     public partial class TabConfig : UserControl {
 
         Main wdwMain;

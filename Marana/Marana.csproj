@@ -107,12 +107,33 @@
       <DependentUpon>Main.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Panels\TabAggregator.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Panels\TabLibrary.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Panels\TabCharts.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Panels\TabConfig.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Panels\TabAggregator.xaml.cs">
+      <DependentUpon>TabAggregator.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TabLibrary.xaml.cs">
+      <DependentUpon>TabLibrary.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Panels\TabCharts.xaml.cs">
+      <DependentUpon>TabCharts.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Panels\TabConfig.xaml.cs">
       <DependentUpon>TabConfig.xaml</DependentUpon>
     </Compile>
