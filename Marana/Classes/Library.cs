@@ -54,22 +54,22 @@ namespace Marana {
                 output = API_AlphaVantage.GetData_TimeSeriesDaily(config.APIKey_AlphaVantage, pairs[i].Symbol, true);
 
                 if (output == "ERROR:INVALID") {                        // Received invalid data (attempted invalid symbol?)
-                    Console.WriteLine(String.Format("{0}: [{1:0000} / {2:0000}]  ERROR, invalid API call for {3}",
+                    Console.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  ERROR, invalid API call for {3}",
                     DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"),
                     i,
                     pairs.Count,
                     pairs[i].Symbol));
                 } else if (output == "ERROR:EXCEEDEDCALLS") {           // Exceeded n amount of API calls in x amount of time (per API)
-                    Console.WriteLine(String.Format("{0}: [{1:0000} / {2:0000}]  WARNING, exceeded API calls on attempt for symbol {3}; retrying in 5 minutes",
+                    Console.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  WARNING, exceeded API calls; retrying in 1 minute",
                     DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"),
                     i,
                     pairs.Count,
                     pairs[i].Symbol));
 
                     i--;
-                    Thread.Sleep(300000);
+                    Thread.Sleep(60000);
                 } else {                                                // Valid data received
-                    Console.WriteLine(String.Format("{0}: [{1:0000} / {2:0000}]  Data for {3} added to library",
+                    Console.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  Data for {3} added to library",
                         DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"),
                         i,
                         pairs.Count,
@@ -81,7 +81,7 @@ namespace Marana {
                 }
             }
 
-            Console.WriteLine(String.Format("{0}: Library update complete!\n", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")));
+            Console.WriteLine(String.Format("{0}:  Library update complete!\n", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")));
         }
     }
 }
