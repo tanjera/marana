@@ -1,32 +1,17 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27703.2042
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marana", "Marana\Marana.csproj", "{D914334A-BE59-4670-8E01-29A3351DC553}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{68A18E18-6830-4A72-951F-3C9D37CBA51D}"
-	ProjectSection(SolutionItems) = preProject
-		LICENSE.md = LICENSE.md
-		README.md = README.md
-		TO_DO.md = TO_DO.md
-	EndProjectSection
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marana", "Marana\Marana.csproj", "{BC34AB15-1C01-46E9-A33B-712A7A8B2412}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D914334A-BE59-4670-8E01-29A3351DC553}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D914334A-BE59-4670-8E01-29A3351DC553}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D914334A-BE59-4670-8E01-29A3351DC553}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D914334A-BE59-4670-8E01-29A3351DC553}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {F1CCC083-27E2-4428-BDD2-85E571DE0B95}
+		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Debug|x86.ActiveCfg = Debug|x86
+		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Debug|x86.Build.0 = Debug|x86
+		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Release|x86.ActiveCfg = Release|x86
+		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 EndGlobal
