@@ -3,12 +3,39 @@ using System.IO;
 
 namespace Marana {
 
-    public class Settings {
-        public string APIKey_AlphaVantage { get; set; }
-        public string Directory_Library { get; set; }
-    }
+    public static class Config {
 
-    public static class Configuration {
+        public static void Info(Settings config) {
+            Prompt.NewLine();
+            Prompt.WriteLine("Fixed Settings:");
+            Prompt.WriteLine(String.Format("  Config Folder: {0}", Config.GetConfigDirectory()));
+            Prompt.NewLine();
+            Prompt.WriteLine("Current Settings:");
+            Prompt.WriteLine(String.Format("  Library Path: {0}", config.Directory_Library));
+            Prompt.WriteLine(String.Format("  API Key -> Alpha Vantage: {0}", config.APIKey_AlphaVantage));
+            Prompt.NewLine();
+            Prompt.WriteLine("To edit these settings, use the command 'marana config edit'");
+        }
+
+        public static void Edit(ref Settings settings) {
+            string input;
+
+            Prompt.NewLine();
+
+            string default_library = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
+            Prompt.Write(String.Format("Library Path [{0}]: ",
+                settings.Directory_Library != null ? settings.Directory_Library : default_library));
+            input = Console.ReadLine().Trim();
+            settings.Directory_Library = !String.IsNullOrEmpty(input) ? input
+                : (settings.Directory_Library != null ? settings.Directory_Library : default_library);
+
+            Prompt.Write(String.Format("API Key -> Alpha Vantage [{0}]: ", settings.APIKey_AlphaVantage));
+            input = Console.ReadLine().Trim();
+            settings.APIKey_AlphaVantage = !String.IsNullOrEmpty(input) ? input
+                : (settings.APIKey_AlphaVantage != null ? settings.APIKey_AlphaVantage : "");
+
+            SaveConfig(settings);
+        }
 
         public static Settings Init() {
             CreateConfigDirectory();

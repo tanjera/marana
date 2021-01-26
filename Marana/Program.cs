@@ -1,51 +1,111 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Marana {
 
     internal class Entry {
 
         public static void Main(string[] args) {
-            args = Prompts.Args();               // For debugging; able to enter args
+            Program p = new Program();
 
-            // Run main program, outside of static Main method
-            Run r = new Run();
-            r.Init(args);
-
-            Console.WriteLine();
+            if (args.Length == 0) {
+                while (true) {
+                    args = Prompt.Args();
+                    if (p.Run(new List<string>(args)) == Program.ReturnCode.Exit)
+                        return;
+                }
+            } else {
+                if (p.Run(new List<string>(args)) == Program.ReturnCode.Exit)
+                    return;
+            }
         }
     }
 
-    public class Run {
-        public Settings Config = new Settings();
+    public class Program {
 
-        public void Init(string[] args) {
-            Config = Configuration.Init();
+        public enum ReturnCode {
+            Okay,
+            Exit
+        }
+
+        public Settings settings = new Settings();
+
+        public string TrimArgs(ref List<string> args) {
+            if (args.Count > 0) {
+                string outarg = args[0].ToLower();
+                args.RemoveAt(0);
+                return outarg;
+            } else {
+                return "";
+            }
+        }
+
+        public ReturnCode Run(List<string> args) {
+            settings = Config.Init();
 
             // Validate the configuration file... if it doesn't exist, force entry into config edit mode
-            if (!Configuration.Validate()) {
-                Console.WriteLine("No configuration file found. Entering 'config edit' mode.");
-                args = new string[2] { "config", "edit" };
+            if (!Config.Validate()) {
+                Prompt.WriteLine("No configuration file found. Entering 'config edit' mode.");
+                args = new List<string> { "config", "edit" };
             }
 
             // Parse command options for program functionality
-            if (args.Length == 0) {
-                Console.WriteLine("Use command 'marana help' for information on using Marana");
-            } else if (args.Length > 0) {                         // Option "config"
-                if (args[0].ToLower() == "config") {
-                    if (args.Length > 1 && args[1].ToLower() == "edit") {
-                        Config = Options.Config_Edit(Config);
-                        Configuration.SaveConfig(Config);
+            if (args.Count == 0) {
+                Prompt.WriteLine("Use command 'marana help' for information on using Marana");
+            } else if (args.Count > 0) {
+                string opt0 = TrimArgs(ref args);
+
+                // "config"
+                if (opt0 == "config") {
+                    if (args.Count == 0) {                              // "config"
+                        Config.Info(settings);
                     } else {
-                        Options.Config_Show(Config);
+                        string opt1 = TrimArgs(ref args);
+
+                        if (opt1 == "edit") {                           // "config edit"
+                            Config.Edit(ref settings);
+                        }
                     }
-                } else if (args[0].ToLower() == "library") {      // Option "library"
-                    Options.Library_Update(args, Config);
-                } else {                                          // Option "help"
-                    Options.Help();
+                }
+
+                // "library"
+                else if (opt0 == "library") {
+                    if (args.Count == 0) {                              // "library"
+                        Library.Info(settings);
+                    } else {
+                        string opt1 = TrimArgs(ref args);
+
+                        if (opt1 == "clear") {                          // "library clear"
+                            Library.Clear(settings);
+                        } else if (opt1 == "update") {                  // "library update"
+                            Library.Update(args, settings);
+                        }
+                    }
+                }
+
+                // "snapshot"
+                else if (opt0 == "snapshot") {
+                    Snapshot.Macro(args, settings);
+                }
+
+                // "help"
+                else if (opt0 == "help") {
+                    Help.Info();
+                }
+
+                // "exit"
+                else if (opt0 == "exit") {
+                    Prompt.WriteLine("Exiting");
+                    return ReturnCode.Exit;
+                }
+
+                // Default or blank option
+                else {
+                    Prompt.WriteLine("Invalid command. Use command 'marana help' for information on using Marana");
                 }
             }
 
-            Prompts.Key();
+            return ReturnCode.Okay;
         }
     }
 }
