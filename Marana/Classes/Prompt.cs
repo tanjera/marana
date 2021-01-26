@@ -40,6 +40,9 @@ namespace Marana {
         }
 
         public static void Write(string Message, ConsoleColor ForeColor = ConsoleColor.Gray) {
+            if (String.IsNullOrEmpty(Message))
+                return;
+
             Console.ForegroundColor = ForeColor;
             Console.Write(Message);
             Console.ResetColor();

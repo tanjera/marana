@@ -83,9 +83,9 @@ namespace Marana {
                     }
                 }
 
-                // "snapshot"
-                else if (opt0 == "snapshot") {
-                    Snapshot.Macro(args, settings);
+                // "analyze"
+                else if (opt0 == "analyze") {
+                    Analysis.Year(args, settings);
                 }
 
                 // "help"

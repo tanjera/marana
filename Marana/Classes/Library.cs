@@ -75,42 +75,21 @@ namespace Marana {
         public static void Update(List<string> args, Settings settings) {
             Init(settings);
 
-            Update_Dailies(args, settings);
+            Update_TSDA(args, settings);
         }
 
-        public static void Update_Dailies(List<string> args, Settings settings) {
+        public static void Update_TSDA(List<string> args, Settings settings) {
             Prompt.Write("Obtaining Symbol list from Nasdaq Trader... ");
             List<SymbolPair> pairs = new List<SymbolPair>(API_NasdaqTrader.GetSymbolPairs().OrderBy(obj => obj.Symbol).ToArray());
             Prompt.Write("Completed", ConsoleColor.Green);
             Prompt.NewLine();
 
-            if (args.Count > 0) {       // Need to trim the symbol list per input args
-                int si = 0, ei = 0;     // Start index, end index ;  for trimming
+            Data.Select_Symbols(ref pairs, args);
 
-                SymbolPair s = (from pair
-                                in pairs
-                                where pair.Symbol == args[0].Trim().ToUpper()
-                                select pair)
-                                    .DefaultIfEmpty(new SymbolPair()).First();
-
-                SymbolPair e = (from pair
-                                in pairs
-                                where pair.Symbol == (args.Count > 1 ? args[1] : "").Trim().ToUpper()
-                                select pair)
-                                    .DefaultIfEmpty(new SymbolPair()).First();
-
-                si = pairs.IndexOf(s);
-                ei = pairs.IndexOf(e) - si + 1;
-
-                if (si > 0)     // Trim beginning and end of List<> per starting and ending indices (inclusive)
-                    pairs.RemoveRange(0, si);
-                if (ei > 0)
-                    pairs.RemoveRange(ei, pairs.Count - ei);
-            }
-
+            // Iterate all symbols in list (pairs), call API to download data, write to files in library
             for (int i = 0; i < pairs.Count; i++) {
                 string output = "";
-                output = API_AlphaVantage.GetData_TimeSeriesDailyAdjusted(settings.APIKey_AlphaVantage, pairs[i].Symbol, true);
+                output = API.AlphaVantage.GetData_TSDA(settings.APIKey_AlphaVantage, pairs[i].Symbol);
 
                 if (output == "ERROR:INVALID") {                        // Received invalid data (attempted invalid symbol?)
                     Prompt.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  Error, invalid API call for {3}",
@@ -124,12 +103,12 @@ namespace Marana {
                     i--;
                     Thread.Sleep(60000);
                 } else {                                                // Valid data received
-                    Prompt.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  Data for {3} added to library",
-                        DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i, pairs.Count, pairs[i].Symbol));
-
                     using (StreamWriter sw = new StreamWriter(
                         Path.Combine(settings.Directory_LibraryData_TSDA, String.Format("{0}.csv", pairs[i].Symbol)), false)) {
                         sw.Write(output);
+
+                        Prompt.WriteLine(String.Format("{0} [{1:0000} / {2:0000}]:  Data for {3} added to library",
+                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i, pairs.Count, pairs[i].Symbol));
                     }
                 }
             }
