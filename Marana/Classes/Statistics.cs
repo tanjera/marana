@@ -12,10 +12,11 @@ namespace Marana {
         public static void CalculateSMA(ref List<DailyValue> values, int period) {
             decimal runningsum = 0;
 
-            for (int i = values.Count - 1; i >= 0; i--) {
+            // Start at oldest value to take a running sum, then save calculations once reaching the period
+            for (int i = 0; i < values.Count; i++) {
                 runningsum += values[i].AdjustedClose;
 
-                if (i <= values.Count - period) {
+                if (i > period - 2) {
                     switch (period) {
                         default: break;
                         case 7: values[i].SMA7 = runningsum / period; break;
@@ -25,8 +26,8 @@ namespace Marana {
                         case 200: values[i].SMA200 = runningsum / period; break;
                     }
 
-                    // Remove the oldest (i + (period - 1)) value for the next iteration
-                    runningsum -= values[i + (period - 1)].AdjustedClose;
+                    // Remove the oldest value for the next iteration
+                    runningsum -= values[i - period + 1].AdjustedClose;
                 }
             }
         }
@@ -35,22 +36,31 @@ namespace Marana {
         public static void CalculateMSD20(ref List<DailyValue> values) {
             int period = 20;
 
-            for (int i = values.Count - period; i >= 0; i--) {
-                decimal sum = 0;
+            // No running sum used; just iterate beginning at period
+            for (int i = period - 1; i < values.Count; i++) {
+                decimal pSum = 0;
+                decimal vSum = 0;
 
-                for (int j = i + period - 1; j >= i; j--) {
-                    sum += values[j].AdjustedClose;
+                for (int j = 0; j < period; j++) {
+                    pSum += values[i - j].AdjustedClose;
+                    vSum += values[i - j].Volume;
                 }
 
-                decimal meanOfSum = sum / period;
-                double sumSquaredVariance = 0;
+                values[i].SMA20 = pSum / period;
+                values[i].vSMA20 = vSum / period;
 
-                for (int j = i + period - 1; j >= i; j--) {
-                    sumSquaredVariance += Math.Pow((double)(values[j].AdjustedClose - meanOfSum), 2);
+                double pSumSquaredVariance = 0;
+                double vSumSquaredVariance = 0;
+
+                for (int j = 0; j < period; j++) {
+                    pSumSquaredVariance += Math.Pow((double)(values[i - j].AdjustedClose - values[i].SMA20), 2);
+                    vSumSquaredVariance += Math.Pow((double)(values[i - j].Volume - values[i].vSMA20), 2);
                 }
 
-                values[i].MSD20 = (decimal)Math.Sqrt(sumSquaredVariance / period);
-                values[i].MSDr20 = values[i].MSD20 / meanOfSum;
+                values[i].MSD20 = (decimal)Math.Sqrt(pSumSquaredVariance / period);
+                values[i].MSDr20 = values[i].MSD20 / values[i].SMA20;
+
+                values[i].vMSD20 = (decimal)Math.Sqrt(vSumSquaredVariance / period);
             }
         }
     }

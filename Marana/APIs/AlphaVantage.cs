@@ -67,6 +67,9 @@ namespace Marana.API {
                 }
             }
 
+            // Chronological order, oldest to newest
+            ds.Values.Sort((a, b) => a.Timestamp.CompareTo(b.Timestamp));
+
             return ds;
         }
     }

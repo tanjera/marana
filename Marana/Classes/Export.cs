@@ -42,6 +42,8 @@ namespace Marana {
                 Map(s => s.SMA200).Index(13).Name("sma200");
                 Map(s => s.MSD20).Index(14).Name("msd20");
                 Map(s => s.MSDr20).Index(15).Name("msdr20");
+                Map(s => s.vSMA20).Index(16).Name("vsma20");
+                Map(s => s.vMSD20).Index(17).Name("vmsd20");
             }
         }
     }

@@ -4,7 +4,10 @@ using System.Collections.Generic;
 namespace Marana {
 
     public class DatasetTSDA {
+        public string Symbol;
+        public string CompanyName;
         public List<DailyValue> Values = new List<DailyValue>();
+        public List<Signal> Signals = new List<Signal>();
     }
 
     public class DailyValue {
@@ -20,7 +23,7 @@ namespace Marana {
         public decimal Dividend_Amount { get; set; }
         public decimal Split_Coefficient { get; set; }
 
-        // Simple moving averages, various periods
+        // Simple moving averages, various periods, for price
 
         public decimal SMA7 { get; set; }
         public decimal SMA20 { get; set; }
@@ -28,15 +31,62 @@ namespace Marana {
         public decimal SMA100 { get; set; }
         public decimal SMA200 { get; set; }
 
-        // Moving standard deviation and according ratio
+        // Moving standard deviation and according ratio (percentage) for price
 
         public decimal MSD20 { get; set; }
         public decimal MSDr20 { get; set; }
+
+        // Metrics for analyzing trading volume
+
+        public decimal vSMA20 { get; set; }
+        public decimal vMSD20 { get; set; }
+    }
+
+    public class Signal {
+        public DateTime Timestamp;
+        public Types Type;
+        public Directions Direction;
+        public Metrics Metric;
+
+        public enum Types {
+            Crossover,
+            Reversal,
+            Variation
+        }
+
+        public enum Directions {
+            Same,
+            Up,
+            Down,
+            Peak,
+            Trough,
+            Plateau,
+            Increase,
+            Decrease
+        }
+
+        public enum Metrics {
+            SMA7,
+            SMA20,
+            SMA50,
+            SMA100,
+            SMA200,
+            SMA7_20,
+            SMA20_50,
+            SMA50_100,
+            SMA100_200,
+        }
+
+        public Signal(DateTime timestamp, Types type, Directions direction, Metrics metric) {
+            Timestamp = timestamp;
+            Type = type;
+            Direction = direction;
+            Metric = metric;
+        }
     }
 
     public class SymbolPair {
         public string Symbol { get; set; }
-
         public string Name { get; set; }
     }
 }
