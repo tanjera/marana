@@ -29,6 +29,7 @@ namespace Marana {
         }
 
         public Settings settings = new Settings();
+        public Database database = new Database();
 
         public string TrimArgs(ref List<string> args) {
             if (args.Count > 0) {
@@ -75,8 +76,8 @@ namespace Marana {
                     } else {
                         string opt1 = TrimArgs(ref args);
 
-                        if (opt1 == "clear") {                          // "library clear"
-                            Library.Clear(settings);
+                        if (opt1 == "init") {                           // "library init"
+                            Library.Init(settings, database);
                         } else if (opt1 == "update") {                  // "library update"
                             Library.Update(args, settings);
                         }
@@ -85,7 +86,7 @@ namespace Marana {
 
                 // "analyze"
                 else if (opt0 == "analyze") {
-                    Analysis.Year(args, settings);
+                    Analysis.Running(args, settings);
                 }
 
                 // "help"

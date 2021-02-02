@@ -10,7 +10,7 @@ using CsvHelper;
 
 namespace Marana.API {
 
-    internal class AlphaVantage {
+    public class AlphaVantage {
 
         public static bool Validate_Error(string text) {
             // Returns true if the returned JSON data (error data always in JSON format) has an "Error Message"

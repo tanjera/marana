@@ -9,14 +9,16 @@ namespace Marana {
 
     public class Analysis {
 
-        public static void Year(List<string> args, Settings settings) {
+        public static void Running(List<string> args, Settings settings) {
             // Process each .csv file to a data structure
             DirectoryInfo ddir = new DirectoryInfo(settings.Directory_LibraryData_TSDA);
             List<FileInfo> dfiles = new List<FileInfo>(ddir.GetFiles("*.csv"));
 
-            List<SymbolPair> pairs = API_NasdaqTrader.GetSymbolPairs();
+            List<SymbolPair> pairs = API.NasdaqTrader.GetSymbolPairs();
 
             Data.Select_Symbols(ref dfiles, args);
+
+            List<DatasetTSDA> lds = new List<DatasetTSDA>();
 
             for (int i = 0; i < dfiles.Count; i++) {
                 DatasetTSDA ds = API.AlphaVantage.ParseData_TSDA(dfiles[i].FullName, 300);
@@ -55,11 +57,20 @@ namespace Marana {
 
                 Prompt.NewLine();
 
-                // Export to .csv for debugging purposes (spot checking math, etc.)
-                string exportpath = Path.Combine(settings.Directory_Library, String.Format("{0}.csv", ds.Symbol));
-                Export.TSDA_To_CSV(ds, exportpath);
+                /* FOR DEBUGGING
+                 * EXPORT TO CSV for debugging purposes (spot checking math, etc.)
+                 */
+                //string exportpath = Path.Combine(settings.Directory_Library, String.Format("{0}.csv", ds.Symbol));
+                //Export.TSDA_To_CSV(ds, exportpath);
 
-                // Run analysis for crossover signals; start at 1, compare to j - 1
+                /* FOR DEBUGGING
+                 * TRIM DATA BY TIME PERIOD
+                 */
+                //ds.Values = ds.Values.FindAll(o => { return o.Timestamp >= new DateTime(2020, 12, 01) && o.Timestamp <= new DateTime(2021, 01, 14); });
+
+                /* Run analysis for crossover signals
+                 * Start at 1, compare to j - 1
+                 */
                 for (int j = 1; j < ds.Values.Count; j++) {
                     Signal.Directions testCross;
 
@@ -83,54 +94,7 @@ namespace Marana {
                     ds.Values[j - 1].SMA50, ds.Values[j - 1].SMA100);
                     if (testCross != Signal.Directions.Same)
                         ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA50_100));
-
-                    // Test SMA100 - SMA200
-                    testCross = HasCrossover(
-                    ds.Values[j].SMA100, ds.Values[j].SMA200,
-                    ds.Values[j - 1].SMA100, ds.Values[j - 1].SMA200);
-                    if (testCross != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA100_200));
                 }
-
-                /* Run analysis for reversal signals
-                 * Start at 1, compare j - 1, j, and j + 1
-                 */
-                for (int j = 1; j < ds.Values.Count - 1; j++) {
-                    Signal.Directions testReversal;
-
-                    // Test SMA7
-                    testReversal = HasReversal(ds.Values[j - 1].SMA7, ds.Values[j].SMA7, ds.Values[j + 1].SMA7);
-                    if (testReversal != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Reversal, testReversal, Signal.Metrics.SMA7));
-
-                    // Test SMA20
-                    testReversal = HasReversal(ds.Values[j - 1].SMA20, ds.Values[j].SMA20, ds.Values[j + 1].SMA20);
-                    if (testReversal != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Reversal, testReversal, Signal.Metrics.SMA20));
-
-                    // Test SMA50
-                    testReversal = HasReversal(ds.Values[j - 1].SMA50, ds.Values[j].SMA50, ds.Values[j + 1].SMA50);
-                    if (testReversal != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Reversal, testReversal, Signal.Metrics.SMA50));
-
-                    // Test SMA100
-                    testReversal = HasReversal(ds.Values[j - 1].SMA100, ds.Values[j].SMA100, ds.Values[j + 1].SMA100);
-                    if (testReversal != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Reversal, testReversal, Signal.Metrics.SMA100));
-
-                    // Test SMA200
-                    testReversal = HasReversal(ds.Values[j - 1].SMA200, ds.Values[j].SMA200, ds.Values[j + 1].SMA200);
-                    if (testReversal != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Reversal, testReversal, Signal.Metrics.SMA200));
-                }
-
-                /* FOR DEBUGGING
-                 */
-                Prompt.WriteLine(String.Format("Detected {0} signals", ds.Signals.Count), ConsoleColor.Yellow);
-                foreach (Signal s in ds.Signals) {
-                    Prompt.WriteLine(String.Format("{0}: {1}\t{2}\t{3}\t{4}", s.Type.ToString(), ds.Symbol, s.Timestamp.ToShortDateString(), s.Direction, s.Metric));
-                }
-                ds.Signals.Clear();
             }
         }
 

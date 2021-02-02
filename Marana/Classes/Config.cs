@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Security.Cryptography;
 
 namespace Marana {
 
@@ -11,8 +12,13 @@ namespace Marana {
             Prompt.WriteLine(String.Format("  Config Folder: {0}", Config.GetConfigDirectory()));
             Prompt.NewLine();
             Prompt.WriteLine("Current Settings:");
-            Prompt.WriteLine(String.Format("  Library Path: {0}", config.Directory_Library));
+            Prompt.WriteLine(String.Format("  Working Directory Path: {0}", config.Directory_Working));
             Prompt.WriteLine(String.Format("  API Key -> Alpha Vantage: {0}", config.APIKey_AlphaVantage));
+            Prompt.NewLine();
+            Prompt.WriteLine(String.Format("  Database -> Server: {0}", config.Database_Server));
+            Prompt.WriteLine(String.Format("  Database -> Port: {0}", config.Database_Port));
+            Prompt.WriteLine(String.Format("  Database -> Name: {0}", config.Database_Schema));
+            Prompt.WriteLine(String.Format("  Database -> User: {0}", config.Database_User));
             Prompt.NewLine();
             Prompt.WriteLine("To edit these settings, use the command 'marana config edit'");
         }
@@ -22,17 +28,43 @@ namespace Marana {
 
             Prompt.NewLine();
 
-            string default_library = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
-            Prompt.Write(String.Format("Library Path [{0}]: ",
-                settings.Directory_Library != null ? settings.Directory_Library : default_library));
+            Prompt.Write(String.Format("Library Path [{0}]: ", settings.Directory_Working));
             input = Console.ReadLine().Trim();
-            settings.Directory_Library = !String.IsNullOrEmpty(input) ? input
-                : (settings.Directory_Library != null ? settings.Directory_Library : default_library);
+            settings.Directory_Working = !String.IsNullOrEmpty(input) ? input
+                : (settings.Directory_Working != null ? settings.Directory_Working : settings.Directory_Working);
 
             Prompt.Write(String.Format("API Key -> Alpha Vantage [{0}]: ", settings.APIKey_AlphaVantage));
             input = Console.ReadLine().Trim();
             settings.APIKey_AlphaVantage = !String.IsNullOrEmpty(input) ? input
                 : (settings.APIKey_AlphaVantage != null ? settings.APIKey_AlphaVantage : "");
+
+            Prompt.Write(String.Format("Database -> Server [{0}]: ", settings.Database_Server));
+            input = Console.ReadLine().Trim();
+            settings.Database_Server = !String.IsNullOrEmpty(input) ? input
+                : (settings.Database_Server != null ? settings.Database_Server : "");
+
+            Prompt.Write(String.Format("Database -> Port [{0}]: ", settings.Database_Port));
+            int result;
+            if (int.TryParse(Console.ReadLine().Trim(), out result))
+                settings.Database_Port = result;
+
+            Prompt.Write(String.Format("Database -> Name [{0}]: ", settings.Database_Schema));
+            input = Console.ReadLine().Trim();
+            settings.Database_Schema = !String.IsNullOrEmpty(input) ? input
+                : (settings.Database_Schema != null ? settings.Database_Schema : "");
+
+            Prompt.WriteLine("Note: Please do NOT use your regular username/password when setting database access.", ConsoleColor.Red);
+            Prompt.WriteLine("This password will be stored in the Marana config file in the config folder.", ConsoleColor.Red);
+
+            Prompt.Write(String.Format("Database -> User [{0}]: ", settings.Database_User));
+            input = Console.ReadLine().Trim();
+            settings.Database_User = !String.IsNullOrEmpty(input) ? input
+                : (settings.Database_User != null ? settings.Database_User : "");
+
+            Prompt.Write(String.Format("Database -> Password [{0}]: ", settings.Database_Password));
+            input = Console.ReadLine().Trim();
+            settings.Database_Password = !String.IsNullOrEmpty(input) ? input
+                : (settings.Database_Password != null ? settings.Database_Password : "");
 
             SaveConfig(settings);
         }
@@ -72,7 +104,13 @@ namespace Marana {
             try {
                 using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
                     sw.WriteLine(String.Format("APIKey_AlphaVantage: {0}", inc.APIKey_AlphaVantage.Trim()));
-                    sw.WriteLine(String.Format("Directory_Library: {0}", inc.Directory_Library.Trim()));
+                    sw.WriteLine(String.Format("Directory_Library: {0}", inc.Directory_Working.Trim()));
+
+                    sw.WriteLine(String.Format("Database_Server: {0}", inc.Database_Server.Trim()));
+                    sw.WriteLine(String.Format("Database_Port: {0}", inc.Database_Port.ToString().Trim()));
+                    sw.WriteLine(String.Format("Database_Name: {0}", inc.Database_Schema.Trim()));
+                    sw.WriteLine(String.Format("Database_User: {0}", inc.Database_User.Trim()));
+                    sw.WriteLine(String.Format("Database_Password: {0}", inc.Database_Password.Trim()));
                     sw.Close();
                     return true;
                 }
@@ -100,7 +138,27 @@ namespace Marana {
                             break;
 
                         case "Directory_Library":
-                            oc.Directory_Library = value;
+                            oc.Directory_Working = value;
+                            break;
+
+                        case "Database_Server":
+                            oc.Database_Server = value;
+                            break;
+
+                        case "Database_Port":
+                            oc.Database_Port = int.Parse(value);
+                            break;
+
+                        case "Database_Name":
+                            oc.Database_Schema = value;
+                            break;
+
+                        case "Database_User":
+                            oc.Database_User = value;
+                            break;
+
+                        case "Database_Password":
+                            oc.Database_Password = value;
                             break;
                     }
                 }

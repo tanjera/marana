@@ -48,6 +48,11 @@ namespace Marana {
         public Directions Direction;
         public Metrics Metric;
 
+        // General conditions around the signal event
+
+        public int HasAlignment = 0;
+        public bool HasResistance = false;
+
         public enum Types {
             Crossover,
             Reversal,
