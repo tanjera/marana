@@ -3,10 +3,9 @@
 ### Short-Term To-Do: For Programming
 - Finish implementation of MySQL as database (moving from .csv files)
   - Continue implementation throughout Library.cs:
-    - Store symbols in `_symbols` table from API.NasdaqTrader
-    - On data download from API.AlphaVantage, run all calculations (async?) and place in DB
-      - In `tsda_symbol` table
+    - **TO_DO** Store symbols in `_symbols` table from API.NasdaqTrader    
     - Analysis can then access the DB for the entire pre-calculated dataset
+      - **TO_DO** Switch data used in Analysis.Running to pull from database
 
 ### Short-Term To-Do: For Analysis
 - NEED to determine where prices have been sitting (average highs and lows for 1 month)

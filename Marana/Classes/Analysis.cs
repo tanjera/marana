@@ -21,52 +21,10 @@ namespace Marana {
             List<DatasetTSDA> lds = new List<DatasetTSDA>();
 
             for (int i = 0; i < dfiles.Count; i++) {
-                DatasetTSDA ds = API.AlphaVantage.ParseData_TSDA(dfiles[i].FullName, 300);
+                DatasetTSDA ds = new DatasetTSDA();
 
                 ds.Symbol = dfiles[i].Name.Substring(0, dfiles[i].Name.IndexOf(".csv")).Trim();
                 ds.CompanyName = (from pair in pairs where pair.Symbol == ds.Symbol select pair.Name).First();
-
-                // Process calculations that analysis is based on
-                // TO-DO: this task can be completed at another time, as long as it is marked as completed
-
-                Prompt.Write(String.Format("Calculating statistics for {0}: ", ds.Symbol));
-
-                Prompt.Write("SMA7");
-                Statistics.CalculateSMA(ref ds.Values, 7);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.Write("SMA20");
-                Statistics.CalculateSMA(ref ds.Values, 20);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.Write("SMA50");
-                Statistics.CalculateSMA(ref ds.Values, 50);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.Write("SMA100");
-                Statistics.CalculateSMA(ref ds.Values, 100);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.Write("SMA200");
-                Statistics.CalculateSMA(ref ds.Values, 200);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.Write("MDS20");
-                Statistics.CalculateMSD20(ref ds.Values);
-                Prompt.Write("! ", ConsoleColor.Green);
-
-                Prompt.NewLine();
-
-                /* FOR DEBUGGING
-                 * EXPORT TO CSV for debugging purposes (spot checking math, etc.)
-                 */
-                //string exportpath = Path.Combine(settings.Directory_Library, String.Format("{0}.csv", ds.Symbol));
-                //Export.TSDA_To_CSV(ds, exportpath);
-
-                /* FOR DEBUGGING
-                 * TRIM DATA BY TIME PERIOD
-                 */
-                //ds.Values = ds.Values.FindAll(o => { return o.Timestamp >= new DateTime(2020, 12, 01) && o.Timestamp <= new DateTime(2021, 01, 14); });
 
                 /* Run analysis for crossover signals
                  * Start at 1, compare to j - 1

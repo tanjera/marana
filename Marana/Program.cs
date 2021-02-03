@@ -28,8 +28,8 @@ namespace Marana {
             Exit
         }
 
-        public Settings settings = new Settings();
-        public Database database = new Database();
+        public Settings _Settings;
+        public Database _Database;
 
         public string TrimArgs(ref List<string> args) {
             if (args.Count > 0) {
@@ -42,7 +42,8 @@ namespace Marana {
         }
 
         public ReturnCode Run(List<string> args) {
-            settings = Config.Init();
+            _Settings = Config.Init();
+            _Database = new Database(_Settings);
 
             // Validate the configuration file... if it doesn't exist, force entry into config edit mode
             if (!Config.Validate()) {
@@ -59,34 +60,33 @@ namespace Marana {
                 // "config"
                 if (opt0 == "config") {
                     if (args.Count == 0) {                              // "config"
-                        Config.Info(settings);
+                        Config.Info(_Settings);
                     } else {
                         string opt1 = TrimArgs(ref args);
 
                         if (opt1 == "edit") {                           // "config edit"
-                            Config.Edit(ref settings);
+                            Config.Edit(ref _Settings);
                         }
                     }
                 }
 
                 // "library"
                 else if (opt0 == "library") {
-                    if (args.Count == 0) {                              // "library"
-                        Library.Info(settings);
+                    if (args.Count == 0) {                             // "library"
+                        Library.Info(_Database);
                     } else {
                         string opt1 = TrimArgs(ref args);
-
-                        if (opt1 == "init") {                           // "library init"
-                            Library.Init(settings, database);
+                        if (opt1 == "clear") {                          // "library clear"
+                            Library.Clear(_Database);
                         } else if (opt1 == "update") {                  // "library update"
-                            Library.Update(args, settings);
+                            Library.Update(args, _Settings, _Database);
                         }
                     }
                 }
 
                 // "analyze"
                 else if (opt0 == "analyze") {
-                    Analysis.Running(args, settings);
+                    Analysis.Running(args, _Settings);
                 }
 
                 // "help"

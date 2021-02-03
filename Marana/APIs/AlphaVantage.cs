@@ -17,6 +17,11 @@ namespace Marana.API {
             return text.Contains("Error Message");
         }
 
+        public static bool Validate_Error_Key(string text) {
+            // Returns true if the returned JSON data (error data always in JSON format) has this specific error message.
+            return text.Contains("the parameter apikey is invalid or missing");
+        }
+
         public static bool Validate_ExceededCalls(string text) {
             // Returns true if the returned JSON data (error data always in JSON format) has a "Note" or Information
             // Indicative of too may API calls per minute/day (over limit)
@@ -35,6 +40,8 @@ namespace Marana.API {
 
             if (Validate_ExceededCalls(rte)) {
                 return "ERROR:EXCEEDEDCALLS";
+            } else if (Validate_Error_Key(rte)) {
+                return "ERROR:INVALIDKEY";
             } else if (Validate_Error(rte)) {
                 return "ERROR:INVALID";
             } else {
@@ -42,10 +49,10 @@ namespace Marana.API {
             }
         }
 
-        public static DatasetTSDA ParseData_TSDA(string filepath, int maxrecords = -1) {
+        public static DatasetTSDA ParseData_TSDA(string data, int maxrecords = -1) {
             DatasetTSDA ds = new DatasetTSDA();
 
-            using (StreamReader sr = new StreamReader(filepath)) {
+            using (StringReader sr = new StringReader(data)) {
                 using (CsvReader csv = new CsvReader(sr, CultureInfo.InvariantCulture)) {
                     csv.Read();
                     csv.ReadHeader();
