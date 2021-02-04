@@ -8,8 +8,8 @@ namespace Marana {
 
     public class Library {
 
-        public static void Info(Database database) {
-            decimal size = database.GetSize();
+        public static void Info(Database db) {
+            decimal size = db.GetSize();
 
             Prompt.WriteLine(String.Format("Database size: {0} MB", size));
             Prompt.NewLine();
@@ -21,31 +21,52 @@ namespace Marana {
             Update_TSDA(args, settings, database);
         }
 
-        public static void Clear(Database database) {
+        public static void Clear(Database db) {
             Prompt.Write("This will delete all current data in the database! Are you sure you want to continue?  ", ConsoleColor.Red);
             if (!Prompt.YesNo())
                 return;
 
-            database.Wipe();
+            db.Wipe();
 
-            Prompt.Write("Database cleared of all data and reinitialized.");
+            Prompt.WriteLine("Database cleared of all data and reinitialized.");
         }
 
-        public static void Update_TSDA(List<string> args, Settings settings, Database database) {
-            Prompt.Write("Obtaining Symbol list from Nasdaq Trader... ");
+        public static List<SymbolPair> GetSymbols(Database db) {
+            if (DateTime.UtcNow - db.GetValidity_Symbols() > new TimeSpan(1, 0, 0, 0))
+                Update_Symbols(db);
+
+            return db.GetData_Symbols();
+        }
+
+        public static void Update_Symbols(Database db) {
+            Prompt.Write("Updating list of ticker symbols from Nasdaq Trader... ");
+
             List<SymbolPair> pairs = new List<SymbolPair>(API.NasdaqTrader.GetSymbolPairs().OrderBy(obj => obj.Symbol).ToArray());
+            db.AddData_Symbols(pairs);
+
             Prompt.Write("Completed", ConsoleColor.Green);
             Prompt.NewLine();
+        }
+
+        public static void Update_TSDA(List<string> args, Settings settings, Database db) {
+            List<SymbolPair> pairs = GetSymbols(db);
 
             Data.Select_Symbols(ref pairs, args);
 
             // Iterate all symbols in list (pairs), call API to download data, write to files in library
             for (int i = 0; i < pairs.Count; i++) {
-                string output = "";
-
-                Prompt.Write(String.Format("{0} [{1:0000} / {2:0000}]:  {3}  :  Requesting data. ",
+                Prompt.Write(String.Format("{0} [{1:0000} / {2:0000}]:  {3}  :  ",
                             DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i, pairs.Count, pairs[i].Symbol));
 
+                /* Check validity- if less than 1 day old, data is valid!
+                 */
+                if (DateTime.UtcNow - db.GetValidity_TSDA(pairs[i]) < new TimeSpan(1, 0, 0, 0)) {
+                    Prompt.WriteLine("Database current. Skipping.");
+                    continue;
+                }
+
+                Prompt.Write("Requesting data.  ");
+                string output = "";
                 output = API.AlphaVantage.GetData_TSDA(settings.APIKey_AlphaVantage, pairs[i].Symbol);
 
                 if (output == "ERROR:INVALID") {                        // Received invalid data (attempted invalid symbol?)
@@ -84,7 +105,7 @@ namespace Marana {
 
                     Prompt.Write("Updating database. ");
 
-                    database.Add_TSDA(ds);
+                    db.AddData_TSDA(ds);
 
                     Prompt.WriteLine("Complete!", ConsoleColor.Green);
                 }

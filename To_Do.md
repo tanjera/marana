@@ -2,8 +2,9 @@
 
 ### Short-Term To-Do: For Programming
 - Finish implementation of MySQL as database (moving from .csv files)
-  - Continue implementation throughout Library.cs:
-    - **TO_DO** Store symbols in `_symbols` table from API.NasdaqTrader    
+  - **TO_DO** Implement _errors table, collect all exceptions/errors
+  - ... also need to add exception handling for each MySQL connection.......
+  - Continue implementation throughout Library.cs:    
     - Analysis can then access the DB for the entire pre-calculated dataset
       - **TO_DO** Switch data used in Analysis.Running to pull from database
 

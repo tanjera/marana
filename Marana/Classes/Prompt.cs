@@ -48,9 +48,24 @@ namespace Marana {
             Console.ResetColor();
         }
 
+        public static void Write(string Message, ConsoleColor ForeColor, params object[] args) {
+            if (String.IsNullOrEmpty(Message))
+                return;
+
+            Console.ForegroundColor = ForeColor;
+            Console.Write(Message, args);
+            Console.ResetColor();
+        }
+
         public static void WriteLine(string Message, ConsoleColor ForeColor = ConsoleColor.Gray) {
             Console.ForegroundColor = ForeColor;
             Console.WriteLine(Message);
+            Console.ResetColor();
+        }
+
+        public static void WriteLine(string Message, ConsoleColor ForeColor, params object[] args) {
+            Console.ForegroundColor = ForeColor;
+            Console.WriteLine(Message, args);
             Console.ResetColor();
         }
     }
