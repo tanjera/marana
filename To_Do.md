@@ -1,7 +1,9 @@
 ﻿### Bugs
 
 ### Short-Term To-Do: For Programming
-- Finish implementation of MySQL as database (moving from .csv files)
+- Finish implementation of MySQL and Alpaca
+  - **TO_DO** Check _validity based on when market was last open!
+  - **TO_DO** Get symbols from Alpaca instead of Nasdaq Trader? May have NYSE...
   - **TO_DO** Implement _errors table, collect all exceptions/errors
   - ... also need to add exception handling for each MySQL connection.......
   - Continue implementation throughout Library.cs:    

@@ -10,21 +10,13 @@ namespace Marana {
     public class Analysis {
 
         public static void Running(List<string> args, Settings settings) {
-            // Process each .csv file to a data structure
-            DirectoryInfo ddir = new DirectoryInfo(settings.Directory_LibraryData_TSDA);
-            List<FileInfo> dfiles = new List<FileInfo>(ddir.GetFiles("*.csv"));
+            List<DatasetTSD> lds = new List<DatasetTSD>();
 
-            List<SymbolPair> pairs = API.NasdaqTrader.GetSymbolPairs();
+            for (int i = 0; i < lds.Count; i++) {
+                DatasetTSD ds = new DatasetTSD();
 
-            Data.Select_Symbols(ref dfiles, args);
-
-            List<DatasetTSDA> lds = new List<DatasetTSDA>();
-
-            for (int i = 0; i < dfiles.Count; i++) {
-                DatasetTSDA ds = new DatasetTSDA();
-
-                ds.Symbol = dfiles[i].Name.Substring(0, dfiles[i].Name.IndexOf(".csv")).Trim();
-                ds.CompanyName = (from pair in pairs where pair.Symbol == ds.Symbol select pair.Name).First();
+                ds.Symbol = "";  // dfiles[i].Name.Substring(0, dfiles[i].Name.IndexOf(".csv")).Trim();
+                ds.CompanyName = ""; //(from pair in pairs where pair.Symbol == ds.Symbol select pair.Name).First();
 
                 /* Run analysis for crossover signals
                  * Start at 1, compare to j - 1

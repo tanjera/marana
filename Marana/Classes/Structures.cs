@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Marana {
 
-    public class DatasetTSDA {
+    public class DatasetTSD {
         public string Symbol;
         public string CompanyName;
         public List<DailyValue> Values = new List<DailyValue>();
@@ -18,10 +18,7 @@ namespace Marana {
         public decimal High { get; set; }
         public decimal Low { get; set; }
         public decimal Close { get; set; }
-        public decimal AdjustedClose { get; set; }
         public decimal Volume { get; set; }
-        public decimal Dividend_Amount { get; set; }
-        public decimal Split_Coefficient { get; set; }
 
         // Simple moving averages, various periods, for price
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace Marana {
 
@@ -13,7 +14,8 @@ namespace Marana {
             Prompt.NewLine();
             Prompt.WriteLine("Current Settings:");
             Prompt.WriteLine(String.Format("  Working Directory Path: {0}", config.Directory_Working));
-            Prompt.WriteLine(String.Format("  API Key -> Alpha Vantage: {0}", config.APIKey_AlphaVantage));
+            Prompt.WriteLine(String.Format("  API -> Alpaca -> Key: {0}", config.API_Alpaca_Key));
+            Prompt.WriteLine(String.Format("  API -> Alpaca -> Secret: {0}", config.API_Alpaca_Secret));
             Prompt.NewLine();
             Prompt.WriteLine(String.Format("  Database -> Server: {0}", config.Database_Server));
             Prompt.WriteLine(String.Format("  Database -> Port: {0}", config.Database_Port));
@@ -33,10 +35,15 @@ namespace Marana {
             settings.Directory_Working = !String.IsNullOrEmpty(input) ? input
                 : (settings.Directory_Working != null ? settings.Directory_Working : settings.Directory_Working);
 
-            Prompt.Write(String.Format("API Key -> Alpha Vantage [{0}]: ", settings.APIKey_AlphaVantage));
+            Prompt.Write(String.Format("API -> Alpaca -> Key [{0}]: ", settings.API_Alpaca_Key));
             input = Console.ReadLine().Trim();
-            settings.APIKey_AlphaVantage = !String.IsNullOrEmpty(input) ? input
-                : (settings.APIKey_AlphaVantage != null ? settings.APIKey_AlphaVantage : "");
+            settings.API_Alpaca_Key = !String.IsNullOrEmpty(input) ? input
+                : (settings.API_Alpaca_Key != null ? settings.API_Alpaca_Key : "");
+
+            Prompt.Write(String.Format("API -> Alpaca -> Secret [{0}]: ", settings.API_Alpaca_Secret));
+            input = Console.ReadLine().Trim();
+            settings.API_Alpaca_Secret = !String.IsNullOrEmpty(input) ? input
+                : (settings.API_Alpaca_Secret != null ? settings.API_Alpaca_Secret : "");
 
             Prompt.Write(String.Format("Database -> Server [{0}]: ", settings.Database_Server));
             input = Console.ReadLine().Trim();
@@ -66,7 +73,10 @@ namespace Marana {
             settings.Database_Password = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_Password != null ? settings.Database_Password : "");
 
-            SaveConfig(settings);
+            if (SaveConfig(settings))
+                Prompt.WriteLine("Settings saved successfully.");
+            else
+                Prompt.WriteLine("Unable to save settings! Filesystem error?", ConsoleColor.Red);
         }
 
         public static Settings Init() {
@@ -103,18 +113,19 @@ namespace Marana {
         public static bool SaveConfig(Settings inc) {
             try {
                 using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
-                    sw.WriteLine(String.Format("APIKey_AlphaVantage: {0}", inc.APIKey_AlphaVantage.Trim()));
-                    sw.WriteLine(String.Format("Directory_Library: {0}", inc.Directory_Working.Trim()));
+                    sw.WriteLine(String.Format("API_Alpaca_Key: {0}", inc.API_Alpaca_Key.Trim()));
+                    sw.WriteLine(String.Format("API_Alpaca_Secret: {0}", inc.API_Alpaca_Secret.Trim()));
+                    sw.WriteLine(String.Format("Directory_Working: {0}", inc.Directory_Working.Trim()));
 
                     sw.WriteLine(String.Format("Database_Server: {0}", inc.Database_Server.Trim()));
                     sw.WriteLine(String.Format("Database_Port: {0}", inc.Database_Port.ToString().Trim()));
-                    sw.WriteLine(String.Format("Database_Name: {0}", inc.Database_Schema.Trim()));
+                    sw.WriteLine(String.Format("Database_Schema: {0}", inc.Database_Schema.Trim()));
                     sw.WriteLine(String.Format("Database_User: {0}", inc.Database_User.Trim()));
                     sw.WriteLine(String.Format("Database_Password: {0}", inc.Database_Password.Trim()));
                     sw.Close();
                     return true;
                 }
-            } catch {
+            } catch (Exception ex) {
                 return false;
             }
         }
@@ -133,11 +144,15 @@ namespace Marana {
 
                     switch (key) {
                         default: break;
-                        case "APIKey_AlphaVantage":
-                            oc.APIKey_AlphaVantage = value;
+                        case "API_Alpaca_Key":
+                            oc.API_Alpaca_Key = value;
                             break;
 
-                        case "Directory_Library":
+                        case "API_Alpaca_Secret":
+                            oc.API_Alpaca_Secret = value;
+                            break;
+
+                        case "Directory_Working":
                             oc.Directory_Working = value;
                             break;
 
@@ -149,7 +164,7 @@ namespace Marana {
                             oc.Database_Port = int.Parse(value);
                             break;
 
-                        case "Database_Name":
+                        case "Database_Schema":
                             oc.Database_Schema = value;
                             break;
 

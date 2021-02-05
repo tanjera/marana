@@ -8,11 +8,11 @@ namespace Marana {
 
     internal class Prompt {
 
-        public static string[] Args() {
+        public static List<string> Args() {
             NewLine();
             Write("Marana > ", ConsoleColor.Blue);
             string input = Console.ReadLine().Trim();
-            return input.Split(' ');
+            return new List<string>(input.Split(' '));
         }
 
         public static void Key() {

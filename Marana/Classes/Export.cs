@@ -13,7 +13,7 @@ namespace Marana {
 
     public class Export {
 
-        public static void TSDA_To_CSV(DatasetTSDA dataset, string filepath) {
+        public static void TSD_To_CSV(DatasetTSD dataset, string filepath) {
             using (StreamWriter sw = new StreamWriter(filepath)) {
                 using (CsvWriter csv = new CsvWriter(sw, CultureInfo.InvariantCulture)) {
                     csv.Context.RegisterClassMap<DailyValueMap>();
@@ -31,10 +31,7 @@ namespace Marana {
                 Map(s => s.High).Index(2).Name("high");
                 Map(s => s.Low).Index(3).Name("low");
                 Map(s => s.Close).Index(4).Name("close");
-                Map(s => s.AdjustedClose).Index(5).Name("adjusted_close");
                 Map(s => s.Volume).Index(6).Name("volume");
-                Map(s => s.Dividend_Amount).Index(7).Name("dividend_amount");
-                Map(s => s.Split_Coefficient).Index(8).Name("split_coefficient");
                 Map(s => s.SMA7).Index(9).Name("sma7");
                 Map(s => s.SMA20).Index(10).Name("sma20");
                 Map(s => s.SMA50).Index(11).Name("sma50");

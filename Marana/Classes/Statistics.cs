@@ -14,7 +14,7 @@ namespace Marana {
 
             // Start at oldest value to take a running sum, then save calculations once reaching the period
             for (int i = 0; i < values.Count; i++) {
-                runningsum += values[i].AdjustedClose;
+                runningsum += values[i].Close;
 
                 if (i > period - 2) {
                     switch (period) {
@@ -27,7 +27,7 @@ namespace Marana {
                     }
 
                     // Remove the oldest value for the next iteration
-                    runningsum -= values[i - period + 1].AdjustedClose;
+                    runningsum -= values[i - period + 1].Close;
                 }
             }
         }
@@ -42,7 +42,7 @@ namespace Marana {
                 decimal vSum = 0;
 
                 for (int j = 0; j < period; j++) {
-                    pSum += values[i - j].AdjustedClose;
+                    pSum += values[i - j].Close;
                     vSum += values[i - j].Volume;
                 }
 
@@ -53,7 +53,7 @@ namespace Marana {
                 double vSumSquaredVariance = 0;
 
                 for (int j = 0; j < period; j++) {
-                    pSumSquaredVariance += Math.Pow((double)(values[i - j].AdjustedClose - values[i].SMA20), 2);
+                    pSumSquaredVariance += Math.Pow((double)(values[i - j].Close - values[i].SMA20), 2);
                     vSumSquaredVariance += Math.Pow((double)(values[i - j].Volume - values[i].vSMA20), 2);
                 }
 

@@ -4,7 +4,9 @@ using System.IO;
 namespace Marana {
 
     public class Settings {
-        public string APIKey_AlphaVantage { get; set; }
+        public string API_Alpaca_Key { get; set; }
+        public string API_Alpaca_Secret { get; set; }
+
         public string Directory_Working { get; set; }
 
         public string Database_Server { get; set; }
@@ -15,10 +17,6 @@ namespace Marana {
 
         public string Directory_LibraryData {
             get { return Path.Combine(Directory_Working, "Data"); }
-        }
-
-        public string Directory_LibraryData_TSDA {
-            get { return Path.Combine(Directory_LibraryData, "TSDA"); }
         }
 
         public Settings() {

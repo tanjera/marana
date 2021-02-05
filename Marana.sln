@@ -1,7 +1,13 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Marana", "Marana\Marana.csproj", "{BC34AB15-1C01-46E9-A33B-712A7A8B2412}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A2EEFE92-2AC4-4FDB-90B1-57DA333364C7}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,5 +19,11 @@ Global
 		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Debug|x86.Build.0 = Debug|x86
 		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Release|x86.ActiveCfg = Release|x86
 		{BC34AB15-1C01-46E9-A33B-712A7A8B2412}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {203A3A3B-5ACC-4D9A-A255-6B2DCF412C32}
 	EndGlobalSection
 EndGlobal
