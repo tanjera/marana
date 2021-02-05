@@ -18,7 +18,7 @@ namespace Marana {
 
         public string ConnectionStr {
             get {
-                return String.Format("server={0};user={1};database={2};port={3};password={4}",
+                return String.Format("server={0}; user={1}; database={2}; port={3}; password={4}",
                     _Settings.Database_Server, _Settings.Database_User, _Settings.Database_Schema, _Settings.Database_Port, _Settings.Database_Password); ;
             }
         }
@@ -34,10 +34,10 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         @"CREATE TABLE IF NOT EXISTS `_validity` (
-                        `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                        `table` VARCHAR(64) NOT NULL,
-                        `updated` DATETIME
-                        ) AUTO_INCREMENT = 1;",
+                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `table` VARCHAR(64) NOT NULL,
+                            `updated` DATETIME
+                            ) AUTO_INCREMENT = 1;",
                         connection))
                     cmd.ExecuteNonQuery();
 
@@ -59,12 +59,9 @@ namespace Marana {
 
                 List<string> tables = new List<string>();
                 using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                    @"SELECT
-                    table_name
-                FROM
-                    information_schema.tables
-                WHERE
-                    table_schema = '{0}';",
+                    @"SELECT table_name
+                        FROM information_schema.tables
+                        WHERE table_schema = '{0}';",
                     _Settings.Database_Schema), connection)) {
                     using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                         while (rdr.Read())
@@ -72,12 +69,12 @@ namespace Marana {
                     }
                 }
 
-                foreach (string table in tables) {
-                    using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                            @"DROP TABLE IF EXISTS {0};",
-                            table), connection))
-                        cmd.ExecuteNonQuery();
-                }
+                string droplist = String.Join(", ",
+                    tables.Select(t => String.Format("`{0}`", MySqlHelper.EscapeString(t))));
+                using (MySqlCommand cmd = new MySqlCommand(String.Format(
+                        @"DROP TABLE IF EXISTS {0};",
+                        droplist), connection))
+                    cmd.ExecuteNonQuery();
 
                 using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
                     cmd.ExecuteNonQuery();
@@ -105,22 +102,21 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         @"CREATE TABLE IF NOT EXISTS `_symbols` (
-                        `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                        `symbol` VARCHAR(8) NOT NULL,
-                        `name` VARCHAR(256) NULL
-                        ) AUTO_INCREMENT = 1;",
+                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `symbol` VARCHAR(8) NOT NULL,
+                            `name` VARCHAR(256) NULL
+                            ) AUTO_INCREMENT = 1;",
                         connection))
                     cmd.ExecuteNonQuery();
 
-                foreach (SymbolPair pair in pairs) {
-                    using (MySqlCommand cmd = new MySqlCommand(
-                            @"INSERT INTO `_symbols` ( symbol, name ) VALUES ( ?symbol, ?name );",
-                            connection)) {
-                        cmd.Parameters.AddWithValue("?symbol", pair.Symbol);
-                        cmd.Parameters.AddWithValue("?name", pair.Name);
-
-                        cmd.ExecuteNonQuery();
-                    }
+                string values = String.Join(", ",
+                    pairs.Select(p => String.Format("('{0}', '{1}')",
+                    MySqlHelper.EscapeString(p.Symbol),
+                    MySqlHelper.EscapeString(p.Name))));
+                using (MySqlCommand cmd = new MySqlCommand(String.Format(
+                        @"INSERT INTO `_symbols` ( symbol, name ) VALUES {0};",
+                        values), connection)) {
+                    cmd.ExecuteNonQuery();
                 }
 
                 UpdateValidity("_symbols");
@@ -152,59 +148,59 @@ namespace Marana {
                 // Create the new table
                 using (MySqlCommand cmd = new MySqlCommand(String.Format(
                         @"CREATE TABLE IF NOT EXISTS `{0}` (
-                        `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                        `timestamp` DATE NOT NULL,
-                        `open` DECIMAL(10, 4),
-                        `high` DECIMAL(10, 4),
-                        `low` DECIMAL(10, 4),
-                        `close` DECIMAL(10, 4),
-                        `volume` BIGINT,
-                        `sma7` DECIMAL(10, 4),
-                        `sma20` DECIMAL(10, 4),
-                        `sma50` DECIMAL(10, 4),
-                        `sma100` DECIMAL(10, 4),
-                        `sma200` DECIMAL(10, 4),
-                        `msd20` DECIMAL(10, 4),
-                        `msdr20` DECIMAL(10, 6),
-                        `vsma20` BIGINT,
-                        `vmsd20` BIGINT
-                        );", table),
-                        connection))
+                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `timestamp` DATE NOT NULL,
+                            `open` DECIMAL(10, 4),
+                            `high` DECIMAL(10, 4),
+                            `low` DECIMAL(10, 4),
+                            `close` DECIMAL(10, 4),
+                            `volume` BIGINT,
+                            `sma7` DECIMAL(10, 4),
+                            `sma20` DECIMAL(10, 4),
+                            `sma50` DECIMAL(10, 4),
+                            `sma100` DECIMAL(10, 4),
+                            `sma200` DECIMAL(10, 4),
+                            `msd20` DECIMAL(10, 4),
+                            `msdr20` DECIMAL(10, 6),
+                            `vsma20` BIGINT,
+                            `vmsd20` BIGINT
+                            );",
+                        table), connection))
                     cmd.ExecuteNonQuery();
 
                 // Insert the data into the table
-                foreach (DailyValue dv in dataset.Values) {
-                    try {
-                        using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                                @"INSERT INTO `{0}` (
-                        timestamp, open, high, low, close, volume,
-                        sma7, sma20, sma50, sma100, sma200, msd20, msdr20, vsma20, vmsd20
-                        ) VALUES (
-                        ?timestamp, ?open, ?high, ?low, ?close, ?volume,
-                        ?sma7, ?sma20, ?sma50, ?sma100, ?sma200, ?msd20, ?msdr20, ?vsma20, ?vmsd20
-                        );", table),
-                                connection)) {
-                            cmd.Parameters.AddWithValue("?timestamp", dv.Timestamp);
-                            cmd.Parameters.AddWithValue("?open", dv.Open);
-                            cmd.Parameters.AddWithValue("?high", dv.High);
-                            cmd.Parameters.AddWithValue("?low", dv.Low);
-                            cmd.Parameters.AddWithValue("?close", dv.Close);
-                            cmd.Parameters.AddWithValue("?volume", dv.Volume);
-                            cmd.Parameters.AddWithValue("?sma7", dv.SMA7);
-                            cmd.Parameters.AddWithValue("?sma20", dv.SMA20);
-                            cmd.Parameters.AddWithValue("?sma50", dv.SMA50);
-                            cmd.Parameters.AddWithValue("?sma100", dv.SMA100);
-                            cmd.Parameters.AddWithValue("?sma200", dv.SMA200);
-                            cmd.Parameters.AddWithValue("?msd20", dv.MSD20);
-                            cmd.Parameters.AddWithValue("?msdr20", dv.MSDr20);
-                            cmd.Parameters.AddWithValue("?vsma20", dv.vSMA20);
-                            cmd.Parameters.AddWithValue("?vmsd20", dv.vMSD20);
 
-                            cmd.ExecuteNonQuery();
-                        }
-                    } catch (Exception ex) {
-                        // TO-DO: log errors to MySQL _errors
+                string values = String.Join(", ",
+                    dataset.Values.Select(v => String.Format(
+                        "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}',"
+                        + "'{11}', '{12}', '{13}', '{14}')",
+                    MySqlHelper.EscapeString(v.Timestamp.ToString("yyyy-MM-dd")),
+                    MySqlHelper.EscapeString(v.Open.ToString()),
+                    MySqlHelper.EscapeString(v.High.ToString()),
+                    MySqlHelper.EscapeString(v.Low.ToString()),
+                    MySqlHelper.EscapeString(v.Close.ToString()),
+                    MySqlHelper.EscapeString(v.Volume.ToString()),
+                    MySqlHelper.EscapeString(v.SMA7.ToString()),
+                    MySqlHelper.EscapeString(v.SMA20.ToString()),
+                    MySqlHelper.EscapeString(v.SMA50.ToString()),
+                    MySqlHelper.EscapeString(v.SMA100.ToString()),
+                    MySqlHelper.EscapeString(v.SMA200.ToString()),
+                    MySqlHelper.EscapeString(v.MSD20.ToString()),
+                    MySqlHelper.EscapeString(v.MSDr20.ToString()),
+                    MySqlHelper.EscapeString(v.vSMA20.ToString()),
+                    MySqlHelper.EscapeString(v.vMSD20.ToString()))));
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(String.Format(
+                            @"INSERT INTO `{0}` (
+                                    timestamp, open, high, low, close, volume,
+                                    sma7, sma20, sma50, sma100, sma200, msd20, msdr20, vsma20, vmsd20
+                                    ) VALUES {1};",
+                            table, values), connection)) {
+                        cmd.ExecuteNonQuery();
                     }
+                } catch (Exception ex) {
+                    // TO-DO: log errors to MySQL _errors
                 }
 
                 UpdateValidity(table);
@@ -279,9 +275,9 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand(String.Format(
                     @"SELECT table_schema `{0}`,
-                        ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) 'size'
-                FROM information_schema.tables
-                GROUP BY table_schema;",
+                            ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) 'size'
+                        FROM information_schema.tables
+                        GROUP BY table_schema;",
                     _Settings.Database_Schema), connection)) {
                     using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                         while (rdr.Read()) {
@@ -315,8 +311,8 @@ namespace Marana {
                 if (oldvalidity) {
                     using (MySqlCommand cmd = new MySqlCommand(
                             @"UPDATE `_validity`
-                        SET `updated` = ?updated
-                        WHERE (`table` = ?table);",
+                                SET `updated` = ?updated
+                                WHERE (`table` = ?table);",
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
                         cmd.Parameters.AddWithValue("?table", table);
@@ -325,10 +321,10 @@ namespace Marana {
                 } else {
                     using (MySqlCommand cmd = new MySqlCommand(
                             @"INSERT INTO `_validity` (
-                        `table`, updated
-                        ) VALUES (
-                        ?table, ?updated
-                        );",
+                                `table`, updated
+                                ) VALUES (
+                                ?table, ?updated
+                                );",
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
                         cmd.Parameters.AddWithValue("?table", table);

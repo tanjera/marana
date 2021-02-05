@@ -62,7 +62,7 @@ namespace Marana {
             // Iterate all symbols in list (pairs), call API to download data, write to files in library
             for (int i = 0; i < pairs.Count; i++) {
                 Prompt.Write(String.Format("{0} [{1:0000} / {2:0000}]  {3,-8}  ",
-                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i, pairs.Count, pairs[i].Symbol));
+                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i + 1, pairs.Count, pairs[i].Symbol));
 
                 /* Check validity- if less than 1 day old, data is valid!
                  */
@@ -121,9 +121,12 @@ namespace Marana {
             }
 
             int finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
-            while (finishing > 0) {
-                Prompt.WriteLine(String.Format("{0}:  Completing remaining background database tasks.", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")));
+            if (finishing > 0) {
+                Prompt.WriteLine(String.Format("{0}:  Completing {1} remaining background database tasks.",
+                    DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"), finishing));
                 Thread.Sleep(5000);
+
+                finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
             }
 
             Prompt.WriteLine(String.Format("{0}:  Library update complete!", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")), ConsoleColor.Green);
