@@ -3,12 +3,7 @@
 ### Short-Term To-Do: For Programming
 - Finish implementation of MySQL and Alpaca
   - **TO_DO** Check _validity based on when market was last open!
-  - **TO_DO** Get symbols from Alpaca instead of Nasdaq Trader? May have NYSE...
-  - **TO_DO** Implement _errors table, collect all exceptions/errors
-  - ... also need to add exception handling for each MySQL connection.......
-  - Continue implementation throughout Library.cs:    
-    - Analysis can then access the DB for the entire pre-calculated dataset
-      - **TO_DO** Switch data used in Analysis.Running to pull from database
+  - **TO_DO** Implement error log file, collect all exceptions/errors
 
 ### Short-Term To-Do: For Analysis
 - NEED to determine where prices have been sitting (average highs and lows for 1 month)

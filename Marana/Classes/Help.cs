@@ -23,8 +23,6 @@ Options:
     library clear                       Erase all library data
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
-
-    snapshot                            Compile a macro-level data snapshot to spreadsheet
 ");
         }
     }

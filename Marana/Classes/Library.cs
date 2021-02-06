@@ -19,8 +19,12 @@ namespace Marana {
             Prompt.WriteLine("Initializing database.");
             database.Init();
 
+            Prompt.WriteLine("Querying database for list of ticker symbols.");
+            List<Asset> assets = GetAssets(database);
+            Data.Select_Assets(ref assets, args);
+
             Prompt.WriteLine("Updating Time Series Dailies (TSD).");
-            Update_TSD(args, settings, database);
+            Update_TSD(assets, settings, database);
         }
 
         public static void Clear(Database db) {
@@ -33,40 +37,36 @@ namespace Marana {
             Prompt.WriteLine("Success- Database cleared of all data and reinitialized.");
         }
 
-        public static List<SymbolPair> GetSymbols(Database db) {
-            if (DateTime.UtcNow - db.GetValidity_Symbols() > new TimeSpan(1, 0, 0, 0))
+        public static List<Asset> GetAssets(Database db) {
+            if (DateTime.UtcNow - db.GetValidity_Assets() > new TimeSpan(1, 0, 0, 0))
                 Update_Symbols(db);
 
-            return db.GetData_Symbols();
+            return db.GetData_Assets();
         }
 
         public static void Update_Symbols(Database db) {
-            Prompt.Write("Updating list of ticker symbols from Nasdaq Trader... ");
+            Prompt.Write("Updating list of ticker symbols. ");
 
-            List<SymbolPair> pairs = new List<SymbolPair>(API.NasdaqTrader.GetSymbolPairs().OrderBy(obj => obj.Symbol).ToArray());
-            db.AddData_Symbols(pairs);
-
-            Prompt.Write("Completed", ConsoleColor.Green);
-            Prompt.NewLine();
+            object output = API.Alpaca.GetAssets(db._Settings);
+            if (output is List<Asset>) {
+                db.AddData_Assets((List<Asset>)output);
+                Prompt.WriteLine("Completed", ConsoleColor.Green);
+            } else {
+                Prompt.WriteLine("Error", ConsoleColor.Red);
+            }
         }
 
-        public static void Update_TSD(List<string> args, Settings settings, Database db) {
-            Prompt.WriteLine("Querying database for list of ticker symbols.");
-
-            List<SymbolPair> pairs = GetSymbols(db);
-
-            Data.Select_Symbols(ref pairs, args);
-
+        public static void Update_TSD(List<Asset> assets, Settings settings, Database db) {
             List<Thread> threads = new List<Thread>();
 
-            // Iterate all symbols in list (pairs), call API to download data, write to files in library
-            for (int i = 0; i < pairs.Count; i++) {
+            // Iterate all symbols in list (assets), call API to download data, write to files in library
+            for (int i = 0; i < assets.Count; i++) {
                 Prompt.Write(String.Format("{0} [{1:0000} / {2:0000}]  {3,-8}  ",
-                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i + 1, pairs.Count, pairs[i].Symbol));
+                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i + 1, assets.Count, assets[i].Symbol));
 
                 /* Check validity- if less than 1 day old, data is valid!
                  */
-                if (DateTime.UtcNow - db.GetValidity_TSD(pairs[i]) < new TimeSpan(1, 0, 0, 0)) {
+                if (DateTime.UtcNow - db.GetValidity_TSD(assets[i]) < new TimeSpan(1, 0, 0, 0)) {
                     Prompt.WriteLine("Database current. Skipping.");
                     continue;
                 }
@@ -74,7 +74,7 @@ namespace Marana {
                 Prompt.Write("Requesting data. ");
 
                 DatasetTSD ds = new DatasetTSD();
-                object output = API.Alpaca.GetData_TSD(settings, pairs[i]);
+                object output = API.Alpaca.GetData_TSD(settings, assets[i]);
 
                 if (output is DatasetTSD)
                     ds = output as DatasetTSD;
@@ -90,20 +90,19 @@ namespace Marana {
                     }
                 }
 
-                ds.Symbol = pairs[i].Symbol;
-                ds.CompanyName = pairs[i].Name;
+                ds.Asset = assets[i];
 
                 /* Calculate metrics
                  */
 
                 Prompt.Write("Calculating metrics. ");
 
-                Statistics.CalculateSMA(ref ds.Values, 7);
-                Statistics.CalculateSMA(ref ds.Values, 20);
-                Statistics.CalculateSMA(ref ds.Values, 50);
-                Statistics.CalculateSMA(ref ds.Values, 100);
-                Statistics.CalculateSMA(ref ds.Values, 200);
-                Statistics.CalculateMSD20(ref ds.Values);
+                Statistics.CalculateSMA(ref ds.TSDValues, 7);
+                Statistics.CalculateSMA(ref ds.TSDValues, 20);
+                Statistics.CalculateSMA(ref ds.TSDValues, 50);
+                Statistics.CalculateSMA(ref ds.TSDValues, 100);
+                Statistics.CalculateSMA(ref ds.TSDValues, 200);
+                Statistics.CalculateMSD20(ref ds.TSDValues);
 
                 /* Save to database
                  * Use threading for highly improved speed!

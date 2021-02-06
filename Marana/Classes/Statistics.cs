@@ -9,7 +9,7 @@ namespace Marana {
     public class Statistics {
 
         // Calculates the simple moving average across a set of values
-        public static void CalculateSMA(ref List<DailyValue> values, int period) {
+        public static void CalculateSMA(ref List<TSDValue> values, int period) {
             decimal runningsum = 0;
 
             // Start at oldest value to take a running sum, then save calculations once reaching the period
@@ -33,7 +33,7 @@ namespace Marana {
         }
 
         // Calculates the moving standard deviation across a set of values
-        public static void CalculateMSD20(ref List<DailyValue> values) {
+        public static void CalculateMSD20(ref List<TSDValue> values) {
             int period = 20;
 
             // No running sum used; just iterate beginning at period

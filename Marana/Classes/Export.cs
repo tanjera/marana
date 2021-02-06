@@ -18,12 +18,12 @@ namespace Marana {
                 using (CsvWriter csv = new CsvWriter(sw, CultureInfo.InvariantCulture)) {
                     csv.Context.RegisterClassMap<DailyValueMap>();
 
-                    csv.WriteRecords(dataset.Values);
+                    csv.WriteRecords(dataset.TSDValues);
                 }
             }
         }
 
-        public class DailyValueMap : ClassMap<DailyValue> {
+        public class DailyValueMap : ClassMap<TSDValue> {
 
             public DailyValueMap() {
                 Map(s => s.Timestamp).Index(0).Name("timestamp");

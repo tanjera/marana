@@ -4,13 +4,12 @@ using System.Collections.Generic;
 namespace Marana {
 
     public class DatasetTSD {
-        public string Symbol;
-        public string CompanyName;
-        public List<DailyValue> Values = new List<DailyValue>();
+        public Asset Asset = new Asset();
+        public List<TSDValue> TSDValues = new List<TSDValue>();
         public List<Signal> Signals = new List<Signal>();
     }
 
-    public class DailyValue {
+    public class TSDValue {
         // Data received from outside API
 
         public DateTime Timestamp { get; set; }
@@ -87,8 +86,15 @@ namespace Marana {
         }
     }
 
-    public class SymbolPair {
+    public class Asset {
+        public string ID { get; set; }
         public string Symbol { get; set; }
-        public string Name { get; set; }
+        public string Class { get; set; }
+        public string Exchange { get; set; }
+        public string Status { get; set; }
+        public bool Tradeable { get; set; }
+        public bool Marginable { get; set; }
+        public bool Shortable { get; set; }
+        public bool EasyToBorrow { get; set; }
     }
 }

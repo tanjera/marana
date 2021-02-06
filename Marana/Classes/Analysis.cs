@@ -9,41 +9,47 @@ namespace Marana {
 
     public class Analysis {
 
-        public static void Running(List<string> args, Settings settings) {
-            List<DatasetTSD> lds = new List<DatasetTSD>();
+        public static void Running(List<string> args, Database db, Settings settings) {
+            List<Asset> assets = db.GetData_Assets();
 
-            for (int i = 0; i < lds.Count; i++) {
-                DatasetTSD ds = new DatasetTSD();
+            Data.Select_Assets(ref assets, args);
 
-                ds.Symbol = "";  // dfiles[i].Name.Substring(0, dfiles[i].Name.IndexOf(".csv")).Trim();
-                ds.CompanyName = ""; //(from pair in pairs where pair.Symbol == ds.Symbol select pair.Name).First();
+            foreach (Asset asset in assets) {
+                DatasetTSD ds = db.GetData_TSD(asset);
 
                 /* Run analysis for crossover signals
                  * Start at 1, compare to j - 1
                  */
-                for (int j = 1; j < ds.Values.Count; j++) {
+                for (int j = 1; j < ds.TSDValues.Count; j++) {
                     Signal.Directions testCross;
 
                     // Test SMA7 - SMA20
                     testCross = HasCrossover(
-                        ds.Values[j].SMA7, ds.Values[j].SMA20,
-                        ds.Values[j - 1].SMA7, ds.Values[j - 1].SMA20);
+                        ds.TSDValues[j].SMA7, ds.TSDValues[j].SMA20,
+                        ds.TSDValues[j - 1].SMA7, ds.TSDValues[j - 1].SMA20);
                     if (testCross != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA7_20));
+                        ds.Signals.Add(new Signal(ds.TSDValues[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA7_20));
 
                     // Test SMA20 - SMA50
                     testCross = HasCrossover(
-                    ds.Values[j].SMA20, ds.Values[j].SMA50,
-                    ds.Values[j - 1].SMA20, ds.Values[j - 1].SMA50);
+                    ds.TSDValues[j].SMA20, ds.TSDValues[j].SMA50,
+                    ds.TSDValues[j - 1].SMA20, ds.TSDValues[j - 1].SMA50);
                     if (testCross != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA20_50));
+                        ds.Signals.Add(new Signal(ds.TSDValues[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA20_50));
 
                     // Test SMA50 - SMA100
                     testCross = HasCrossover(
-                    ds.Values[j].SMA50, ds.Values[j].SMA100,
-                    ds.Values[j - 1].SMA50, ds.Values[j - 1].SMA100);
+                    ds.TSDValues[j].SMA50, ds.TSDValues[j].SMA100,
+                    ds.TSDValues[j - 1].SMA50, ds.TSDValues[j - 1].SMA100);
                     if (testCross != Signal.Directions.Same)
-                        ds.Signals.Add(new Signal(ds.Values[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA50_100));
+                        ds.Signals.Add(new Signal(ds.TSDValues[j].Timestamp, Signal.Types.Crossover, testCross, Signal.Metrics.SMA50_100));
+                }
+
+                /* FOR DEBUGGING
+                 */
+                Prompt.WriteLine(String.Format("Detected {0} signals", ds.Signals.Count), ConsoleColor.Yellow);
+                foreach (Signal s in ds.Signals) {
+                    Prompt.WriteLine(String.Format("{0}: {1}\t{2}\t{3}\t{4}", s.Type.ToString(), ds.Asset.Symbol, s.Timestamp.ToShortDateString(), s.Direction, s.Metric));
                 }
             }
         }

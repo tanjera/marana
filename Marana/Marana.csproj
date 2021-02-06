@@ -158,7 +158,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="APIs\Alpaca.cs" />
-    <Compile Include="APIs\NasdaqTrader.cs" />
     <Compile Include="Classes\Config.cs" />
     <Compile Include="Classes\Data.cs" />
     <Compile Include="Classes\Database.cs" />

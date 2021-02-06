@@ -85,7 +85,7 @@ namespace Marana {
             }
         }
 
-        public void AddData_Symbols(List<SymbolPair> pairs) {
+        public void AddData_Assets(List<Asset> assets) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -96,30 +96,43 @@ namespace Marana {
 
                 // Drop the old table- easier than sorting and updating
                 using (MySqlCommand cmd = new MySqlCommand(
-                    @"DROP TABLE IF EXISTS `_symbols`;",
+                    @"DROP TABLE IF EXISTS `_assets`;",
                     connection))
                     cmd.ExecuteNonQuery();
 
                 using (MySqlCommand cmd = new MySqlCommand(
-                        @"CREATE TABLE IF NOT EXISTS `_symbols` (
-                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `symbol` VARCHAR(8) NOT NULL,
-                            `name` VARCHAR(256) NULL
-                            ) AUTO_INCREMENT = 1;",
+                        @"CREATE TABLE IF NOT EXISTS `_assets` (
+                            `id` VARCHAR(64) PRIMARY KEY,
+                            `symbol` VARCHAR(10) NOT NULL,
+                            `class` VARCHAR (16),
+                            `exchange` VARCHAR (16),
+                            `status` VARCHAR (16),
+                            `tradeable` BOOLEAN,
+                            `marginable` BOOLEAN,
+                            `shortable` BOOLEAN,
+                            `easytoborrow` BOOLEAN
+                            );",
                         connection))
                     cmd.ExecuteNonQuery();
 
                 string values = String.Join(", ",
-                    pairs.Select(p => String.Format("('{0}', '{1}')",
-                    MySqlHelper.EscapeString(p.Symbol),
-                    MySqlHelper.EscapeString(p.Name))));
+                    assets.Select(a => String.Format("('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}')",
+                    MySqlHelper.EscapeString(a.ID),
+                    MySqlHelper.EscapeString(a.Symbol),
+                    MySqlHelper.EscapeString(a.Class),
+                    MySqlHelper.EscapeString(a.Exchange),
+                    MySqlHelper.EscapeString(a.Status),
+                    MySqlHelper.EscapeString(a.Tradeable.GetHashCode().ToString()),
+                    MySqlHelper.EscapeString(a.Marginable.GetHashCode().ToString()),
+                    MySqlHelper.EscapeString(a.Shortable.GetHashCode().ToString()),
+                    MySqlHelper.EscapeString(a.EasyToBorrow.GetHashCode().ToString()))));
                 using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"INSERT INTO `_symbols` ( symbol, name ) VALUES {0};",
+                        @"INSERT INTO `_assets` ( id, symbol, class, exchange, status, tradeable, marginable, shortable, easytoborrow ) VALUES {0};",
                         values), connection)) {
                     cmd.ExecuteNonQuery();
                 }
 
-                UpdateValidity("_symbols");
+                UpdateValidity("_assets");
 
                 connection.Close();
             }
@@ -137,7 +150,7 @@ namespace Marana {
                     return;
                 }
 
-                string table = String.Format("tsd_{0}", dataset.Symbol);
+                string table = String.Format("TSD:{0}", dataset.Asset.ID);
 
                 // Drop the old table- easier than sorting and updating
                 using (MySqlCommand cmd = new MySqlCommand(String.Format(
@@ -171,7 +184,7 @@ namespace Marana {
                 // Insert the data into the table
 
                 string values = String.Join(", ",
-                    dataset.Values.Select(v => String.Format(
+                    dataset.TSDValues.Select(v => String.Format(
                         "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}',"
                         + "'{11}', '{12}', '{13}', '{14}')",
                     MySqlHelper.EscapeString(v.Timestamp.ToString("yyyy-MM-dd")),
@@ -199,38 +212,102 @@ namespace Marana {
                             table, values), connection)) {
                         cmd.ExecuteNonQuery();
                     }
+
+                    UpdateValidity(table);
                 } catch (Exception ex) {
-                    // TO-DO: log errors to MySQL _errors
+                    // TO-DO: log errors to error log
+                } finally {
+                    connection.Close();
                 }
-
-                UpdateValidity(table);
-
-                connection.Close();
             }
         }
 
-        public List<SymbolPair> GetData_Symbols() {
+        public List<Asset> GetData_Assets() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
                 } catch (Exception ex) {
                     Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return new List<SymbolPair>();
+                    return new List<Asset>();
                 }
 
-                List<SymbolPair> pairs = new List<SymbolPair>();
+                List<Asset> assets = new List<Asset>();
 
-                using (MySqlCommand cmd = new MySqlCommand(
-                       @"SELECT `symbol`, `name` FROM `_symbols`;",
-                       connection)) {
-                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                        while (rdr.Read())
-                            pairs.Add(new SymbolPair() { Symbol = rdr.GetString("symbol"), Name = rdr.GetString("name") });
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                           @"SELECT * FROM `_assets` ORDER BY symbol;",
+                           connection)) {
+                        using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                            while (rdr.Read())
+                                assets.Add(new Asset() {
+                                    ID = rdr.GetString("id"),
+                                    Symbol = rdr.GetString("symbol"),
+                                    Class = rdr.GetString("class"),
+                                    Exchange = rdr.GetString("exchange"),
+                                    Status = rdr.GetString("status"),
+                                    Tradeable = rdr.GetBoolean("tradeable"),
+                                    Marginable = rdr.GetBoolean("marginable"),
+                                    Shortable = rdr.GetBoolean("shortable"),
+                                    EasyToBorrow = rdr.GetBoolean("easytoborrow")
+                                });
+                        }
                     }
+
+                    connection.Close();
+                    return assets;
+                } catch (Exception ex) {
+                    connection.Close();
+                    return new List<Asset>();
+                }
+            }
+        }
+
+        public DatasetTSD GetData_TSD(Asset asset) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    connection.Open();
+                } catch (Exception ex) {
+                    Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return null;
                 }
 
-                connection.Close();
-                return pairs;
+                string table = String.Format("TSD:{0}", asset.ID);
+                DatasetTSD ds = new DatasetTSD() { Asset = asset };
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(String.Format(
+                            @"SELECT * FROM `{0}`;",
+                            table), connection)) {
+                        using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                            while (rdr.Read()) {
+                                ds.TSDValues.Add(new TSDValue() {
+                                    Timestamp = rdr.GetDateTime("timestamp"),
+                                    Open = rdr.GetDecimal("open"),
+                                    High = rdr.GetDecimal("high"),
+                                    Low = rdr.GetDecimal("low"),
+                                    Close = rdr.GetDecimal("close"),
+                                    Volume = rdr.GetInt64("volume"),
+                                    SMA7 = rdr.GetDecimal("sma7"),
+                                    SMA20 = rdr.GetDecimal("sma20"),
+                                    SMA50 = rdr.GetDecimal("sma50"),
+                                    SMA100 = rdr.GetDecimal("sma100"),
+                                    SMA200 = rdr.GetDecimal("sma200"),
+                                    MSD20 = rdr.GetDecimal("msd20"),
+                                    MSDr20 = rdr.GetDecimal("msdr20"),
+                                    vSMA20 = rdr.GetInt64("vsma20"),
+                                    vMSD20 = rdr.GetInt64("vmsd20"),
+                                });
+                            }
+                        }
+                    }
+
+                    connection.Close();
+                    return ds;
+                } catch (Exception ex) {
+                    connection.Close();
+                    return null;
+                    // TO-DO: log errors to error log
+                }
             }
         }
 
@@ -254,11 +331,11 @@ namespace Marana {
             }
         }
 
-        public DateTime GetValidity_Symbols()
-            => GetValidity("_symbols");
+        public DateTime GetValidity_Assets()
+            => GetValidity("_assets");
 
-        public DateTime GetValidity_TSD(SymbolPair pair)
-            => GetValidity(String.Format("tsd_{0}", pair.Symbol));
+        public DateTime GetValidity_TSD(Asset asset)
+            => GetValidity(String.Format("TSD:{0}", asset.ID));
 
         public decimal GetSize() {
             Init();                                     // Cannot get size of a schema with no tables!

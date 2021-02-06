@@ -57,7 +57,7 @@ namespace Marana {
 
                     // "analyze"
                     else if (opt0 == "analyze") {
-                        Analysis.Running(_args, _Settings);
+                        Analysis.Running(_args, _Database, _Settings);
                     }
 
                     // "help"
@@ -76,6 +76,8 @@ namespace Marana {
                         Prompt.WriteLine("Invalid command. Use command 'marana help' for information on using Marana");
                     }
                 }
+
+                _args.Clear();
             }
         }
 
