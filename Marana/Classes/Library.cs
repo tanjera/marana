@@ -20,7 +20,7 @@ namespace Marana {
             database.Init();
 
             Prompt.WriteLine("Querying database for list of ticker symbols.");
-            List<Asset> assets = GetAssets(database);
+            List<Data.Asset> assets = GetAssets(database);
             Data.Select_Assets(ref assets, args);
 
             Prompt.WriteLine("Updating Time Series Dailies (TSD).");
@@ -37,7 +37,7 @@ namespace Marana {
             Prompt.WriteLine("Success- Database cleared of all data and reinitialized.");
         }
 
-        public static List<Asset> GetAssets(Database db) {
+        public static List<Data.Asset> GetAssets(Database db) {
             if (DateTime.UtcNow - db.GetValidity_Assets() > new TimeSpan(1, 0, 0, 0))
                 Update_Symbols(db);
 
@@ -48,15 +48,15 @@ namespace Marana {
             Prompt.Write("Updating list of ticker symbols. ");
 
             object output = API.Alpaca.GetAssets(db._Settings);
-            if (output is List<Asset>) {
-                db.AddData_Assets((List<Asset>)output);
+            if (output is List<Data.Asset>) {
+                db.AddData_Assets((List<Data.Asset>)output);
                 Prompt.WriteLine("Completed", ConsoleColor.Green);
             } else {
                 Prompt.WriteLine("Error", ConsoleColor.Red);
             }
         }
 
-        public static void Update_TSD(List<Asset> assets, Settings settings, Database db) {
+        public static void Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
             List<Thread> threads = new List<Thread>();
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library
@@ -73,11 +73,11 @@ namespace Marana {
 
                 Prompt.Write("Requesting data. ");
 
-                DatasetTSD ds = new DatasetTSD();
+                Data.Daily ds = new Data.Daily();
                 object output = API.Alpaca.GetData_TSD(settings, assets[i]);
 
-                if (output is DatasetTSD)
-                    ds = output as DatasetTSD;
+                if (output is Data.Daily)
+                    ds = output as Data.Daily;
                 else if (output is string) {
                     if (output as string == "Too Many Requests") {
                         Prompt.WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
@@ -91,18 +91,6 @@ namespace Marana {
                 }
 
                 ds.Asset = assets[i];
-
-                /* Calculate metrics
-                 */
-
-                Prompt.Write("Calculating metrics. ");
-
-                Statistics.CalculateSMA(ref ds.TSDValues, 7);
-                Statistics.CalculateSMA(ref ds.TSDValues, 20);
-                Statistics.CalculateSMA(ref ds.TSDValues, 50);
-                Statistics.CalculateSMA(ref ds.TSDValues, 100);
-                Statistics.CalculateSMA(ref ds.TSDValues, 200);
-                Statistics.CalculateMSD20(ref ds.TSDValues);
 
                 /* Save to database
                  * Use threading for highly improved speed!

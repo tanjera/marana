@@ -21,9 +21,9 @@ namespace Marana.API {
                 var assets = await client.ListAssetsAsync(new AssetsRequest { AssetStatus = AssetStatus.Active });
                 var filtered = assets.Where(asset => asset.IsTradable && (asset.Exchange == Exchange.Nasdaq || asset.Exchange == Exchange.Nyse));
 
-                List<Asset> output = new List<Asset>();
+                List<Data.Asset> output = new List<Data.Asset>();
                 foreach (var asset in filtered) {
-                    output.Add(new Asset() {
+                    output.Add(new Data.Asset() {
                         ID = asset.AssetId.ToString(),
                         Class = asset.Class.ToString(),
                         Exchange = asset.Exchange.ToString(),
@@ -41,21 +41,21 @@ namespace Marana.API {
             }
         }
 
-        public static object GetData_TSD(Settings settings, Asset sp, int limit = 300) {
+        public static object GetData_TSD(Settings settings, Data.Asset sp, int limit = 300) {
             return GetData_TSD_Async(settings, sp, limit).Result;
         }
 
-        private static async Task<object> GetData_TSD_Async(Settings settings, Asset sp, int limit = 300) {
+        private static async Task<object> GetData_TSD_Async(Settings settings, Data.Asset sp, int limit = 300) {
             try {
                 var client = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
 
                 // Maximum 1000 bars per API call
-                var bars = await client.GetBarSetAsync(new BarSetRequest(sp.Symbol, TimeFrame.Day) { Limit = 300 });
+                var bars = await client.GetBarSetAsync(new BarSetRequest(sp.Symbol, TimeFrame.Day) { Limit = limit });
 
-                DatasetTSD ds = new DatasetTSD();
+                Data.Daily ds = new Data.Daily();
                 foreach (var bar in bars[sp.Symbol]) {
                     if (bar.TimeUtc != null)
-                        ds.TSDValues.Add(new TSDValue() {
+                        ds.Prices.Add(new Data.Daily.Price() {
                             Timestamp = bar.TimeUtc ?? new DateTime(),
                             Open = bar.Open,
                             High = bar.High,

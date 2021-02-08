@@ -57,7 +57,7 @@ namespace Marana {
 
                     // "analyze"
                     else if (opt0 == "analyze") {
-                        Analysis.Running(_args, _Database, _Settings);
+                        Analysis.Week(_args, _Database, _Settings);
                     }
 
                     // "help"

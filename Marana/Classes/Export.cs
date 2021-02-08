@@ -6,41 +6,53 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using CsvHelper;
-using CsvHelper.Configuration;
-
 namespace Marana {
 
     public class Export {
 
-        public static void TSD_To_CSV(DatasetTSD dataset, string filepath) {
+        public static void Signals_To_CSV(List<Data.Signal> signals, string filepath) {
             using (StreamWriter sw = new StreamWriter(filepath)) {
-                using (CsvWriter csv = new CsvWriter(sw, CultureInfo.InvariantCulture)) {
-                    csv.Context.RegisterClassMap<DailyValueMap>();
+                sw.WriteLine("symbol, exchange, alpaca_id, timestamp, description, direction, yahoo_link, yahoo_chart");
 
-                    csv.WriteRecords(dataset.TSDValues);
+                foreach (Data.Signal s in signals) {
+                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}",
+                        s.Asset.Symbol,
+                        s.Asset.Exchange,
+                        s.Asset.ID,
+                        s.Timestamp,
+                        s.Description,
+                        s.Direction,
+                        String.Format("https://finance.yahoo.com/quote/{0}", s.Asset.Symbol),
+                        String.Format("https://finance.yahoo.com/chart/{0}", s.Asset.Symbol)
+                        );
                 }
             }
         }
 
-        public class DailyValueMap : ClassMap<TSDValue> {
+        public static void Data_To_CSV(Data.Daily dd, string filepath) {
+            using (StreamWriter sw = new StreamWriter(filepath)) {
+                sw.WriteLine("timestamp, open, high, low, close, volume, sma7, sma20, sma50, sma100, sma200, msd20, msdr20, vsma20, vmsd20, rsi");
 
-            public DailyValueMap() {
-                Map(s => s.Timestamp).Index(0).Name("timestamp");
-                Map(s => s.Open).Index(1).Name("open");
-                Map(s => s.High).Index(2).Name("high");
-                Map(s => s.Low).Index(3).Name("low");
-                Map(s => s.Close).Index(4).Name("close");
-                Map(s => s.Volume).Index(6).Name("volume");
-                Map(s => s.SMA7).Index(9).Name("sma7");
-                Map(s => s.SMA20).Index(10).Name("sma20");
-                Map(s => s.SMA50).Index(11).Name("sma50");
-                Map(s => s.SMA100).Index(12).Name("sma100");
-                Map(s => s.SMA200).Index(13).Name("sma200");
-                Map(s => s.MSD20).Index(14).Name("msd20");
-                Map(s => s.MSDr20).Index(15).Name("msdr20");
-                Map(s => s.vSMA20).Index(16).Name("vsma20");
-                Map(s => s.vMSD20).Index(17).Name("vmsd20");
+                foreach (Data.Daily.Price p in dd.Prices) {
+                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}",
+                        p.Timestamp,
+                        p.Open,
+                        p.High,
+                        p.Low,
+                        p.Close,
+                        p.Volume,
+                        p.Metric.SMA7,
+                        p.Metric.SMA20,
+                        p.Metric.SMA50,
+                        p.Metric.SMA100,
+                        p.Metric.SMA200,
+                        p.Metric.MSD20,
+                        p.Metric.MSDr20,
+                        p.Metric.vSMA20,
+                        p.Metric.vMSD20,
+                        p.Metric.RSI
+                        );
+                }
             }
         }
     }

@@ -15,10 +15,6 @@ namespace Marana {
         public string Database_User { get; set; }
         public string Database_Password { get; set; }
 
-        public string Directory_LibraryData {
-            get { return Path.Combine(Directory_Working, "Data"); }
-        }
-
         public Settings() {
             Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
 

@@ -85,7 +85,7 @@ namespace Marana {
             }
         }
 
-        public void AddData_Assets(List<Asset> assets) {
+        public void AddData_Assets(List<Data.Asset> assets) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -139,9 +139,9 @@ namespace Marana {
         }
 
         public void AddData_TSD(object dataset)
-            => AddData_TSD((DatasetTSD)dataset);
+            => AddData_TSD((Data.Daily)dataset);
 
-        public void AddData_TSD(DatasetTSD dataset) {
+        public void AddData_TSD(Data.Daily dataset) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -163,20 +163,11 @@ namespace Marana {
                         @"CREATE TABLE IF NOT EXISTS `{0}` (
                             `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
                             `timestamp` DATE NOT NULL,
-                            `open` DECIMAL(10, 4),
-                            `high` DECIMAL(10, 4),
-                            `low` DECIMAL(10, 4),
-                            `close` DECIMAL(10, 4),
-                            `volume` BIGINT,
-                            `sma7` DECIMAL(10, 4),
-                            `sma20` DECIMAL(10, 4),
-                            `sma50` DECIMAL(10, 4),
-                            `sma100` DECIMAL(10, 4),
-                            `sma200` DECIMAL(10, 4),
-                            `msd20` DECIMAL(10, 4),
-                            `msdr20` DECIMAL(10, 6),
-                            `vsma20` BIGINT,
-                            `vmsd20` BIGINT
+                            `open` DECIMAL(12, 4),
+                            `high` DECIMAL(12, 4),
+                            `low` DECIMAL(12, 4),
+                            `close` DECIMAL(12, 4),
+                            `volume` BIGINT
                             );",
                         table), connection))
                     cmd.ExecuteNonQuery();
@@ -184,30 +175,19 @@ namespace Marana {
                 // Insert the data into the table
 
                 string values = String.Join(", ",
-                    dataset.TSDValues.Select(v => String.Format(
-                        "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}',"
-                        + "'{11}', '{12}', '{13}', '{14}')",
+                    dataset.Prices.Select(v => String.Format(
+                        "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')",
                     MySqlHelper.EscapeString(v.Timestamp.ToString("yyyy-MM-dd")),
                     MySqlHelper.EscapeString(v.Open.ToString()),
                     MySqlHelper.EscapeString(v.High.ToString()),
                     MySqlHelper.EscapeString(v.Low.ToString()),
                     MySqlHelper.EscapeString(v.Close.ToString()),
-                    MySqlHelper.EscapeString(v.Volume.ToString()),
-                    MySqlHelper.EscapeString(v.SMA7.ToString()),
-                    MySqlHelper.EscapeString(v.SMA20.ToString()),
-                    MySqlHelper.EscapeString(v.SMA50.ToString()),
-                    MySqlHelper.EscapeString(v.SMA100.ToString()),
-                    MySqlHelper.EscapeString(v.SMA200.ToString()),
-                    MySqlHelper.EscapeString(v.MSD20.ToString()),
-                    MySqlHelper.EscapeString(v.MSDr20.ToString()),
-                    MySqlHelper.EscapeString(v.vSMA20.ToString()),
-                    MySqlHelper.EscapeString(v.vMSD20.ToString()))));
+                    MySqlHelper.EscapeString(v.Volume.ToString()))));
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(String.Format(
                             @"INSERT INTO `{0}` (
-                                    timestamp, open, high, low, close, volume,
-                                    sma7, sma20, sma50, sma100, sma200, msd20, msdr20, vsma20, vmsd20
+                                    timestamp, open, high, low, close, volume
                                     ) VALUES {1};",
                             table, values), connection)) {
                         cmd.ExecuteNonQuery();
@@ -222,16 +202,16 @@ namespace Marana {
             }
         }
 
-        public List<Asset> GetData_Assets() {
+        public List<Data.Asset> GetData_Assets() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
                 } catch (Exception ex) {
                     Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return new List<Asset>();
+                    return new List<Data.Asset>();
                 }
 
-                List<Asset> assets = new List<Asset>();
+                List<Data.Asset> assets = new List<Data.Asset>();
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(
@@ -239,7 +219,7 @@ namespace Marana {
                            connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                             while (rdr.Read())
-                                assets.Add(new Asset() {
+                                assets.Add(new Data.Asset() {
                                     ID = rdr.GetString("id"),
                                     Symbol = rdr.GetString("symbol"),
                                     Class = rdr.GetString("class"),
@@ -257,12 +237,12 @@ namespace Marana {
                     return assets;
                 } catch (Exception ex) {
                     connection.Close();
-                    return new List<Asset>();
+                    return new List<Data.Asset>();
                 }
             }
         }
 
-        public DatasetTSD GetData_TSD(Asset asset) {
+        public Data.Daily GetData_TSD(Data.Asset asset) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -272,7 +252,7 @@ namespace Marana {
                 }
 
                 string table = String.Format("TSD:{0}", asset.ID);
-                DatasetTSD ds = new DatasetTSD() { Asset = asset };
+                Data.Daily ds = new Data.Daily() { Asset = asset };
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(String.Format(
@@ -280,22 +260,13 @@ namespace Marana {
                             table), connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                             while (rdr.Read()) {
-                                ds.TSDValues.Add(new TSDValue() {
+                                ds.Prices.Add(new Data.Daily.Price() {
                                     Timestamp = rdr.GetDateTime("timestamp"),
                                     Open = rdr.GetDecimal("open"),
                                     High = rdr.GetDecimal("high"),
                                     Low = rdr.GetDecimal("low"),
                                     Close = rdr.GetDecimal("close"),
-                                    Volume = rdr.GetInt64("volume"),
-                                    SMA7 = rdr.GetDecimal("sma7"),
-                                    SMA20 = rdr.GetDecimal("sma20"),
-                                    SMA50 = rdr.GetDecimal("sma50"),
-                                    SMA100 = rdr.GetDecimal("sma100"),
-                                    SMA200 = rdr.GetDecimal("sma200"),
-                                    MSD20 = rdr.GetDecimal("msd20"),
-                                    MSDr20 = rdr.GetDecimal("msdr20"),
-                                    vSMA20 = rdr.GetInt64("vsma20"),
-                                    vMSD20 = rdr.GetInt64("vmsd20"),
+                                    Volume = rdr.GetInt64("volume")
                                 });
                             }
                         }
@@ -334,7 +305,7 @@ namespace Marana {
         public DateTime GetValidity_Assets()
             => GetValidity("_assets");
 
-        public DateTime GetValidity_TSD(Asset asset)
+        public DateTime GetValidity_TSD(Data.Asset asset)
             => GetValidity(String.Format("TSD:{0}", asset.ID));
 
         public decimal GetSize() {
