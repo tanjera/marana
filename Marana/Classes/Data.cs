@@ -40,6 +40,12 @@ namespace Marana {
                 public decimal SMA100 { get; set; }
                 public decimal SMA200 { get; set; }
 
+                // Moving growth rate (derived from simple moving average)
+
+                public decimal MGR50 { get; set; }
+                public decimal MGR100 { get; set; }
+                public decimal MGR200 { get; set; }
+
                 // Moving standard deviation and according ratio (percentage) for price
 
                 public decimal MSD20 { get; set; }
@@ -71,6 +77,7 @@ namespace Marana {
             public DateTime Timestamp;
             public string Description;
             public Directions Direction;
+            public decimal Strength;
 
             public enum Directions {
                 None,

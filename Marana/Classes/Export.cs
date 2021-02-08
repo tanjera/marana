@@ -12,16 +12,17 @@ namespace Marana {
 
         public static void Signals_To_CSV(List<Data.Signal> signals, string filepath) {
             using (StreamWriter sw = new StreamWriter(filepath)) {
-                sw.WriteLine("symbol, exchange, alpaca_id, timestamp, description, direction, yahoo_link, yahoo_chart");
+                sw.WriteLine("symbol, exchange, alpaca_id, timestamp, description, direction, strength, yahoo_link, yahoo_chart");
 
                 foreach (Data.Signal s in signals) {
-                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}",
+                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}",
                         s.Asset.Symbol,
                         s.Asset.Exchange,
                         s.Asset.ID,
                         s.Timestamp,
                         s.Description,
                         s.Direction,
+                        s.Strength,
                         String.Format("https://finance.yahoo.com/quote/{0}", s.Asset.Symbol),
                         String.Format("https://finance.yahoo.com/chart/{0}", s.Asset.Symbol)
                         );

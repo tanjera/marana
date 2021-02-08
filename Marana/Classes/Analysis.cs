@@ -9,7 +9,28 @@ namespace Marana {
 
     public class Analysis {
 
-        public static void Week(List<string> args, Database db, Settings settings) {
+        // Task to be run when looking to enter new trading in general good market conditions
+        public static void Insert_Long(List<string> args, Database db, Settings settings) {
+            Analyze(args, db, settings,
+                Strategy_Insert_Long,
+                Path.Combine(settings.Directory_Working, String.Format("Insert Long Analysis Signals, {0}.csv", DateTime.Now.ToString("yyyy-MM-dd-HHmm"))));
+        }
+
+        public static void Insert_Short(List<string> args, Database db, Settings settings) {
+            Analyze(args, db, settings,
+                Strategy_Insert_Short,
+                Path.Combine(settings.Directory_Working, String.Format("Insert Short Analysis Signals, {0}.csv", DateTime.Now.ToString("yyyy-MM-dd-HHmm"))));
+        }
+
+        // Task to be run daily for buy/sell signals to inform trading
+        public static void Daily(List<string> args, Database db, Settings settings) {
+            Analyze(args, db, settings,
+                Strategy_Daily,
+                Path.Combine(settings.Directory_Working, String.Format("Daily Analysis Signals, {0}.csv", DateTime.Now.ToString("yyyy-MM-dd-HHmm"))));
+        }
+
+        public static void Analyze(List<string> args, Database db, Settings settings,
+                Func<Data.Daily, List<Data.Signal>> strategy, string filepath) {
             Prompt.WriteLine("Querying database for list of ticker symbols.");
 
             List<Data.Asset> assets = db.GetData_Assets();
@@ -29,98 +50,85 @@ namespace Marana {
                 }
 
                 Prompt.Write("Calculating metrics. ");
-                Calculations.CalculateMetrics(ref dd);
+                Calculations.Metrics(ref dd);
 
                 Prompt.Write("Analyzing signals. ");
 
-                /* Run analysis for signals
-                 * Start at 1, compare to j - 1
-                 */
-                for (int j = dd.Prices.Count - 5; j >= 0 && j < dd.Prices.Count; j++) {
-                    /* Search criteria for RSI oversold in an uptrend
-                     * See https://school.stockcharts.com/doku.php?id=technical_indicators:relative_strength_index_rsi for more information
-                     */
-                    if (dd.Prices[j].Metric.HasSMA200 && dd.Prices[j].Close > dd.Prices[j].Metric.SMA200
-                        && dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI <= 30)
-                        signals.Add(new Data.Signal() {
-                            Asset = dd.Asset,
-                            Timestamp = dd.Prices[j].Timestamp,
-                            Description = "RSI Oversold in Uptrend",
-                            Direction = Data.Signal.Directions.Buy
-                        });
-
-                    if (dd.Prices[j].Metric.HasSMA200 && dd.Prices[j].Close < dd.Prices[j].Metric.SMA200
-                        && dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI >= 70)
-                        signals.Add(new Data.Signal() {
-                            Asset = dd.Asset,
-                            Timestamp = dd.Prices[j].Timestamp,
-                            Description = "RSI Overbought in Downtrend",
-                            Direction = Data.Signal.Directions.Sell
-                        });
-                }
+                signals.AddRange(strategy(dd));
 
                 Prompt.WriteLine("Complete.", ConsoleColor.Green);
             }
 
-            string filepath = Path.Combine(settings.Directory_Working, String.Format("Week Analysis Signals, {0}.csv", DateTime.Now.ToString("yyyy-MM-dd-HHmm")));
+            signals.Sort((a, b) => a.Strength.CompareTo(b.Strength));
+
             Export.Signals_To_CSV(signals, filepath);
             Prompt.WriteLine(String.Format("Signals exported to {0}", filepath), ConsoleColor.Green);
         }
 
-        public static Data.Signal.Directions HasCrossover(decimal new1, decimal new2, decimal old1, decimal old2) {
-            /* All the metrics (prices, etc) should be positive numbers
-             * Zero indicates data unavailable or inapplicable
-             */
+        public static List<Data.Signal> Strategy_Daily(Data.Daily dd) {
+            List<Data.Signal> signals = new List<Data.Signal>();
 
-            if (new1 == 0 || new2 == 0 || old1 == 0 || old2 == 0)
-                return Data.Signal.Directions.Same;
+            for (int j = dd.Prices.Count - 1; j >= 0 && j < dd.Prices.Count; j++) {
+                if ((dd.Prices[j].Metric.HasSMA200 && dd.Prices[j].Close > dd.Prices[j].Metric.SMA200)
+                    && (dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI <= 30))
+                    signals.Add(new Data.Signal() {
+                        Asset = dd.Asset,
+                        Timestamp = dd.Prices[j].Timestamp,
+                        Description = "RSI < 30; Close > SMA200",
+                        Direction = Data.Signal.Directions.Buy,
+                        Strength = dd.Prices[j].Metric.RSI
+                    });
 
-            decimal diff1 = new1 - new2;
-            decimal diff2 = old1 - old2;
+                if ((dd.Prices[j].Metric.HasSMA200 && dd.Prices[j].Close < dd.Prices[j].Metric.SMA200)
+                    && (dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI >= 70))
+                    signals.Add(new Data.Signal() {
+                        Asset = dd.Asset,
+                        Timestamp = dd.Prices[j].Timestamp,
+                        Description = "RSI > 70; Close < SMA200",
+                        Direction = Data.Signal.Directions.Sell,
+                        Strength = dd.Prices[j].Metric.RSI
+                    });
+            }
 
-            if (diff1 == 0 && diff2 == 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 > 0 && diff2 > 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 < 0 && diff2 < 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 > 0 && diff2 <= 0)
-                return Data.Signal.Directions.Up;
-            else if (diff1 <= 0 && diff2 > 0)
-                return Data.Signal.Directions.Down;
-            else
-                return Data.Signal.Directions.Same;
+            return signals;
         }
 
-        public static Data.Signal.Directions HasReversal(decimal num1, decimal num2, decimal num3) {
-            /* All the metrics (prices, etc) should be positive numbers
-             * Zero indicates data unavailable or inapplicable
-             */
+        public static List<Data.Signal> Strategy_Insert_Long(Data.Daily dd) {
+            List<Data.Signal> signals = new List<Data.Signal>();
 
-            if (num1 == 0 || num2 == 0 || num3 == 0)
-                return Data.Signal.Directions.Same;
+            for (int j = dd.Prices.Count - 1; j >= 0 && j < dd.Prices.Count; j++) {
+                if ((dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI <= 50)
+                    && (dd.Prices[j].Metric.HasSMA200 && dd.Prices[j].Close > dd.Prices[j].Metric.SMA200)
+                    && dd.Prices[j].Metric.MGR200 > 0)
+                    signals.Add(new Data.Signal() {
+                        Asset = dd.Asset,
+                        Timestamp = dd.Prices[j].Timestamp,
+                        Description = "RSI < 50; Close > SMA100; MGR200 (Strength)",
+                        Direction = Data.Signal.Directions.Buy,
+                        Strength = dd.Prices[j].Metric.MGR200
+                    });
+            }
 
-            decimal diff1 = num1 - num2;
-            decimal diff2 = num2 - num3;
+            return signals;
+        }
 
-            /* Known issue: Will not detect reversal if ((diff1 || diff2) == 0)
-             * ... it's a minor edge case, marginal effect on outcomes
-             */
+        public static List<Data.Signal> Strategy_Insert_Short(Data.Daily dd) {
+            List<Data.Signal> signals = new List<Data.Signal>();
 
-            if (diff1 == 0 && diff2 == 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 > 0 && diff2 > 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 < 0 && diff2 < 0)
-                return Data.Signal.Directions.Same;
-            else if (diff1 != 0 && diff2 == 0)
-                return Data.Signal.Directions.Plateau;
-            else if (diff1 > 0 && diff2 < 0)
-                return Data.Signal.Directions.Trough;
-            else if (diff1 < 0 && diff2 > 0)
-                return Data.Signal.Directions.Peak;
-            else
-                return Data.Signal.Directions.Same;
+            for (int j = dd.Prices.Count - 1; j >= 0 && j < dd.Prices.Count; j++) {
+                if ((dd.Prices[j].Metric.HasRSI && dd.Prices[j].Metric.RSI <= 50)
+                    && (dd.Prices[j].Metric.HasSMA7 && dd.Prices[j].Close > dd.Prices[j].Metric.SMA7)
+                    && dd.Prices[j].Metric.MGR50 > 0)
+                    signals.Add(new Data.Signal() {
+                        Asset = dd.Asset,
+                        Timestamp = dd.Prices[j].Timestamp,
+                        Description = "RSI < 50; Close > SMA7; MGR50 (Strength)",
+                        Direction = Data.Signal.Directions.Buy,
+                        Strength = dd.Prices[j].Metric.MGR50
+                    });
+            }
+
+            return signals;
         }
     }
 }

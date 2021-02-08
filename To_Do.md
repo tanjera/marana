@@ -24,20 +24,6 @@
 - Report summary for "analyze" with 1 symbol per line, with colored progress bar to indicate signals
 
 
-### Analysis Strategies
-- Reversals without crossovers (showing significant variation) are mostly meaningless signals
-  - Especially in longer-term averages (50, 100, 200), it's small reversals in a general plateau
-- Multiple crossovers on the same metric (especially SMA7-20) in a short period are not good
-- Strongest signals are: 
-  - #1 SMA7 > SMA20 > SMA50 ?> SMA100 ?> SMA200 (indicates growth steady!)
-    - **TO_DO**: **Analyze using variance Signal**
-  - #2 Being at or near within resistance range e.g. 1m high/low (not too high!)
-  - #3 Crossovers in longer-term averages (SMA20-50, SMA50-100, etc.)
-  - History of good performance (6 mo, 1 yr)
-  - Positive short-metric crossovers (SMA7-20 and SMA20-50) preceded by troughs in longer-term metrics?
-    - Could indicate a breakout?
-
-
 #### "B-Score" (https://www.reddit.com/r/algotrading/comments/ldkt1z/options_trading_with_automated_ta/)
 - Here are all the checks for B-Score. If they are True, the counter gets increased by 1.
 - RSI <=40

@@ -174,6 +174,12 @@ namespace Marana {
 
                 // Insert the data into the table
 
+                if (dataset.Prices.Count == 0) {
+                    UpdateValidity(table);
+                    connection.Close();
+                    return;
+                }
+
                 string values = String.Join(", ",
                     dataset.Prices.Select(v => String.Format(
                         "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')",
