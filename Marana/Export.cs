@@ -47,7 +47,7 @@ namespace Marana {
                         p.Metric.SMA50,
                         p.Metric.SMA100,
                         p.Metric.SMA200,
-                        p.Metric.RSI14
+                        p.Metric.RSI
                         );
                 }
             }

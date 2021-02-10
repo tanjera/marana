@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Marana {
+namespace Marana.Library {
 
     public class Help {
 
@@ -23,10 +23,6 @@ Options:
     library clear                       Erase all library data
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
-
-    analyze daily                       Analyze library for latest trading day, for day-to-day buy/sell signals
-    analyze insert short                Analyze library for new trades (analyzes past 50 days)
-    analyze insert long                 Analyze library for new trades (analyzes past 200 days)
 ");
         }
     }

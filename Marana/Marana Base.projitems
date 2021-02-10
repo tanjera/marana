@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>9e636048-06e4-4fa2-a197-2b0792ac3da3</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Marana</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)APIs\Alpaca.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Data.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Database.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Export.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings.cs" />
+  </ItemGroup>
+</Project>

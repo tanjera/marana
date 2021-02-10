@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using Skender.Stock.Indicators;
 
-namespace Marana {
+namespace Marana.Library {
 
     public class Calculate {
 
@@ -42,25 +42,15 @@ namespace Marana {
 
             for (int i = 0; i < dd.Metrics.Count; i++) {
                 try {
-                    if ((sma7 != null && sma7[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (sma20 != null && sma20[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (sma50 != null && sma50[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (sma100 != null && sma100[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (sma200 != null && sma200[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (rsi14 != null && rsi14[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (bb20 != null && bb20[i].Date != dd.Metrics[i].Timestamp.Date)
-                        || (macd12269 != null && macd12269[i].Date != dd.Metrics[i].Timestamp.Date))
-                        throw new ApplicationException("Indicator date mismatch with Price data.");
-
                     dd.Metrics[i].SMA7 = sma7 != null ? sma7[i].Sma : null;
                     dd.Metrics[i].SMA20 = sma20 != null ? sma20[i].Sma : null;
                     dd.Metrics[i].SMA50 = sma50 != null ? sma50[i].Sma : null;
                     dd.Metrics[i].SMA100 = sma100 != null ? sma100[i].Sma : null;
                     dd.Metrics[i].SMA200 = sma200 != null ? sma200[i].Sma : null;
 
-                    dd.Metrics[i].RSI14 = rsi14 != null ? rsi14[i].Rsi : null;
-                    dd.Metrics[i].BB20 = bb20 != null ? bb20[i] : null;
-                    dd.Metrics[i].MACD12269 = macd12269 != null ? macd12269[i] : null;
+                    dd.Metrics[i].RSI = rsi14 != null ? rsi14[i].Rsi : null;
+                    dd.Metrics[i].BB = bb20 != null ? bb20[i] : null;
+                    dd.Metrics[i].MACD = macd12269 != null ? macd12269[i] : null;
                 } catch (Exception ex) {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);
                 }

@@ -58,15 +58,15 @@ namespace Marana {
 
                 // Relative Strength Indicator (RSI)
 
-                public decimal? RSI14 { get; set; }
+                public decimal? RSI { get; set; }
 
                 // Bollingers
 
-                public BollingerBandsResult BB20 { get; set; }
+                public BollingerBandsResult BB { get; set; }
 
                 // Moving Average Convergence/Divergence (MACD)
 
-                public MacdResult MACD12269 { get; set; }
+                public MacdResult MACD { get; set; }
             }
         }
 

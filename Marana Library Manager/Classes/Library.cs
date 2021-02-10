@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marana {
+namespace Marana.Library {
 
     public class Library {
 
@@ -100,6 +100,11 @@ namespace Marana {
                 }
 
                 ds.Asset = assets[i];
+
+                /* Calculate metrics, stock indicators
+                 */
+                Prompt.Write("Calculating indicators. ");
+                Calculate.Metrics(ref ds);
 
                 /* Save to database
                  * Use threading for highly improved speed!

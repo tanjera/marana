@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace Marana {
+namespace Marana.Library {
 
     public static class Config {
 
