@@ -10,17 +10,17 @@ namespace Marana {
         public static void Info(Settings config) {
             Prompt.NewLine();
             Prompt.WriteLine("Fixed Settings:");
-            Prompt.WriteLine(String.Format("  Config Folder: {0}", Config.GetConfigDirectory()));
+            Prompt.WriteLine($"  Config Folder: {Config.GetConfigDirectory()}");
             Prompt.NewLine();
             Prompt.WriteLine("Current Settings:");
-            Prompt.WriteLine(String.Format("  Working Directory Path: {0}", config.Directory_Working));
-            Prompt.WriteLine(String.Format("  API -> Alpaca -> Key: {0}", config.API_Alpaca_Key));
-            Prompt.WriteLine(String.Format("  API -> Alpaca -> Secret: {0}", config.API_Alpaca_Secret));
+            Prompt.WriteLine($"  Working Directory Path: {config.Directory_Working}");
+            Prompt.WriteLine($"  API -> Alpaca -> Key: {config.API_Alpaca_Key}");
+            Prompt.WriteLine($"  API -> Alpaca -> Secret: {config.API_Alpaca_Secret}");
             Prompt.NewLine();
-            Prompt.WriteLine(String.Format("  Database -> Server: {0}", config.Database_Server));
-            Prompt.WriteLine(String.Format("  Database -> Port: {0}", config.Database_Port));
-            Prompt.WriteLine(String.Format("  Database -> Name: {0}", config.Database_Schema));
-            Prompt.WriteLine(String.Format("  Database -> User: {0}", config.Database_User));
+            Prompt.WriteLine($"  Database -> Server: {config.Database_Server}");
+            Prompt.WriteLine($"  Database -> Port: {config.Database_Port}");
+            Prompt.WriteLine($"  Database -> Name: {config.Database_Schema}");
+            Prompt.WriteLine($"  Database -> User: {config.Database_User}");
             Prompt.NewLine();
             Prompt.WriteLine("To edit these settings, use the command 'marana config edit'");
         }
@@ -30,32 +30,32 @@ namespace Marana {
 
             Prompt.NewLine();
 
-            Prompt.Write(String.Format("Library Path [{0}]: ", settings.Directory_Working));
+            Prompt.Write($"Library Path [{settings.Directory_Working}]: ");
             input = Console.ReadLine().Trim();
             settings.Directory_Working = !String.IsNullOrEmpty(input) ? input
                 : (settings.Directory_Working != null ? settings.Directory_Working : settings.Directory_Working);
 
-            Prompt.Write(String.Format("API -> Alpaca -> Key [{0}]: ", settings.API_Alpaca_Key));
+            Prompt.Write($"API -> Alpaca -> Key [{settings.API_Alpaca_Key}]: ");
             input = Console.ReadLine().Trim();
             settings.API_Alpaca_Key = !String.IsNullOrEmpty(input) ? input
                 : (settings.API_Alpaca_Key != null ? settings.API_Alpaca_Key : "");
 
-            Prompt.Write(String.Format("API -> Alpaca -> Secret [{0}]: ", settings.API_Alpaca_Secret));
+            Prompt.Write($"API -> Alpaca -> Secret [{settings.API_Alpaca_Secret}]: ");
             input = Console.ReadLine().Trim();
             settings.API_Alpaca_Secret = !String.IsNullOrEmpty(input) ? input
                 : (settings.API_Alpaca_Secret != null ? settings.API_Alpaca_Secret : "");
 
-            Prompt.Write(String.Format("Database -> Server [{0}]: ", settings.Database_Server));
+            Prompt.Write($"Database -> Server [{settings.Database_Server}]: ");
             input = Console.ReadLine().Trim();
             settings.Database_Server = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_Server != null ? settings.Database_Server : "");
 
-            Prompt.Write(String.Format("Database -> Port [{0}]: ", settings.Database_Port));
+            Prompt.Write($"Database -> Port [{settings.Database_Port}]: ");
             int result;
             if (int.TryParse(Console.ReadLine().Trim(), out result))
                 settings.Database_Port = result;
 
-            Prompt.Write(String.Format("Database -> Name [{0}]: ", settings.Database_Schema));
+            Prompt.Write($"Database -> Name [{settings.Database_Schema}]: ");
             input = Console.ReadLine().Trim();
             settings.Database_Schema = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_Schema != null ? settings.Database_Schema : "");
@@ -63,12 +63,12 @@ namespace Marana {
             Prompt.WriteLine("Note: Please do NOT use your regular username/password when setting database access.", ConsoleColor.Red);
             Prompt.WriteLine("This password will be stored in the Marana config file in the config folder.", ConsoleColor.Red);
 
-            Prompt.Write(String.Format("Database -> User [{0}]: ", settings.Database_User));
+            Prompt.Write($"Database -> User [{settings.Database_User}]: ");
             input = Console.ReadLine().Trim();
             settings.Database_User = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_User != null ? settings.Database_User : "");
 
-            Prompt.Write(String.Format("Database -> Password [{0}]: ", settings.Database_Password));
+            Prompt.Write($"Database -> Password [{settings.Database_Password}]: ");
             input = Console.ReadLine().Trim();
             settings.Database_Password = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_Password != null ? settings.Database_Password : "");
@@ -113,15 +113,15 @@ namespace Marana {
         public static bool SaveConfig(Settings inc) {
             try {
                 using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
-                    sw.WriteLine(String.Format("API_Alpaca_Key: {0}", inc.API_Alpaca_Key.Trim()));
-                    sw.WriteLine(String.Format("API_Alpaca_Secret: {0}", inc.API_Alpaca_Secret.Trim()));
-                    sw.WriteLine(String.Format("Directory_Working: {0}", inc.Directory_Working.Trim()));
+                    sw.WriteLine($"API_Alpaca_Key: {inc.API_Alpaca_Key.Trim()}");
+                    sw.WriteLine($"API_Alpaca_Secret: {inc.API_Alpaca_Secret.Trim()}");
+                    sw.WriteLine($"Directory_Working: {inc.Directory_Working.Trim()}");
 
-                    sw.WriteLine(String.Format("Database_Server: {0}", inc.Database_Server.Trim()));
-                    sw.WriteLine(String.Format("Database_Port: {0}", inc.Database_Port.ToString().Trim()));
-                    sw.WriteLine(String.Format("Database_Schema: {0}", inc.Database_Schema.Trim()));
-                    sw.WriteLine(String.Format("Database_User: {0}", inc.Database_User.Trim()));
-                    sw.WriteLine(String.Format("Database_Password: {0}", inc.Database_Password.Trim()));
+                    sw.WriteLine($"Database_Server: {inc.Database_Server.Trim()}");
+                    sw.WriteLine($"Database_Port: {inc.Database_Port.ToString().Trim()}");
+                    sw.WriteLine($"Database_Schema: {inc.Database_Schema.Trim()}");
+                    sw.WriteLine($"Database_User: {inc.Database_User.Trim()}");
+                    sw.WriteLine($"Database_Password: {inc.Database_Password.Trim()}");
                     sw.Close();
                     return true;
                 }

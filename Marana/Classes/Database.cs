@@ -18,8 +18,9 @@ namespace Marana {
 
         public string ConnectionStr {
             get {
-                return String.Format("server={0}; user={1}; database={2}; port={3}; password={4}",
-                    _Settings.Database_Server, _Settings.Database_User, _Settings.Database_Schema, _Settings.Database_Port, _Settings.Database_Password); ;
+                return $"server={_Settings.Database_Server}; user={_Settings.Database_User}; "
+                    + $"database={_Settings.Database_Schema}; port={_Settings.Database_Port}; "
+                   + $"password={_Settings.Database_Password}";
             }
         }
 
@@ -35,9 +36,38 @@ namespace Marana {
                 using (MySqlCommand cmd = new MySqlCommand(
                         @"CREATE TABLE IF NOT EXISTS `_validity` (
                             `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `table` VARCHAR(64) NOT NULL,
+                            `item` VARCHAR(64) NOT NULL,
                             `updated` DATETIME
                             ) AUTO_INCREMENT = 1;",
+                        connection))
+                    cmd.ExecuteNonQuery();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        @"CREATE TABLE IF NOT EXISTS `_assets` (
+                            `id` VARCHAR(64) PRIMARY KEY,
+                            `symbol` VARCHAR(10) NOT NULL,
+                            `class` VARCHAR (16),
+                            `exchange` VARCHAR (16),
+                            `status` VARCHAR (16),
+                            `tradeable` BOOLEAN,
+                            `marginable` BOOLEAN,
+                            `shortable` BOOLEAN,
+                            `easytoborrow` BOOLEAN
+                            );",
+                        connection))
+                    cmd.ExecuteNonQuery();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"CREATE TABLE IF NOT EXISTS `tsd` (
+                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `asset` VARCHAR(64),
+                            `date` DATE NOT NULL,
+                            `open` DECIMAL(16, 6),
+                            `high` DECIMAL(16, 6),
+                            `low` DECIMAL(16, 6),
+                            `close` DECIMAL(16, 6),
+                            `volume` BIGINT,
+                            INDEX(`asset`));",
                         connection))
                     cmd.ExecuteNonQuery();
 
@@ -58,11 +88,11 @@ namespace Marana {
                     cmd.ExecuteNonQuery();
 
                 List<string> tables = new List<string>();
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                    @"SELECT table_name
+                using (MySqlCommand cmd = new MySqlCommand(
+                    $@"SELECT table_name
                         FROM information_schema.tables
-                        WHERE table_schema = '{0}';",
-                    _Settings.Database_Schema), connection)) {
+                        WHERE table_schema = '{_Settings.Database_Schema}';",
+                    connection)) {
                     using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                         while (rdr.Read())
                             tables.Add(rdr.GetString(0));
@@ -70,10 +100,10 @@ namespace Marana {
                 }
 
                 string droplist = String.Join(", ",
-                    tables.Select(t => String.Format("`{0}`", MySqlHelper.EscapeString(t))));
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"DROP TABLE IF EXISTS {0};",
-                        droplist), connection))
+                    tables.Select(t => $"`{MySqlHelper.EscapeString(t)}`"));
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DROP TABLE IF EXISTS {droplist};",
+                        connection))
                     cmd.ExecuteNonQuery();
 
                 using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
@@ -94,41 +124,40 @@ namespace Marana {
                     return;
                 }
 
-                // Drop the old table- easier than sorting and updating
-                using (MySqlCommand cmd = new MySqlCommand(
-                    @"DROP TABLE IF EXISTS `_assets`;",
-                    connection))
-                    cmd.ExecuteNonQuery();
+                if (assets.Count == 0) {
+                    UpdateValidity("_assets");
+                    connection.Close();
+                    return;
+                }
 
-                using (MySqlCommand cmd = new MySqlCommand(
-                        @"CREATE TABLE IF NOT EXISTS `_assets` (
-                            `id` VARCHAR(64) PRIMARY KEY,
-                            `symbol` VARCHAR(10) NOT NULL,
-                            `class` VARCHAR (16),
-                            `exchange` VARCHAR (16),
-                            `status` VARCHAR (16),
-                            `tradeable` BOOLEAN,
-                            `marginable` BOOLEAN,
-                            `shortable` BOOLEAN,
-                            `easytoborrow` BOOLEAN
-                            );",
-                        connection))
-                    cmd.ExecuteNonQuery();
+                // Delete data that will be updated or rewritten
 
-                string values = String.Join(", ",
-                    assets.Select(a => String.Format("('{0}', '{1}', '{2}', '{3}', '{4}', '{5}', '{6}', '{7}', '{8}')",
-                    MySqlHelper.EscapeString(a.ID),
-                    MySqlHelper.EscapeString(a.Symbol),
-                    MySqlHelper.EscapeString(a.Class),
-                    MySqlHelper.EscapeString(a.Exchange),
-                    MySqlHelper.EscapeString(a.Status),
-                    MySqlHelper.EscapeString(a.Tradeable.GetHashCode().ToString()),
-                    MySqlHelper.EscapeString(a.Marginable.GetHashCode().ToString()),
-                    MySqlHelper.EscapeString(a.Shortable.GetHashCode().ToString()),
-                    MySqlHelper.EscapeString(a.EasyToBorrow.GetHashCode().ToString()))));
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"INSERT INTO `_assets` ( id, symbol, class, exchange, status, tradeable, marginable, shortable, easytoborrow ) VALUES {0};",
-                        values), connection)) {
+                string deletes = String.Join(" OR ",
+                    assets.Select(a =>
+                    $"id = '{a.ID}'"));
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `_assets` WHERE {deletes};",
+                        connection)) {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Insert new or updated data
+
+                string inserts = String.Join(", ",
+                    assets.Select(a =>
+                    $"('{MySqlHelper.EscapeString(a.ID)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Symbol)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Class)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Exchange)}',"
+                    + $"'{MySqlHelper.EscapeString(a.Status)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Tradeable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.Marginable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.Shortable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.EasyToBorrow.GetHashCode().ToString())}')"));
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"INSERT INTO `_assets` ( id, symbol, class, exchange, status, tradeable, marginable, shortable, easytoborrow ) "
+                        + $"VALUES {inserts};",
+                        connection)) {
                     cmd.ExecuteNonQuery();
                 }
 
@@ -150,56 +179,42 @@ namespace Marana {
                     return;
                 }
 
-                string table = String.Format("TSD:{0}", dataset.Asset.ID);
+                // Delete data that will be updated or rewritten
 
-                // Drop the old table- easier than sorting and updating
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"DROP TABLE IF EXISTS `{0}`;",
-                        table), connection))
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `tsd` WHERE asset = '{dataset.Asset.ID}';",
+                        connection)) {
                     cmd.ExecuteNonQuery();
-
-                // Create the new table
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"CREATE TABLE IF NOT EXISTS `{0}` (
-                            `id` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `timestamp` DATE NOT NULL,
-                            `open` DECIMAL(12, 4),
-                            `high` DECIMAL(12, 4),
-                            `low` DECIMAL(12, 4),
-                            `close` DECIMAL(12, 4),
-                            `volume` BIGINT
-                            );",
-                        table), connection))
-                    cmd.ExecuteNonQuery();
+                }
 
                 // Insert the data into the table
 
                 if (dataset.Prices.Count == 0) {
-                    UpdateValidity(table);
+                    UpdateValidity($"tsd:{dataset.Asset.ID}");
                     connection.Close();
                     return;
                 }
 
                 string values = String.Join(", ",
-                    dataset.Prices.Select(v => String.Format(
-                        "('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')",
-                    MySqlHelper.EscapeString(v.Timestamp.ToString("yyyy-MM-dd")),
-                    MySqlHelper.EscapeString(v.Open.ToString()),
-                    MySqlHelper.EscapeString(v.High.ToString()),
-                    MySqlHelper.EscapeString(v.Low.ToString()),
-                    MySqlHelper.EscapeString(v.Close.ToString()),
-                    MySqlHelper.EscapeString(v.Volume.ToString()))));
+                    dataset.Prices.Select(v =>
+                        $"('{MySqlHelper.EscapeString(dataset.Asset.ID)}', "
+                        + $"'{MySqlHelper.EscapeString(v.Date.ToString("yyyy-MM-dd"))}', "
+                        + $"'{MySqlHelper.EscapeString(v.Open.ToString())}', "
+                        + $"'{MySqlHelper.EscapeString(v.High.ToString())}', "
+                        + $"'{MySqlHelper.EscapeString(v.Low.ToString())}', "
+                        + $"'{MySqlHelper.EscapeString(v.Close.ToString())}', "
+                        + $"'{MySqlHelper.EscapeString(v.Volume.ToString())}')"));
 
                 try {
-                    using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                            @"INSERT INTO `{0}` (
-                                    timestamp, open, high, low, close, volume
-                                    ) VALUES {1};",
-                            table, values), connection)) {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"INSERT INTO `tsd` (
+                                    asset, date, open, high, low, close, volume
+                                    ) VALUES {values};",
+                            connection)) {
                         cmd.ExecuteNonQuery();
                     }
 
-                    UpdateValidity(table);
+                    UpdateValidity($"tsd:{dataset.Asset.ID}");
                 } catch (Exception ex) {
                     // TO-DO: log errors to error log
                 } finally {
@@ -257,17 +272,17 @@ namespace Marana {
                     return null;
                 }
 
-                string table = String.Format("TSD:{0}", asset.ID);
+                string table = $"TSD:{asset.ID}";
                 Data.Daily ds = new Data.Daily() { Asset = asset };
 
                 try {
-                    using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                            @"SELECT * FROM `{0}`;",
-                            table), connection)) {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"SELECT * FROM `tsd` WHERE asset = '{asset.ID}';",
+                            connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                             while (rdr.Read()) {
                                 ds.Prices.Add(new Data.Daily.Price() {
-                                    Timestamp = rdr.GetDateTime("timestamp"),
+                                    Date = rdr.GetDateTime("date"),
                                     Open = rdr.GetDecimal("open"),
                                     High = rdr.GetDecimal("high"),
                                     Low = rdr.GetDecimal("low"),
@@ -288,7 +303,7 @@ namespace Marana {
             }
         }
 
-        public DateTime GetValidity(string table) {
+        public DateTime GetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -298,9 +313,9 @@ namespace Marana {
                 }
 
                 DateTime result = new DateTime();
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"SELECT `updated` FROM `_validity` WHERE `table` = '{0}';",
-                        table), connection))
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT `updated` FROM `_validity` WHERE `item` = '{item}';",
+                        connection))
                     result = cmd.ExecuteScalar() != null ? (DateTime)(cmd.ExecuteScalar()) : new DateTime();
 
                 connection.Close();
@@ -312,7 +327,7 @@ namespace Marana {
             => GetValidity("_assets");
 
         public DateTime GetValidity_TSD(Data.Asset asset)
-            => GetValidity(String.Format("TSD:{0}", asset.ID));
+            => GetValidity($"tsd:{asset.ID}");
 
         public decimal GetSize() {
             Init();                                     // Cannot get size of a schema with no tables!
@@ -327,12 +342,12 @@ namespace Marana {
 
                 decimal size = 0;
 
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                    @"SELECT table_schema `{0}`,
+                using (MySqlCommand cmd = new MySqlCommand(
+                    $@"SELECT table_schema `{_Settings.Database_Schema}`,
                             ROUND(SUM(data_length + index_length) / 1024 / 1024, 1) 'size'
                         FROM information_schema.tables
                         GROUP BY table_schema;",
-                    _Settings.Database_Schema), connection)) {
+                    connection)) {
                     using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                         while (rdr.Read()) {
                             size += rdr.GetDecimal("size");
@@ -345,7 +360,7 @@ namespace Marana {
             }
         }
 
-        public void UpdateValidity(string table) {
+        public void UpdateValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -355,9 +370,9 @@ namespace Marana {
                 }
 
                 bool oldvalidity = false;
-                using (MySqlCommand cmd = new MySqlCommand(String.Format(
-                        @"SELECT `id` FROM `_validity` WHERE `table` = '{0}';",
-                        table), connection))
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT `id` FROM `_validity` WHERE `item` = '{item}';",
+                        connection))
                     oldvalidity = cmd.ExecuteScalar() != null;
 
                 // Use UTC time- in case client and server in different time zones
@@ -366,22 +381,22 @@ namespace Marana {
                     using (MySqlCommand cmd = new MySqlCommand(
                             @"UPDATE `_validity`
                                 SET `updated` = ?updated
-                                WHERE (`table` = ?table);",
+                                WHERE (`item` = ?item);",
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
-                        cmd.Parameters.AddWithValue("?table", table);
+                        cmd.Parameters.AddWithValue("?item", item);
                         cmd.ExecuteNonQuery();
                     }
                 } else {
                     using (MySqlCommand cmd = new MySqlCommand(
                             @"INSERT INTO `_validity` (
-                                `table`, updated
+                                `item`, updated
                                 ) VALUES (
-                                ?table, ?updated
+                                ?item, ?updated
                                 );",
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
-                        cmd.Parameters.AddWithValue("?table", table);
+                        cmd.Parameters.AddWithValue("?item", item);
                         cmd.ExecuteNonQuery();
                     }
                 }

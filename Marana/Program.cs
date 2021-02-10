@@ -59,13 +59,13 @@ namespace Marana {
                     else if (opt0 == "analyze") {
                         string opt1 = TrimArgs(ref _args);
                         if (opt1 == "daily") {
-                            Analysis.Daily(_args, _Database, _Settings);
+                            Analyze.Daily(_args, _Database, _Settings);
                         } else if (opt1 == "insert") {
                             string opt2 = TrimArgs(ref _args);
                             if (opt2 == "long") {
-                                Analysis.Insert_Long(_args, _Database, _Settings);
+                                Analyze.Insert_Long(_args, _Database, _Settings);
                             } else if (opt2 == "short") {
-                                Analysis.Insert_Short(_args, _Database, _Settings);
+                                Analyze.Insert_Short(_args, _Database, _Settings);
                             }
                         }
                     }

@@ -32,11 +32,11 @@ namespace Marana {
 
         public static void Data_To_CSV(Data.Daily dd, string filepath) {
             using (StreamWriter sw = new StreamWriter(filepath)) {
-                sw.WriteLine("timestamp, open, high, low, close, volume, sma7, sma20, sma50, sma100, sma200, msd20, msdr20, vsma20, vmsd20, rsi");
+                sw.WriteLine("timestamp, open, high, low, close, volume, sma7, sma20, sma50, sma100, sma200, rsi");
 
                 foreach (Data.Daily.Price p in dd.Prices) {
-                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}",
-                        p.Timestamp,
+                    sw.WriteLine("{0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}",
+                        p.Date,
                         p.Open,
                         p.High,
                         p.Low,
@@ -47,11 +47,7 @@ namespace Marana {
                         p.Metric.SMA50,
                         p.Metric.SMA100,
                         p.Metric.SMA200,
-                        p.Metric.MSD20,
-                        p.Metric.MSDr20,
-                        p.Metric.vSMA20,
-                        p.Metric.vMSD20,
-                        p.Metric.RSI
+                        p.Metric.RSI14
                         );
                 }
             }

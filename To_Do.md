@@ -5,7 +5,8 @@
 - **Alpaca.Paper** does not support adjusted (split) closing prices
   - Once on a Live account, will need to implement Polygon's adjusted closing prices!
 - **Add technical indicators**  
-  - MACD: https://www.investopedia.com/terms/m/macd.asp
+  - Growth200: SMA100 from i-200 compared to i
+  - MACD:
   - Stochastic Oscillator
   - ROC
   - MFI

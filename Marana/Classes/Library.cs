@@ -12,7 +12,7 @@ namespace Marana {
         public static void Info(Database db) {
             decimal size = db.GetSize();
 
-            Prompt.WriteLine(String.Format("Database size: {0} MB", size));
+            Prompt.WriteLine($"Database size: {size} MB");
         }
 
         public static void Update(List<string> args, Settings settings, Database database) {
@@ -61,8 +61,7 @@ namespace Marana {
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
-                Prompt.Write(String.Format("{0} [{1:0000} / {2:0000}]  {3,-8}  ",
-                            DateTime.Now.ToString("MM/dd/yyyy HH:mm"), i + 1, assets.Count, assets[i].Symbol));
+                Prompt.Write($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm")} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
                 /* Check validity- if less than 1 day old, data is valid!
                  */
@@ -85,7 +84,7 @@ namespace Marana {
                         i--;
                         continue;
                     } else {
-                        Console.WriteLine("Error: {0}", output);
+                        Prompt.WriteLine($"Error: {output}");
                         continue;
                     }
                 }
@@ -109,14 +108,12 @@ namespace Marana {
 
             int finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
             if (finishing > 0) {
-                Prompt.WriteLine(String.Format("{0}:  Completing {1} remaining background database tasks.",
-                    DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss"), finishing));
+                Prompt.WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Completing {finishing} remaining background database tasks.");
                 Thread.Sleep(5000);
 
                 finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
+                Prompt.WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Library update complete!", ConsoleColor.Green);
             }
-
-            Prompt.WriteLine(String.Format("{0}:  Library update complete!", DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")), ConsoleColor.Green);
         }
     }
 }

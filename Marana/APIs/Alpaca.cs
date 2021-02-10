@@ -56,7 +56,7 @@ namespace Marana.API {
                 foreach (var bar in bars[sp.Symbol]) {
                     if (bar.TimeUtc != null)
                         ds.Prices.Add(new Data.Daily.Price() {
-                            Timestamp = bar.TimeUtc ?? new DateTime(),
+                            Date = bar.TimeUtc ?? new DateTime(),
                             Open = bar.Open,
                             High = bar.High,
                             Low = bar.Low,

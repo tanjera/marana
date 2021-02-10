@@ -69,6 +69,9 @@
     <Reference Include="Renci.SshNet, Version=2020.0.1.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
       <HintPath>..\packages\SSH.NET.2020.0.1\lib\net40\Renci.SshNet.dll</HintPath>
     </Reference>
+    <Reference Include="Skender.Stock.Indicators, Version=1.7.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Skender.Stock.Indicators.1.7.0\lib\net461\Skender.Stock.Indicators.dll</HintPath>
+    </Reference>
     <Reference Include="SuperSocket.ClientEngine, Version=0.10.0.0, Culture=neutral, PublicKeyToken=ee9af13f57f00acc, processorArchitecture=MSIL">
       <HintPath>..\packages\SuperSocket.ClientEngine.Core.0.10.0\lib\net45\SuperSocket.ClientEngine.dll</HintPath>
     </Reference>
@@ -163,8 +166,8 @@
     <Compile Include="Classes\Prompt.cs" />
     <Compile Include="Classes\Help.cs" />
     <Compile Include="Classes\Settings.cs" />
-    <Compile Include="Classes\Analysis.cs" />
-    <Compile Include="Classes\Calculations.cs" />
+    <Compile Include="Classes\Analyze.cs" />
+    <Compile Include="Classes\Calculate.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

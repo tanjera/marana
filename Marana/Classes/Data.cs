@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Skender.Stock.Indicators;
+
 namespace Marana {
 
     public class Data {
@@ -14,10 +16,11 @@ namespace Marana {
             public List<Price> Prices = new List<Price>();
             public List<Metric> Metrics = new List<Metric>();
 
-            public class Price {
+            public class Price : IQuote {
                 // Data received from outside API
 
-                public DateTime Timestamp { get; set; }
+                public DateTime Date { get; set; }
+
                 public Metric Metric { get; set; }
 
                 public decimal Open { get; set; }
@@ -25,50 +28,45 @@ namespace Marana {
                 public decimal Low { get; set; }
                 public decimal Close { get; set; }
                 public decimal Volume { get; set; }
+
+                public Quote Quote {
+                    get {
+                        return new Quote() {
+                            Date = Date,
+                            Open = Open,
+                            High = High,
+                            Low = Low,
+                            Close = Close,
+                            Volume = Volume
+                        };
+                    }
+                }
             }
 
             public class Metric {
                 public Price Price { get; set; }
 
-                public DateTime Timestamp { get { return Price.Timestamp; } }
+                public DateTime Timestamp { get { return Price.Date; } }
 
                 // Simple moving averages, various periods, for price
 
-                public decimal SMA7 { get; set; }
-                public decimal SMA20 { get; set; }
-                public decimal SMA50 { get; set; }
-                public decimal SMA100 { get; set; }
-                public decimal SMA200 { get; set; }
-
-                // Moving growth rate (derived from simple moving average)
-
-                public decimal MGR50 { get; set; }
-                public decimal MGR100 { get; set; }
-                public decimal MGR200 { get; set; }
-
-                // Moving standard deviation and according ratio (percentage) for price
-
-                public decimal MSD20 { get; set; }
-                public decimal MSDr20 { get; set; }
-
-                // Metrics for analyzing trading volume
-
-                public decimal vSMA20 { get; set; }
-                public decimal vMSD20 { get; set; }
+                public decimal? SMA7 { get; set; }
+                public decimal? SMA20 { get; set; }
+                public decimal? SMA50 { get; set; }
+                public decimal? SMA100 { get; set; }
+                public decimal? SMA200 { get; set; }
 
                 // Relative Strength Indicator (RSI)
 
-                public decimal RSI { get; set; }
+                public decimal? RSI14 { get; set; }
 
-                // Quick references of whether the calculations were possible
+                // Bollingers
 
-                public bool HasSMA7 { get { return SMA7 > 0; } }
-                public bool HasSMA20 { get { return SMA20 > 0; } }
-                public bool HasSMA50 { get { return SMA50 > 0; } }
-                public bool HasSMA100 { get { return SMA100 > 0; } }
-                public bool HasSMA200 { get { return SMA200 > 0; } }
+                public BollingerBandsResult BB20 { get; set; }
 
-                public bool HasRSI { get { return RSI > 0; } }
+                // Moving Average Convergence/Divergence (MACD)
+
+                public MacdResult MACD12269 { get; set; }
             }
         }
 
@@ -77,7 +75,7 @@ namespace Marana {
             public DateTime Timestamp;
             public string Description;
             public Directions Direction;
-            public decimal Strength;
+            public decimal? Strength;
 
             public enum Directions {
                 None,
