@@ -38,7 +38,8 @@ namespace Marana {
         }
 
         public static List<Data.Asset> GetAssets(Database db) {
-            if (DateTime.UtcNow - db.GetValidity_Assets() > new TimeSpan(1, 0, 0, 0))
+            // Update ticker symbols weekly
+            if (DateTime.UtcNow - db.GetValidity_Assets() > new TimeSpan(7, 0, 0, 0))
                 Update_Symbols(db);
 
             return db.GetData_Assets();
@@ -59,13 +60,22 @@ namespace Marana {
         public static void Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
             List<Thread> threads = new List<Thread>();
 
+            DateTime lastMarketClose = new DateTime();
+            object result = API.Alpaca.GetTime_LastMarketClose(settings);
+            if (result is DateTime) {
+                lastMarketClose = (DateTime)result;
+            } else {
+                lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
+            }
+
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
                 Prompt.Write($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm")} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
-                /* Check validity- if less than 1 day old, data is valid!
+                /* Check validity timestamp against last known market close
                  */
-                if (DateTime.UtcNow - db.GetValidity_TSD(assets[i]) < new TimeSpan(1, 0, 0, 0)) {
+
+                if (db.GetValidity_TSD(assets[i]).CompareTo(lastMarketClose) > 0) {
                     Prompt.WriteLine("Database current. Skipping.");
                     continue;
                 }

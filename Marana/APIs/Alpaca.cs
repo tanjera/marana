@@ -70,5 +70,19 @@ namespace Marana.API {
                 return ex.Message;
             }
         }
+
+        public static object GetTime_LastMarketClose(Settings settings) {
+            return GetDateTime_LastMarketClose_Async(settings).Result;
+        }
+
+        private static async Task<object> GetDateTime_LastMarketClose_Async(Settings settings) {
+            try {
+                var client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
+                var calendars = await client.ListCalendarAsync(new CalendarRequest().SetInclusiveTimeInterval(DateTime.Now - new TimeSpan(30, 0, 0, 0), DateTime.Now));
+                return calendars.Where(c => c.TradingCloseTimeUtc.CompareTo(DateTime.UtcNow) <= 0).Last().TradingCloseTimeUtc;
+            } catch (Exception ex) {
+                return ex.Message;
+            }
+        }
     }
 }
