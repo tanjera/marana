@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using MySql.Data;
 using MySql.Data.MySqlClient;
 
+using Skender.Stock.Indicators;
+
 namespace Marana {
     public class Database {
         public Settings _Settings;
@@ -72,6 +74,15 @@ namespace Marana {
                             `SMA50` DECIMAL(16, 6),
                             `SMA100` DECIMAL(16, 6),
                             `SMA200` DECIMAL(16, 6),
+                            `EMA7` DECIMAL(16, 6),
+                            `EMA20` DECIMAL(16, 6),
+                            `EMA50` DECIMAL(16, 6),
+                            `DEMA7` DECIMAL(16, 6),
+                            `DEMA20` DECIMAL(16, 6),
+                            `DEMA50` DECIMAL(16, 6),
+                            `TEMA7` DECIMAL(16, 6),
+                            `TEMA20` DECIMAL(16, 6),
+                            `TEMA50` DECIMAL(16, 6),
                             `RSI` DECIMAL(16, 6),
                             `MACD` DECIMAL(16, 6),
                             `MACD_Histogram` DECIMAL(16, 6),
@@ -227,6 +238,15 @@ namespace Marana {
                         {(v.Metric?.SMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA50.ToString())}'" : "null")},
                         {(v.Metric?.SMA100 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA100.ToString())}'" : "null")},
                         {(v.Metric?.SMA200 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA200.ToString())}'" : "null")},
+                        {(v.Metric?.EMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA7.ToString())}'" : "null")},
+                        {(v.Metric?.EMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA20.ToString())}'" : "null")},
+                        {(v.Metric?.EMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA50.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA7.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA20.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA50.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA7.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA20.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA50.ToString())}'" : "null")},
                         {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
                         {(v.Metric?.MACD?.Macd != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Macd.ToString())}'" : "null")},
                         {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
@@ -244,6 +264,7 @@ namespace Marana {
                             $@"INSERT INTO `TSD` (
                                     Asset, Symbol, Date, Open, High, Low, Close, Volume,
                                     SMA7, SMA20, SMA50, SMA100, SMA200,
+                                    EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
                                     RSI,
                                     MACD, MACD_Histogram, MACD_Signal,
                                     BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width
@@ -252,7 +273,7 @@ namespace Marana {
                         cmd.ExecuteNonQuery();
                     }
 
-                    UpdateValidity($"tsd:{dataset.Asset.ID}");
+                    UpdateValidity($"TSD:{dataset.Asset.ID}");
                 } catch (Exception ex) {
                     // TO-DO: log errors to error log
                 } finally {
@@ -319,14 +340,51 @@ namespace Marana {
                             connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                             while (rdr.Read()) {
-                                ds.Prices.Add(new Data.Daily.Price() {
+                                Data.Daily.Price p = new Data.Daily.Price() {
                                     Date = rdr.GetDateTime("Date"),
                                     Open = rdr.GetDecimal("Open"),
                                     High = rdr.GetDecimal("High"),
                                     Low = rdr.GetDecimal("Low"),
                                     Close = rdr.GetDecimal("Close"),
                                     Volume = rdr.GetInt64("Volume")
-                                });
+                                };
+
+                                Data.Daily.Metric m = new Data.Daily.Metric() {
+                                    SMA7 = rdr.GetDecimal("SMA7"),
+                                    SMA20 = rdr.GetDecimal("SMA20"),
+                                    SMA50 = rdr.GetDecimal("SMA50"),
+                                    SMA100 = rdr.GetDecimal("SMA100"),
+                                    SMA200 = rdr.GetDecimal("SMA200"),
+                                    EMA7 = rdr.GetDecimal("EMA7"),
+                                    EMA20 = rdr.GetDecimal("EMA20"),
+                                    EMA50 = rdr.GetDecimal("EMA50"),
+                                    DEMA7 = rdr.GetDecimal("DEMA7"),
+                                    DEMA20 = rdr.GetDecimal("DEMA20"),
+                                    DEMA50 = rdr.GetDecimal("DEMA50"),
+                                    TEMA7 = rdr.GetDecimal("TEMA7"),
+                                    TEMA20 = rdr.GetDecimal("TEMA20"),
+                                    TEMA50 = rdr.GetDecimal("TEMA50"),
+                                    RSI = rdr.GetDecimal("RSI"),
+                                    MACD = new MacdResult() {
+                                        Macd = rdr.GetDecimal("MACD"),
+                                        Histogram = rdr.GetDecimal("MACD_Histogram"),
+                                        Signal = rdr.GetDecimal("MACD_Signal")
+                                    },
+                                    BB = new BollingerBandsResult {
+                                        Sma = rdr.GetDecimal("BollingerBands_Center"),
+                                        UpperBand = rdr.GetDecimal("BollingerBands_Upper"),
+                                        LowerBand = rdr.GetDecimal("BollingerBands_Lower"),
+                                        PercentB = rdr.GetDecimal("BollingerBands_Percent"),
+                                        ZScore = rdr.GetDecimal("BollingerBands_ZScore"),
+                                        Width = rdr.GetDecimal("BollingerBands_Width"),
+                                    }
+                                };
+
+                                p.Metric = m;
+                                m.Price = p;
+
+                                ds.Prices.Add(p);
+                                ds.Metrics.Add(m);
                             }
                         }
                     }

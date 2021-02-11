@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Marana.Library {
+namespace Marana {
 
     internal class Prompt {
 

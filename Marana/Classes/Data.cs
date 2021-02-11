@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 using Skender.Stock.Indicators;
 
 namespace Marana {
-
     public class Data {
-
         public class Daily {
             public Asset Asset = new Asset();
             public List<Price> Prices = new List<Price>();
@@ -56,6 +54,18 @@ namespace Marana {
                 public decimal? SMA100 { get; set; }
                 public decimal? SMA200 { get; set; }
 
+                // Exponential moving averages
+
+                public decimal? EMA7 { get; set; }
+                public decimal? EMA20 { get; set; }
+                public decimal? EMA50 { get; set; }
+                public decimal? DEMA7 { get; set; }
+                public decimal? DEMA20 { get; set; }
+                public decimal? DEMA50 { get; set; }
+                public decimal? TEMA7 { get; set; }
+                public decimal? TEMA20 { get; set; }
+                public decimal? TEMA50 { get; set; }
+
                 // Relative Strength Indicator (RSI)
 
                 public decimal? RSI { get; set; }
@@ -67,6 +77,11 @@ namespace Marana {
                 // Moving Average Convergence/Divergence (MACD)
 
                 public MacdResult MACD { get; set; }
+
+                public Metric() {
+                    BB = new BollingerBandsResult();
+                    MACD = new MacdResult();
+                }
             }
         }
 

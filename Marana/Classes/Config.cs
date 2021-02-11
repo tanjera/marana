@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace Marana.Library {
+namespace Marana {
 
     public static class Config {
 
@@ -21,6 +21,8 @@ namespace Marana.Library {
             Prompt.WriteLine($"  Database -> Port: {config.Database_Port}");
             Prompt.WriteLine($"  Database -> Name: {config.Database_Schema}");
             Prompt.WriteLine($"  Database -> User: {config.Database_User}");
+            Prompt.NewLine();
+            Prompt.WriteLine($"  # of historical entries of daily market data to retain: {config.Entries_TSD}");
             Prompt.NewLine();
             Prompt.WriteLine("To edit these settings, use the command 'marana config edit'");
         }
@@ -73,6 +75,12 @@ namespace Marana.Library {
             settings.Database_Password = !String.IsNullOrEmpty(input) ? input
                 : (settings.Database_Password != null ? settings.Database_Password : "");
 
+            Prompt.Write($"# of historical entries of daily market data to retain (300 - 1000): [{settings.Entries_TSD}]: ");
+            input = Console.ReadLine().Trim();
+            int entries = settings.Entries_TSD;
+            bool canParse = int.TryParse(input, out entries);
+            settings.Entries_TSD = canParse ? Math.Max(Math.Min(1000, entries), 300) : settings.Entries_TSD;
+
             if (SaveConfig(settings))
                 Prompt.WriteLine("Settings saved successfully.");
             else
@@ -122,6 +130,8 @@ namespace Marana.Library {
                     sw.WriteLine($"Database_Schema: {inc.Database_Schema.Trim()}");
                     sw.WriteLine($"Database_User: {inc.Database_User.Trim()}");
                     sw.WriteLine($"Database_Password: {inc.Database_Password.Trim()}");
+
+                    sw.WriteLine($"Entries_TSD: {inc.Entries_TSD.ToString().Trim()}");
                     sw.Close();
                     return true;
                 }
@@ -174,6 +184,10 @@ namespace Marana.Library {
 
                         case "Database_Password":
                             oc.Database_Password = value;
+                            break;
+
+                        case "Entries_TSD":
+                            oc.Entries_TSD = int.Parse(value);
                             break;
                     }
                 }

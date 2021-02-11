@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Marana.Library {
+namespace Marana {
 
     public class Library {
 
@@ -83,7 +83,7 @@ namespace Marana.Library {
                 Prompt.Write("Requesting data. ");
 
                 Data.Daily ds = new Data.Daily();
-                object output = API.Alpaca.GetData_TSD(settings, assets[i]);
+                object output = API.Alpaca.GetData_TSD(settings, assets[i], settings.Entries_TSD);
 
                 if (output is Data.Daily)
                     ds = output as Data.Daily;

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Marana.Library {
+namespace Marana {
 
     internal class Program {
 
@@ -44,10 +44,12 @@ namespace Marana.Library {
                     // "library"
                     else if (opt0 == "library") {
                         if (_args.Count == 0) {                             // "library"
-                            Library.Info(_Database);
+                            Help.Library();
                         } else {
                             string opt1 = TrimArgs(ref _args);
-                            if (opt1 == "clear") {                          // "library clear"
+                            if (opt1 == "info") {                           // "library info"
+                                Library.Info(_Database);
+                            } else if (opt1 == "clear") {                   // "library clear"
                                 Library.Clear(_Database);
                             } else if (opt1 == "update") {                  // "library update"
                                 Library.Update(_args, _Settings, _Database);
@@ -57,7 +59,14 @@ namespace Marana.Library {
 
                     // "help"
                     else if (opt0 == "help") {
-                        Help.Info();
+                        if (_args.Count == 0) {
+                            Help.Default();
+                        } else {
+                            string opt1 = TrimArgs(ref _args);
+                            if (opt1 == "library") {                        // "help library"
+                                Help.Library();
+                            }
+                        }
                     }
 
                     // "exit"

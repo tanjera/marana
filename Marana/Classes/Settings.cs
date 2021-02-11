@@ -2,7 +2,6 @@
 using System.IO;
 
 namespace Marana {
-
     public class Settings {
         public string API_Alpaca_Key { get; set; }
         public string API_Alpaca_Secret { get; set; }
@@ -15,12 +14,16 @@ namespace Marana {
         public string Database_User { get; set; }
         public string Database_Password { get; set; }
 
+        public int Entries_TSD { get; set; }
+
         public Settings() {
             Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
 
             Database_Server = "localhost";
             Database_Port = 3306;
             Database_Schema = "Marana";
+
+            Entries_TSD = 300;
         }
     }
 }
