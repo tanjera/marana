@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using Skender.Stock.Indicators;
 
 namespace Marana {
+
     public class Data {
+
         public class Daily {
             public Asset Asset = new Asset();
             public List<Price> Prices = new List<Price>();
@@ -85,29 +87,6 @@ namespace Marana {
             }
         }
 
-        public class Signal {
-            public Asset Asset;
-            public DateTime Timestamp;
-            public string Description;
-            public Directions Direction;
-            public decimal? Strength;
-
-            public enum Directions {
-                None,
-                Same,
-
-                Buy,
-                Sell,
-
-                Up,
-                Down,
-
-                Plateau,
-                Peak,
-                Trough
-            }
-        }
-
         public class Asset {
             public string ID { get; set; }
             public string Symbol { get; set; }
@@ -118,6 +97,11 @@ namespace Marana {
             public bool Marginable { get; set; }
             public bool Shortable { get; set; }
             public bool EasyToBorrow { get; set; }
+        }
+
+        public class Strategy {
+            public string Name { get; set; }
+            public string Query { get; set; }
         }
 
         public static void Select_Assets(ref List<Asset> assets, List<string> args) {

@@ -10,6 +10,7 @@ using MySql.Data.MySqlClient;
 using Skender.Stock.Indicators;
 
 namespace Marana {
+
     public class Database {
         public Settings _Settings;
 
@@ -19,7 +20,7 @@ namespace Marana {
 
         public string ConnectionStr {
             get {
-                return $"server={_Settings.Database_Server}; user={_Settings.Database_User}; "
+                return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
                     + $"database={_Settings.Database_Schema}; port={_Settings.Database_Port}; "
                    + $"password={_Settings.Database_Password}";
             }
@@ -97,188 +98,16 @@ namespace Marana {
                         connection))
                     cmd.ExecuteNonQuery();
 
-                connection.Close();
-            }
-        }
-
-        public void Wipe() {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    connection.Open();
-                } catch (Exception ex) {
-                    // TO_DO: Log error messages
-                    return;
-                }
-
-                using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 0;", connection))
-                    cmd.ExecuteNonQuery();
-
-                List<string> tables = new List<string>();
                 using (MySqlCommand cmd = new MySqlCommand(
-                    $@"SELECT table_name
-                        FROM information_schema.tables
-                        WHERE table_schema = '{_Settings.Database_Schema}';",
-                    connection)) {
-                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                        while (rdr.Read())
-                            tables.Add(rdr.GetString(0));
-                    }
-                }
-
-                string droplist = String.Join(", ",
-                    tables.Select(t => $"`{MySqlHelper.EscapeString(t)}`"));
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DROP TABLE IF EXISTS {droplist};",
+                        $@"CREATE TABLE IF NOT EXISTS `Strategies` (
+                            `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `Name` VARCHAR(256),
+                            `Query` TEXT
+                            ) AUTO_INCREMENT = 1;",
                         connection))
                     cmd.ExecuteNonQuery();
 
-                using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
-                    cmd.ExecuteNonQuery();
-
-                Init();
-
                 connection.Close();
-            }
-        }
-
-        public void AddData_Assets(List<Data.Asset> assets) {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    connection.Open();
-                } catch (Exception ex) {
-                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return;
-                }
-
-                if (assets.Count == 0) {
-                    UpdateValidity("Assets");
-                    connection.Close();
-                    return;
-                }
-
-                // Delete data that will be updated or rewritten
-
-                string deletes = String.Join(" OR ",
-                    assets.Select(a =>
-                    $"ID = '{a.ID}'"));
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DELETE FROM `Assets` WHERE {deletes};",
-                        connection)) {
-                    cmd.ExecuteNonQuery();
-                }
-
-                // Insert new or updated data
-
-                string inserts = String.Join(", ",
-                    assets.Select(a =>
-                    $"('{MySqlHelper.EscapeString(a.ID)}', "
-                    + $"'{MySqlHelper.EscapeString(a.Symbol)}', "
-                    + $"'{MySqlHelper.EscapeString(a.Class)}', "
-                    + $"'{MySqlHelper.EscapeString(a.Exchange)}',"
-                    + $"'{MySqlHelper.EscapeString(a.Status)}', "
-                    + $"'{MySqlHelper.EscapeString(a.Tradeable.GetHashCode().ToString())}', "
-                    + $"'{MySqlHelper.EscapeString(a.Marginable.GetHashCode().ToString())}', "
-                    + $"'{MySqlHelper.EscapeString(a.Shortable.GetHashCode().ToString())}', "
-                    + $"'{MySqlHelper.EscapeString(a.EasyToBorrow.GetHashCode().ToString())}')"));
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"INSERT INTO `Assets` ( ID, Symbol, Class, Exchange, Status, Tradeable, Marginable, Shortable, EasyToBorrow ) "
-                        + $"VALUES {inserts};",
-                        connection)) {
-                    cmd.ExecuteNonQuery();
-                }
-
-                UpdateValidity("Assets");
-
-                connection.Close();
-            }
-        }
-
-        public void AddData_TSD(object dataset)
-            => AddData_TSD((Data.Daily)dataset);
-
-        public void AddData_TSD(Data.Daily dataset) {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    connection.Open();
-                } catch (Exception ex) {
-                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return;
-                }
-
-                // Delete data that will be updated or rewritten
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DELETE FROM `TSD`
-                            WHERE Asset = '{dataset.Asset.ID}';",
-                        connection)) {
-                    cmd.ExecuteNonQuery();
-                }
-
-                // Insert the data into the table
-
-                if (dataset.Prices.Count == 0) {
-                    UpdateValidity($"TSD:{dataset.Asset.ID}");
-                    connection.Close();
-                    return;
-                }
-
-                string values = String.Join(", ",
-                    dataset.Prices.Select(v =>
-                        $@"(
-                        '{MySqlHelper.EscapeString(dataset.Asset.ID)}',
-                        '{MySqlHelper.EscapeString(dataset.Asset.Symbol)}',
-                        '{MySqlHelper.EscapeString(v.Date.ToString("yyyy-MM-dd"))}',
-                        '{MySqlHelper.EscapeString(v.Open.ToString())}',
-                        '{MySqlHelper.EscapeString(v.High.ToString())}',
-                        '{MySqlHelper.EscapeString(v.Low.ToString())}',
-                        '{MySqlHelper.EscapeString(v.Close.ToString())}',
-                        '{MySqlHelper.EscapeString(v.Volume.ToString())}',
-                        {(v.Metric?.SMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA7.ToString())}'" : "null")},
-                        {(v.Metric?.SMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA20.ToString())}'" : "null")},
-                        {(v.Metric?.SMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA50.ToString())}'" : "null")},
-                        {(v.Metric?.SMA100 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA100.ToString())}'" : "null")},
-                        {(v.Metric?.SMA200 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA200.ToString())}'" : "null")},
-                        {(v.Metric?.EMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA7.ToString())}'" : "null")},
-                        {(v.Metric?.EMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA20.ToString())}'" : "null")},
-                        {(v.Metric?.EMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA50.ToString())}'" : "null")},
-                        {(v.Metric?.DEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA7.ToString())}'" : "null")},
-                        {(v.Metric?.DEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA20.ToString())}'" : "null")},
-                        {(v.Metric?.DEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA50.ToString())}'" : "null")},
-                        {(v.Metric?.TEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA7.ToString())}'" : "null")},
-                        {(v.Metric?.TEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA20.ToString())}'" : "null")},
-                        {(v.Metric?.TEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA50.ToString())}'" : "null")},
-                        {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Macd != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Macd.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Signal.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.Sma != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Sma.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.UpperBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.UpperBand.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.LowerBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.LowerBand.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.PercentB != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.PercentB.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.ZScore != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.ZScore.ToString())}'" : "null")},
-                        {(v.Metric?.BB?.Width != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Width.ToString())}'" : "null")}
-                        )"));
-
-                try {
-                    using (MySqlCommand cmd = new MySqlCommand(
-                            $@"INSERT INTO `TSD` (
-                                    Asset, Symbol, Date, Open, High, Low, Close, Volume,
-                                    SMA7, SMA20, SMA50, SMA100, SMA200,
-                                    EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
-                                    RSI,
-                                    MACD, MACD_Histogram, MACD_Signal,
-                                    BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width
-                                    ) VALUES {values};",
-                            connection)) {
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    UpdateValidity($"TSD:{dataset.Asset.ID}");
-                } catch (Exception ex) {
-                    // TO-DO: log errors to error log
-                } finally {
-                    connection.Close();
-                }
             }
         }
 
@@ -478,7 +307,180 @@ namespace Marana {
             }
         }
 
-        public void UpdateValidity(string item) {
+        public void SetData_Assets(List<Data.Asset> assets) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    connection.Open();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return;
+                }
+
+                if (assets.Count == 0) {
+                    SetValidity("Assets");
+                    connection.Close();
+                    return;
+                }
+
+                // Delete data that will be updated or rewritten
+
+                string deletes = String.Join(" OR ",
+                    assets.Select(a =>
+                    $"ID = '{a.ID}'"));
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `Assets` WHERE {deletes};",
+                        connection)) {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Insert new or updated data
+
+                string inserts = String.Join(", ",
+                    assets.Select(a =>
+                    $"('{MySqlHelper.EscapeString(a.ID)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Symbol)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Class)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Exchange)}',"
+                    + $"'{MySqlHelper.EscapeString(a.Status)}', "
+                    + $"'{MySqlHelper.EscapeString(a.Tradeable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.Marginable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.Shortable.GetHashCode().ToString())}', "
+                    + $"'{MySqlHelper.EscapeString(a.EasyToBorrow.GetHashCode().ToString())}')"));
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"INSERT INTO `Assets` ( ID, Symbol, Class, Exchange, Status, Tradeable, Marginable, Shortable, EasyToBorrow ) "
+                        + $"VALUES {inserts};",
+                        connection)) {
+                    cmd.ExecuteNonQuery();
+                }
+
+                SetValidity("Assets");
+
+                connection.Close();
+            }
+        }
+
+        public void SetData_TSD(object dataset)
+            => SetData_TSD((Data.Daily)dataset);
+
+        public void SetData_TSD(Data.Daily dataset) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    connection.Open();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return;
+                }
+
+                // Delete data that will be updated or rewritten
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `TSD`
+                            WHERE Asset = '{dataset.Asset.ID}';",
+                        connection)) {
+                    cmd.ExecuteNonQuery();
+                }
+
+                // Insert the data into the table
+
+                if (dataset.Prices.Count == 0) {
+                    SetValidity($"TSD:{dataset.Asset.ID}");
+                    connection.Close();
+                    return;
+                }
+
+                string values = String.Join(", ",
+                    dataset.Prices.Select(v =>
+                        $@"(
+                        '{MySqlHelper.EscapeString(dataset.Asset.ID)}',
+                        '{MySqlHelper.EscapeString(dataset.Asset.Symbol)}',
+                        '{MySqlHelper.EscapeString(v.Date.ToString("yyyy-MM-dd"))}',
+                        '{MySqlHelper.EscapeString(v.Open.ToString())}',
+                        '{MySqlHelper.EscapeString(v.High.ToString())}',
+                        '{MySqlHelper.EscapeString(v.Low.ToString())}',
+                        '{MySqlHelper.EscapeString(v.Close.ToString())}',
+                        '{MySqlHelper.EscapeString(v.Volume.ToString())}',
+                        {(v.Metric?.SMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA7.ToString())}'" : "null")},
+                        {(v.Metric?.SMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA20.ToString())}'" : "null")},
+                        {(v.Metric?.SMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA50.ToString())}'" : "null")},
+                        {(v.Metric?.SMA100 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA100.ToString())}'" : "null")},
+                        {(v.Metric?.SMA200 != null ? $"'{MySqlHelper.EscapeString(v.Metric.SMA200.ToString())}'" : "null")},
+                        {(v.Metric?.EMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA7.ToString())}'" : "null")},
+                        {(v.Metric?.EMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA20.ToString())}'" : "null")},
+                        {(v.Metric?.EMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.EMA50.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA7.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA20.ToString())}'" : "null")},
+                        {(v.Metric?.DEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.DEMA50.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA7.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA20.ToString())}'" : "null")},
+                        {(v.Metric?.TEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA50.ToString())}'" : "null")},
+                        {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
+                        {(v.Metric?.MACD?.Macd != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Macd.ToString())}'" : "null")},
+                        {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
+                        {(v.Metric?.MACD?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Signal.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.Sma != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Sma.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.UpperBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.UpperBand.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.LowerBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.LowerBand.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.PercentB != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.PercentB.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.ZScore != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.ZScore.ToString())}'" : "null")},
+                        {(v.Metric?.BB?.Width != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Width.ToString())}'" : "null")}
+                        )"));
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"INSERT INTO `TSD` (
+                                    Asset, Symbol, Date, Open, High, Low, Close, Volume,
+                                    SMA7, SMA20, SMA50, SMA100, SMA200,
+                                    EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
+                                    RSI,
+                                    MACD, MACD_Histogram, MACD_Signal,
+                                    BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width
+                                    ) VALUES {values};",
+                            connection)) {
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    SetValidity($"TSD:{dataset.Asset.ID}");
+                } catch (Exception ex) {
+                    // TO-DO: log errors to error log
+                } finally {
+                    connection.Close();
+                }
+            }
+        }
+
+        public void SetStrategy(Data.Strategy strategy) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    connection.Open();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return;
+                }
+
+                bool oldentry = false;
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `Strategies` WHERE `Name` = '{strategy.Name}';",
+                        connection)) {
+                    cmd.ExecuteNonQuery();
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        @"INSERT INTO `Strategies` (
+                                `Name`, `Query`
+                                ) VALUES (
+                                ?name, ?query
+                                );",
+                        connection)) {
+                    cmd.Parameters.AddWithValue("?name", strategy.Name);
+                    cmd.Parameters.AddWithValue("?query", strategy.Query);
+                    cmd.ExecuteNonQuery();
+                }
+
+                connection.Close();
+            }
+        }
+
+        public void SetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     connection.Open();
@@ -520,6 +522,49 @@ namespace Marana {
                 }
 
                 connection.Close();
+            }
+        }
+
+        public bool Wipe() {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    connection.Open();
+                } catch (Exception ex) {
+                    return false;
+                }
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 0;", connection))
+                        cmd.ExecuteNonQuery();
+
+                    List<string> tables = new List<string>();
+                    using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT table_name
+                        FROM information_schema.tables
+                        WHERE table_schema = '{_Settings.Database_Schema}';",
+                        connection)) {
+                        using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                            while (rdr.Read())
+                                tables.Add(rdr.GetString(0));
+                        }
+                    }
+
+                    string droplist = String.Join(", ",
+                        tables.Select(t => $"`{MySqlHelper.EscapeString(t)}`"));
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"DROP TABLE IF EXISTS {droplist};",
+                            connection))
+                        cmd.ExecuteNonQuery();
+
+                    using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
+                        cmd.ExecuteNonQuery();
+
+                    Init();
+                    connection.Close();
+                    return true;
+                } catch (Exception ex) {
+                    return false;
+                }
             }
         }
     }

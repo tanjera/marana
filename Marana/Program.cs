@@ -2,86 +2,54 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+using Terminal.Gui;
+
 namespace Marana {
 
     internal class Program {
 
         private static void Main(string[] args) {
+            Settings settings = Settings.Init();
+            Database db = new Database(settings);
+
+            if (args.Length > 0)
+                RunCommand(args, settings, db);
+            else RunGUI(settings, db);
+        }
+
+        private static void RunGUI(Settings settings, Database db) {
+            Marana.GUI.Main.Run(settings, db);
+        }
+
+        private static void RunCommand(string[] args, Settings settings, Database db) {
             List<string> _args = new List<string>(args);
 
-            while (true) {
-                if (_args.Count == 0)
-                    _args = Prompt.Args();
+            // Validate the configuration file... if it doesn't exist, force entry into config edit mode
+            if (!Settings.Exists()) {
+                Prompt.WriteLine("No configuration file found. Please configure Marana!");
+            }
 
-                Settings _Settings = Config.Init();
-                Database _Database = new Database(_Settings);
+            // Parse command options for program functionality
+            if (_args.Count > 0) {
+                string opt0 = TrimArgs(ref _args);
 
-                // Validate the configuration file... if it doesn't exist, force entry into config edit mode
-                if (!Config.Validate()) {
-                    Prompt.WriteLine("No configuration file found. Entering 'config edit' mode.");
-                    _args = new List<string> { "config", "edit" };
-                }
+                // "library"
+                if (opt0 == "library") {
+                    if (_args.Count == 0) {
+                        Help.Default();
+                    } else {
+                        string opt1 = TrimArgs(ref _args);
 
-                // Parse command options for program functionality
-                if (_args.Count == 0) {
-                    Prompt.WriteLine("Use command 'marana help' for information on using Marana");
-                } else if (_args.Count > 0) {
-                    string opt0 = TrimArgs(ref _args);
-
-                    // "config"
-                    if (opt0 == "config") {
-                        if (_args.Count == 0) {                              // "config"
-                            Config.Info(_Settings);
-                        } else {
-                            string opt1 = TrimArgs(ref _args);
-
-                            if (opt1 == "edit") {                           // "config edit"
-                                Config.Edit(ref _Settings);
-                            }
+                        if (opt1 == "update") {
+                            Library.Update(_args, settings, db);
                         }
-                    }
-
-                    // "library"
-                    else if (opt0 == "library") {
-                        if (_args.Count == 0) {                             // "library"
-                            Help.Library();
-                        } else {
-                            string opt1 = TrimArgs(ref _args);
-                            if (opt1 == "info") {                           // "library info"
-                                Library.Info(_Database);
-                            } else if (opt1 == "clear") {                   // "library clear"
-                                Library.Clear(_Database);
-                            } else if (opt1 == "update") {                  // "library update"
-                                Library.Update(_args, _Settings, _Database);
-                            }
-                        }
-                    }
-
-                    // "help"
-                    else if (opt0 == "help") {
-                        if (_args.Count == 0) {
-                            Help.Default();
-                        } else {
-                            string opt1 = TrimArgs(ref _args);
-                            if (opt1 == "library") {                        // "help library"
-                                Help.Library();
-                            }
-                        }
-                    }
-
-                    // "exit"
-                    else if (opt0 == "exit") {
-                        Prompt.WriteLine("Exiting");
-                        return;
-                    }
-
-                    // Default or blank option
-                    else {
-                        Prompt.WriteLine("Invalid command. Use command 'marana help' for information on using Marana");
                     }
                 }
 
-                _args.Clear();
+                // "help"
+                else {
+                    Help.Default();
+                }
             }
         }
 

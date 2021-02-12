@@ -9,12 +9,6 @@ namespace Marana {
 
     public class Library {
 
-        public static void Info(Database db) {
-            decimal size = db.GetSize();
-
-            Prompt.WriteLine($"Database size: {size} MB");
-        }
-
         public static void Update(List<string> args, Settings settings, Database database) {
             Prompt.WriteLine("Initializing database.");
             database.Init();
@@ -25,16 +19,6 @@ namespace Marana {
 
             Prompt.WriteLine("Updating Time Series Dailies (TSD).");
             Update_TSD(assets, settings, database);
-        }
-
-        public static void Clear(Database db) {
-            Prompt.Write("This will delete all current data in the database! Are you sure you want to continue?  ", ConsoleColor.Red);
-            if (!Prompt.YesNo())
-                return;
-
-            db.Wipe();
-
-            Prompt.WriteLine("Success- Database cleared of all data and reinitialized.");
         }
 
         public static List<Data.Asset> GetAssets(Database db) {
@@ -50,7 +34,7 @@ namespace Marana {
 
             object output = API.Alpaca.GetAssets(db._Settings);
             if (output is List<Data.Asset>) {
-                db.AddData_Assets((List<Data.Asset>)output);
+                db.SetData_Assets((List<Data.Asset>)output);
                 Prompt.WriteLine("Completed", ConsoleColor.Green);
             } else {
                 Prompt.WriteLine("Error", ConsoleColor.Red);
@@ -112,7 +96,7 @@ namespace Marana {
 
                 Prompt.WriteLine("Updating database.", ConsoleColor.Green);
 
-                Thread thread = new Thread(new ParameterizedThreadStart(db.AddData_TSD));
+                Thread thread = new Thread(new ParameterizedThreadStart(db.SetData_TSD));
                 thread.Start(ds);
                 threads.Add(thread);
 
