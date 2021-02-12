@@ -12,7 +12,7 @@ namespace Marana {
     public class Calculate {
 
         // Calculates all the indicator metrics for a dataset
-        public static void Metrics(ref Data.Daily dd) {
+        public static async Task<Data.Daily> Metrics(Data.Daily dd) {
             // Prepare the data structures and tie Prices <-> Metrics
 
             dd.Prices.Sort((a, b) => a.Date.CompareTo(b.Date));
@@ -81,6 +81,8 @@ namespace Marana {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);
                 }
             }
+
+            return dd;
         }
     }
 }

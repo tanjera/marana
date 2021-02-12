@@ -228,10 +228,10 @@ namespace Marana {
             }
         }
 
-        public DateTime GetValidity(string item) {
+        public async Task<DateTime> GetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync();
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return new DateTime();
@@ -243,18 +243,18 @@ namespace Marana {
                             FROM `Validity`
                             WHERE `Item` = '{item}';",
                         connection))
-                    result = cmd.ExecuteScalar() != null ? (DateTime)(cmd.ExecuteScalar()) : new DateTime();
+                    result = await cmd.ExecuteScalarAsync() != null ? (DateTime)(await cmd.ExecuteScalarAsync()) : new DateTime();
 
-                connection.Close();
+                await connection.CloseAsync();
                 return result;
             }
         }
 
-        public DateTime GetValidity_Assets()
-            => GetValidity("Assets");
+        public async Task<DateTime> GetValidity_Assets()
+            => await GetValidity("Assets");
 
-        public DateTime GetValidity_TSD(Data.Asset asset)
-            => GetValidity($"TSD:{asset.ID}");
+        public async Task<DateTime> GetValidity_TSD(Data.Asset asset)
+            => await GetValidity($"TSD:{asset.ID}");
 
         public decimal GetSize() {
             Init();                                     // Cannot get size of a schema with no tables!

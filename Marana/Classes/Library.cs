@@ -8,40 +8,126 @@ using System.Threading.Tasks;
 namespace Marana {
 
     public class Library {
+        /* Status and Output variables, handler, and event triggering
+         * For updating GUI with status and output text in an asynchronous manner
+         */
 
-        public static void Update(List<string> args, Settings settings, Database database) {
-            Prompt.WriteLine("Initializing database.");
-            database.Init();
+        public Statuses Status;
+        public List<string> Output;
+        public bool CancelUpdate = false;
 
-            Prompt.WriteLine("Querying database for list of ticker symbols.");
-            List<Data.Asset> assets = GetAssets(database);
-            Data.Select_Assets(ref assets, args);
+        public enum Statuses {
+            Inactive,
+            Updating
+        };
 
-            Prompt.WriteLine("Updating Time Series Dailies (TSD).");
-            Update_TSD(assets, settings, database);
+        public enum ExitCode {
+            Completed,
+            Cancelled
         }
 
-        public static List<Data.Asset> GetAssets(Database db) {
+        public event StatusUpdateHandler StatusUpdate;
+
+        public delegate void StatusUpdateHandler(object sender, StatusEventArgs e);
+
+        public class StatusEventArgs : EventArgs {
+            public Statuses Status { get; set; }
+            public List<string> Output { get; set; }
+        }
+
+        public Library() {
+            Status = Statuses.Inactive;
+            Output = new List<string>();
+        }
+
+        private void OnStatusUpdate()
+            => StatusUpdate?.Invoke(this, new StatusEventArgs() {
+                Status = Status,
+                Output = Output
+            });
+
+        /* Utility methods
+         * For messaging
+         */
+
+        public void Write(string message, ConsoleColor color = ConsoleColor.Gray) {
+            if (Output.Count == 0)
+                Output.Add("");
+
+            Output[Output.Count - 1] = $"{Output[Output.Count - 1]}{message}";
+            OnStatusUpdate();
+
+            Prompt.Write(message, color);
+        }
+
+        public void WriteLine(string message, ConsoleColor color = ConsoleColor.Gray) {
+            if (Output.Count == 0)
+                Output.Add("");
+
+            Output[Output.Count - 1] = $"{Output[Output.Count - 1]}{message}";
+            Output.Add("");
+            OnStatusUpdate();
+
+            Prompt.WriteLine(message, color);
+        }
+
+        /* Library functionality:
+         * Updating the data library, setting, and getting data
+         */
+
+        public async Task Update(List<string> args, Settings settings, Database database) {
+            Status = Statuses.Updating;
+
+            WriteLine("Initializing database.");
+            database.Init();
+
+            WriteLine("Querying database for list of ticker symbols.");
+            List<Data.Asset> assets = await GetAssets(database);
+            Data.Select_Assets(ref assets, args);
+
+            WriteLine("Updating Time Series Dailies (TSD).");
+            if (await Update_TSD(assets, settings, database) == ExitCode.Cancelled) {
+                await Update_Cancel();
+                return;
+            }
+
+            await Update_Complete();
+        }
+
+        public async Task Update_Cancel() {
+            WriteLine("Library update cancelled.");
+            Status = Statuses.Inactive;
+            CancelUpdate = false;
+        }
+
+        public async Task Update_Complete() {
+            WriteLine("Library update complete.");
+            Status = Statuses.Inactive;
+        }
+
+        public async Task<List<Data.Asset>> GetAssets(Database db) {
             // Update ticker symbols weekly
-            if (DateTime.UtcNow - db.GetValidity_Assets() > new TimeSpan(7, 0, 0, 0))
-                Update_Symbols(db);
+            if (DateTime.UtcNow - db.GetValidity_Assets().Result > new TimeSpan(7, 0, 0, 0))
+                await Update_Symbols(db);
 
             return db.GetData_Assets();
         }
 
-        public static void Update_Symbols(Database db) {
-            Prompt.Write("Updating list of ticker symbols. ");
+        public async Task<ExitCode> Update_Symbols(Database db) {
+            Write("Updating list of ticker symbols. ");
 
             object output = API.Alpaca.GetAssets(db._Settings);
             if (output is List<Data.Asset>) {
                 db.SetData_Assets((List<Data.Asset>)output);
-                Prompt.WriteLine("Completed", ConsoleColor.Green);
+                WriteLine("Completed", ConsoleColor.Green);
+                return ExitCode.Completed;
             } else {
-                Prompt.WriteLine("Error", ConsoleColor.Red);
+                WriteLine("Error", ConsoleColor.Red);
+                return ExitCode.Completed;
             }
         }
 
-        public static void Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
+        public async Task<ExitCode> Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
             List<Thread> threads = new List<Thread>();
 
             DateTime lastMarketClose = new DateTime();
@@ -54,50 +140,55 @@ namespace Marana {
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
-                Prompt.Write($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm")} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
+                if (CancelUpdate)
+                    return ExitCode.Cancelled;
+
+                Write($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm")} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
                 /* Check validity timestamp against last known market close
                  */
 
-                if (db.GetValidity_TSD(assets[i]).CompareTo(lastMarketClose) > 0) {
-                    Prompt.WriteLine("Database current. Skipping.");
+                DateTime validity = await db.GetValidity_TSD(assets[i]);
+                if (validity.CompareTo(lastMarketClose) > 0) {
+                    await Task.Delay(10);               // Allows GUI responsiveness
+                    WriteLine("Database current. Skipping.");
                     continue;
                 }
 
-                Prompt.Write("Requesting data. ");
+                Write("Requesting data. ");
 
-                Data.Daily ds = new Data.Daily();
-                object output = API.Alpaca.GetData_TSD(settings, assets[i], settings.Entries_TSD);
+                Data.Daily dd = new Data.Daily();
+                object output = await API.Alpaca.GetData_TSD(settings, assets[i], settings.Entries_TSD);
 
                 if (output is Data.Daily)
-                    ds = output as Data.Daily;
+                    dd = output as Data.Daily;
                 else if (output is string) {
                     if (output as string == "Too Many Requests") {
-                        Prompt.WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
-                        Thread.Sleep(30000);
+                        WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
+                        await Task.Delay(30000);
                         i--;
                         continue;
                     } else {
-                        Prompt.WriteLine($"Error: {output}");
+                        WriteLine($"Error: {output}");
                         continue;
                     }
                 }
 
-                ds.Asset = assets[i];
+                dd.Asset = assets[i];
 
                 /* Calculate metrics, stock indicators
                  */
-                Prompt.Write("Calculating indicators. ");
-                Calculate.Metrics(ref ds);
+                Write("Calculating indicators. ");
+                dd = await Calculate.Metrics(dd);
 
                 /* Save to database
                  * Use threading for highly improved speed!
                  */
 
-                Prompt.WriteLine("Updating database.", ConsoleColor.Green);
+                WriteLine("Updating database.", ConsoleColor.Green);
 
                 Thread thread = new Thread(new ParameterizedThreadStart(db.SetData_TSD));
-                thread.Start(ds);
+                thread.Start(dd);
                 threads.Add(thread);
 
                 int awaiting = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
@@ -107,12 +198,14 @@ namespace Marana {
 
             int finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
             if (finishing > 0) {
-                Prompt.WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Completing {finishing} remaining background database tasks.");
+                WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Completing {finishing} remaining background database tasks.");
                 Thread.Sleep(5000);
 
                 finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
-                Prompt.WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Library update complete!", ConsoleColor.Green);
+                WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Library update complete!", ConsoleColor.Green);
             }
+
+            return ExitCode.Completed;
         }
     }
 }

@@ -11,7 +11,8 @@ namespace Marana.GUI {
     internal class Settings {
 
         public static void Edit(Marana.Settings settings) {
-            Window window = Utility.SetWindow("Edit Settings");
+            Window window = Utility.SelectWindow(Main.WindowTypes.Settings);
+            window.RemoveAll();
 
             // Layout coordinates
 
@@ -78,7 +79,7 @@ namespace Marana.GUI {
 
             // Dialog notification on save success
 
-            Dialog dlgSaved = Utility.DialogNotification_Okay("Settings saved successfully.", 40, 7, window);
+            Dialog dlgSaved = Utility.CreateDialog_NotificationOkay("Settings saved successfully.", 40, 7, window);
 
             // Button for saving settings
 
@@ -108,7 +109,7 @@ namespace Marana.GUI {
 
             window.Add(btnSave);
 
-            Application.Run();
+            Application.Refresh();
         }
     }
 }

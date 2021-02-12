@@ -41,11 +41,7 @@ namespace Marana.API {
             }
         }
 
-        public static object GetData_TSD(Settings settings, Data.Asset sp, int limit = 300) {
-            return GetData_TSD_Async(settings, sp, limit).Result;
-        }
-
-        private static async Task<object> GetData_TSD_Async(Settings settings, Data.Asset sp, int limit = 300) {
+        public static async Task<object> GetData_TSD(Settings settings, Data.Asset sp, int limit = 300) {
             try {
                 var client = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
 
@@ -72,13 +68,9 @@ namespace Marana.API {
         }
 
         public static object GetTime_LastMarketClose(Settings settings) {
-            return GetDateTime_LastMarketClose_Async(settings).Result;
-        }
-
-        private static async Task<object> GetDateTime_LastMarketClose_Async(Settings settings) {
             try {
                 var client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
-                var calendars = await client.ListCalendarAsync(new CalendarRequest().SetInclusiveTimeInterval(DateTime.Now - new TimeSpan(30, 0, 0, 0), DateTime.Now));
+                var calendars = client.ListCalendarAsync(new CalendarRequest().SetInclusiveTimeInterval(DateTime.UtcNow - new TimeSpan(30, 0, 0, 0), DateTime.UtcNow)).Result;
                 return calendars.Where(c => c.TradingCloseTimeUtc.CompareTo(DateTime.UtcNow) <= 0).Last().TradingCloseTimeUtc;
             } catch (Exception ex) {
                 return ex.Message;

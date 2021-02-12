@@ -8,20 +8,21 @@ namespace Marana {
 
     internal class Program {
 
-        private static void Main(string[] args) {
+        private static async Task Main(string[] args) {
             Settings settings = Settings.Init();
             Database db = new Database(settings);
 
             if (args.Length > 0)
-                RunCommand(args, settings, db);
-            else RunGUI(settings, db);
+                await RunCommand(args, settings, db);
+            else
+                await RunGUI(settings, db);
         }
 
-        private static void RunGUI(Settings settings, Database db) {
-            Marana.GUI.Main.Run(settings, db);
+        private static async Task RunGUI(Settings settings, Database db) {
+            await new Marana.GUI.Main().Init(settings, db);
         }
 
-        private static void RunCommand(string[] args, Settings settings, Database db) {
+        private static async Task RunCommand(string[] args, Settings settings, Database db) {
             List<string> _args = new List<string>(args);
 
             // Validate the configuration file... if it doesn't exist, force entry into config edit mode
@@ -41,7 +42,7 @@ namespace Marana {
                         string opt1 = TrimArgs(ref _args);
 
                         if (opt1 == "update") {
-                            Library.Update(_args, settings, db);
+                            await new Library().Update(_args, settings, db);
                         }
                     }
                 }

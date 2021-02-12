@@ -9,9 +9,46 @@ using Terminal.Gui;
 namespace Marana.GUI {
 
     internal class Main {
+        public Marana.Library _Library = new Marana.Library();
 
-        public static void Run(Marana.Settings settings, Database db) {
+        public enum WindowTypes {
+            Welcome,
+            Settings,
+            LibraryUpdate,
+            LibraryInformation,
+            LibraryEraseDatabase,
+            Screen,
+            TradeLive,
+            TradePaper
+        }
+
+        private static string[] WindowTitles = new string[] {
+            "Welcome to Marana",
+            "Edit Settings",
+            "Update the Data Library",
+            "Data Library Information",
+            "Erase Data Library's Database",
+            "Asset Screening",
+            "Live Trading",
+            "Paper Trading"
+        };
+
+        public async Task Init(Marana.Settings settings, Database db) {
             Application.Init();
+
+            // Initialize all Windows in Application.Top.Subviews stack
+            string[] wTypes = Enum.GetNames(typeof(WindowTypes));
+            for (int i = 0; i < wTypes.Length; i++)
+                Application.Top.Add(Utility.CreateWindow(wTypes[i], WindowTitles[i]));
+
+            await Welcome(settings, db);
+
+            Application.Run();
+        }
+
+        public async Task Welcome(Marana.Settings settings, Database db) {
+            Window window = Utility.SelectWindow(WindowTypes.Welcome);
+            window.RemoveAll();
 
             MenuBar menuMain = new MenuBar(new MenuBarItem[] {
                 new MenuBarItem ("_File", new MenuItem [] {
@@ -20,18 +57,22 @@ namespace Marana.GUI {
                     })
                 }),
 
-                new MenuBarItem ("_Settings", new MenuItem [] {
-                    new MenuItem ("_Edit", "", () => { GUI.Settings.Edit(settings);  })
-                }),
+                new MenuBarItem ("_Edit Settings", "", () => { GUI.Settings.Edit(settings);  }),
 
                 new MenuBarItem ("_Library", new MenuItem [] {
+                    new MenuItem ("_Update", "", () => { new GUI.Library().Update(_Library, settings, db); }),
                     new MenuItem ("_Information", "", () => { GUI.Library.Info(settings, db);  }),
                     new MenuItem(),
                     new MenuItem ("_Erase Database", "", () => { GUI.Library.Erase(settings, db);  })
+                }),
+
+                new MenuBarItem("_Screen", new MenuItem[] { }),
+
+                new MenuBarItem("_Trade", new MenuItem[] {
+                    new MenuItem("_Live", "", () => { throw new NotImplementedException(); }),
+                    new MenuItem("_Paper", "", () => { throw new NotImplementedException(); })
                 })
             });
-
-            Window wdwMain = Utility.SetWindow("Marana");
 
             Label lblWelcome = new Label(
                 $"Welcome to Marana {Environment.NewLine}"
@@ -42,10 +83,11 @@ namespace Marana.GUI {
                 Y = Pos.Center()
             };
 
-            wdwMain.Add(lblWelcome);
+            window.Add(lblWelcome);
 
-            Application.Top.Add(menuMain, wdwMain);
-            Application.Run();
+            Application.Top.Add(menuMain);
+
+            Application.Refresh();
         }
     }
 }
