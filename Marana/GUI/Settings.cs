@@ -10,7 +10,7 @@ namespace Marana.GUI {
 
     internal class Settings {
 
-        public static void Edit(Marana.Settings settings) {
+        public async Task Edit(Marana.Settings settings) {
             Window window = Utility.SelectWindow(Main.WindowTypes.Settings);
             window.RemoveAll();
 

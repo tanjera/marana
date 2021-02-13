@@ -11,11 +11,7 @@ namespace Marana.API {
 
     public class Alpaca {
 
-        public static object GetAssets(Settings settings) {
-            return GetAssets_Async(settings).Result;
-        }
-
-        private static async Task<object> GetAssets_Async(Settings settings) {
+        public static async Task<object> GetAssets(Settings settings) {
             try {
                 var client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
                 var assets = await client.ListAssetsAsync(new AssetsRequest { AssetStatus = AssetStatus.Active });

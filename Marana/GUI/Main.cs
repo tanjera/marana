@@ -9,7 +9,10 @@ using Terminal.Gui;
 namespace Marana.GUI {
 
     internal class Main {
-        public Marana.Library _Library = new Marana.Library();
+        private Marana.Library _Library = new Marana.Library();
+        private GUI.Settings guiSettings = new Settings();
+        private GUI.Library guiLibrary = new GUI.Library();
+        private GUI.Strategies guiStrategies = new Strategies();
 
         public enum WindowTypes {
             Welcome,
@@ -17,9 +20,10 @@ namespace Marana.GUI {
             LibraryUpdate,
             LibraryInformation,
             LibraryEraseDatabase,
-            Screen,
-            TradeLive,
-            TradePaper
+            StrategiesEdit,
+            StrategiesRun,
+            TradingLive,
+            TradingPaper
         }
 
         private static string[] WindowTitles = new string[] {
@@ -28,7 +32,8 @@ namespace Marana.GUI {
             "Update the Data Library",
             "Data Library Information",
             "Erase Data Library's Database",
-            "Asset Screening",
+            "Edit Strategy Queries",
+            "Run Strategy Queries",
             "Live Trading",
             "Paper Trading"
         };
@@ -57,18 +62,23 @@ namespace Marana.GUI {
                     })
                 }),
 
-                new MenuBarItem ("_Edit Settings", "", () => { GUI.Settings.Edit(settings);  }),
+                new MenuBarItem ("_Settings", new MenuItem[] {
+                    new MenuItem("_Edit Settings", "", async () => { await guiSettings.Edit(settings);  })
+                    }),
 
                 new MenuBarItem ("_Library", new MenuItem [] {
-                    new MenuItem ("_Update", "", () => { new GUI.Library().Update(_Library, settings, db); }),
-                    new MenuItem ("_Information", "", () => { GUI.Library.Info(settings, db);  }),
+                    new MenuItem ("_Update", "", async () => { await guiLibrary.Update(_Library, settings, db); }),
+                    new MenuItem ("_Information", "", async () => { await guiLibrary.Info(settings, db);  }),
                     new MenuItem(),
-                    new MenuItem ("_Erase Database", "", () => { GUI.Library.Erase(settings, db);  })
+                    new MenuItem ("_Erase Database", "", async () => { await guiLibrary.Erase(settings, db);  })
                 }),
 
-                new MenuBarItem("_Screen", new MenuItem[] { }),
+                new MenuBarItem("St_rategies", new MenuItem[] {
+                    new MenuItem ("_Edit Queries", "", async () => { await guiStrategies.Edit(settings, db); }),
+                    new MenuItem ("_Run Queries", "", async () => { await guiStrategies.Run(settings, db); }),
+                }),
 
-                new MenuBarItem("_Trade", new MenuItem[] {
+                new MenuBarItem("_Trading", new MenuItem[] {
                     new MenuItem("_Live", "", () => { throw new NotImplementedException(); }),
                     new MenuItem("_Paper", "", () => { throw new NotImplementedException(); })
                 })

@@ -26,10 +26,10 @@ namespace Marana {
             }
         }
 
-        public void Init() {
+        public async Task Init() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return;
@@ -42,7 +42,7 @@ namespace Marana {
                             `Updated` DATETIME
                             ) AUTO_INCREMENT = 1;",
                         connection))
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         @"CREATE TABLE IF NOT EXISTS `Assets` (
@@ -57,7 +57,7 @@ namespace Marana {
                             `EasyToBorrow` BOOLEAN
                             );",
                         connection))
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `TSD` (
@@ -96,25 +96,47 @@ namespace Marana {
                             `BollingerBands_Width` DECIMAL(16, 6),
                             INDEX(`Asset`));",
                         connection))
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `Strategies` (
-                            `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `Name` VARCHAR(256),
+                            `Name` VARCHAR(256) PRIMARY KEY,
                             `Query` TEXT
-                            ) AUTO_INCREMENT = 1;",
+                            );",
                         connection))
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
 
-                connection.Close();
+                await connection.CloseAsync();
             }
         }
 
-        public List<Data.Asset> GetData_Assets() {
+        public async Task DeleteStrategy(Data.Strategy strategy) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return;
+                }
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                           $@"DELETE FROM `Strategies`
+                            WHERE `Name` = '{MySqlHelper.EscapeString(strategy.Name)}';",
+                           connection)) {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                } catch (Exception ex) {
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+
+        public async Task<List<Data.Asset>> GetAssets() {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return new List<Data.Asset>();
@@ -142,19 +164,19 @@ namespace Marana {
                         }
                     }
 
-                    connection.Close();
+                    await connection.CloseAsync();
                     return assets;
                 } catch (Exception ex) {
-                    connection.Close();
+                    await connection.CloseAsync();
                     return new List<Data.Asset>();
                 }
             }
         }
 
-        public Data.Daily GetData_TSD(Data.Asset asset) {
+        public async Task<Data.Daily> GetData_Daily(Data.Asset asset) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return null;
@@ -218,17 +240,49 @@ namespace Marana {
                         }
                     }
 
-                    connection.Close();
+                    await connection.CloseAsync();
                     return ds;
                 } catch (Exception ex) {
-                    connection.Close();
+                    await connection.CloseAsync();
                     return null;
                     // TO-DO: log errors to error log
                 }
             }
         }
 
+        public async Task<List<Data.Strategy>> GetStrategies() {
+            List<Data.Strategy> result = new List<Data.Strategy>();
+
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return new List<Data.Strategy>();
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        @"SELECT * FROM `Strategies`;",
+                    connection)) {
+                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                        while (rdr.Read()) {
+                            result.Add(new Data.Strategy() {
+                                Name = rdr.GetString("Name"),
+                                Query = rdr.GetString("Query")
+                            });
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+            }
+
+            return result;
+        }
+
         public async Task<DateTime> GetValidity(string item) {
+            DateTime result = new DateTime();
+
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
                     await connection.OpenAsync();
@@ -237,7 +291,6 @@ namespace Marana {
                     return new DateTime();
                 }
 
-                DateTime result = new DateTime();
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"SELECT `Updated`
                             FROM `Validity`
@@ -246,8 +299,9 @@ namespace Marana {
                     result = await cmd.ExecuteScalarAsync() != null ? (DateTime)(await cmd.ExecuteScalarAsync()) : new DateTime();
 
                 await connection.CloseAsync();
-                return result;
             }
+
+            return result;
         }
 
         public async Task<DateTime> GetValidity_Assets()
@@ -256,12 +310,14 @@ namespace Marana {
         public async Task<DateTime> GetValidity_TSD(Data.Asset asset)
             => await GetValidity($"TSD:{asset.ID}");
 
-        public decimal GetSize() {
+        public async Task<decimal> GetSize() {
             Init();                                     // Cannot get size of a schema with no tables!
+
+            decimal size = 0;
 
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return 0;
@@ -284,10 +340,8 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand($@"ANALYZE TABLE {analyzelist};",
                     connection)) {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
-
-                decimal size = 0;
 
                 using (MySqlCommand cmd = new MySqlCommand(
                     $@"SELECT table_schema `{_Settings.Database_Schema}`,
@@ -302,23 +356,24 @@ namespace Marana {
                     }
                 }
 
-                connection.Close();
-                return size;
+                await connection.CloseAsync();
             }
+
+            return size;
         }
 
-        public void SetData_Assets(List<Data.Asset> assets) {
+        public async Task SetAssets(List<Data.Asset> assets) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return;
                 }
 
                 if (assets.Count == 0) {
-                    SetValidity("Assets");
-                    connection.Close();
+                    await SetValidity("Assets");
+                    await connection.CloseAsync();
                     return;
                 }
 
@@ -330,7 +385,7 @@ namespace Marana {
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"DELETE FROM `Assets` WHERE {deletes};",
                         connection)) {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // Insert new or updated data
@@ -350,22 +405,21 @@ namespace Marana {
                         $@"INSERT INTO `Assets` ( ID, Symbol, Class, Exchange, Status, Tradeable, Marginable, Shortable, EasyToBorrow ) "
                         + $"VALUES {inserts};",
                         connection)) {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
-                SetValidity("Assets");
-
-                connection.Close();
+                await SetValidity("Assets");
+                await connection.CloseAsync();
             }
         }
 
-        public void SetData_TSD(object dataset)
-            => SetData_TSD((Data.Daily)dataset);
+        public async Task SetData_Daily(object dataset)
+            => await SetData_Daily((Data.Daily)dataset);
 
-        public void SetData_TSD(Data.Daily dataset) {
+        public async Task SetData_Daily(Data.Daily dataset) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return;
@@ -377,14 +431,14 @@ namespace Marana {
                         $@"DELETE FROM `TSD`
                             WHERE Asset = '{dataset.Asset.ID}';",
                         connection)) {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 // Insert the data into the table
 
                 if (dataset.Prices.Count == 0) {
-                    SetValidity($"TSD:{dataset.Asset.ID}");
-                    connection.Close();
+                    await SetValidity($"TSD:{dataset.Asset.ID}");
+                    await connection.CloseAsync();
                     return;
                 }
 
@@ -436,32 +490,31 @@ namespace Marana {
                                     BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width
                                     ) VALUES {values};",
                             connection)) {
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
                     }
 
-                    SetValidity($"TSD:{dataset.Asset.ID}");
+                    await SetValidity($"TSD:{dataset.Asset.ID}");
                 } catch (Exception ex) {
                     // TO-DO: log errors to error log
                 } finally {
-                    connection.Close();
+                    await connection.CloseAsync();
                 }
             }
         }
 
-        public void SetStrategy(Data.Strategy strategy) {
+        public async Task SetStrategy(Data.Strategy strategy) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync();
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return;
                 }
 
-                bool oldentry = false;
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"DELETE FROM `Strategies` WHERE `Name` = '{strategy.Name}';",
                         connection)) {
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 using (MySqlCommand cmd = new MySqlCommand(
@@ -473,17 +526,17 @@ namespace Marana {
                         connection)) {
                     cmd.Parameters.AddWithValue("?name", strategy.Name);
                     cmd.Parameters.AddWithValue("?query", strategy.Query);
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
-                connection.Close();
+                await connection.CloseAsync();
             }
         }
 
-        public void SetValidity(string item) {
+        public async Task SetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync();
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                     return;
@@ -505,7 +558,7 @@ namespace Marana {
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
                         cmd.Parameters.AddWithValue("?item", item);
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
                     }
                 } else {
                     using (MySqlCommand cmd = new MySqlCommand(
@@ -517,25 +570,25 @@ namespace Marana {
                             connection)) {
                         cmd.Parameters.AddWithValue("?updated", DateTime.UtcNow.ToString("yyyy/MM/dd HH:mm:ss"));
                         cmd.Parameters.AddWithValue("?item", item);
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
                     }
                 }
 
-                connection.Close();
+                await connection.CloseAsync();
             }
         }
 
-        public bool Wipe() {
+        public async Task<bool> Wipe() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
-                    connection.Open();
+                    await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     return false;
                 }
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 0;", connection))
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
 
                     List<string> tables = new List<string>();
                     using (MySqlCommand cmd = new MySqlCommand(
@@ -554,13 +607,13 @@ namespace Marana {
                     using (MySqlCommand cmd = new MySqlCommand(
                             $@"DROP TABLE IF EXISTS {droplist};",
                             connection))
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
 
                     using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
-                        cmd.ExecuteNonQuery();
+                        await cmd.ExecuteNonQueryAsync();
 
                     Init();
-                    connection.Close();
+                    await connection.CloseAsync();
                     return true;
                 } catch (Exception ex) {
                     return false;

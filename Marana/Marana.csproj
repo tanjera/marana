@@ -181,6 +181,8 @@
     <Compile Include="Classes\Database.cs" />
     <Compile Include="GUI\Library.cs" />
     <Compile Include="GUI\Main.cs" />
+    <Compile Include="GUI\Strategies.Edit.cs" />
+    <Compile Include="GUI\Strategies.Run.cs" />
     <Compile Include="GUI\Settings.cs" />
     <Compile Include="GUI\Utility.cs" />
     <Compile Include="Program.cs" />

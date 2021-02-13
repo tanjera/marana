@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marana {
@@ -110,15 +109,15 @@ namespace Marana {
             if (DateTime.UtcNow - db.GetValidity_Assets().Result > new TimeSpan(7, 0, 0, 0))
                 await Update_Symbols(db);
 
-            return db.GetData_Assets();
+            return await db.GetAssets();
         }
 
         public async Task<ExitCode> Update_Symbols(Database db) {
             Write("Updating list of ticker symbols. ");
 
-            object output = API.Alpaca.GetAssets(db._Settings);
+            object output = await API.Alpaca.GetAssets(db._Settings);
             if (output is List<Data.Asset>) {
-                db.SetData_Assets((List<Data.Asset>)output);
+                await db.SetAssets((List<Data.Asset>)output);
                 WriteLine("Completed", ConsoleColor.Green);
                 return ExitCode.Completed;
             } else {
@@ -128,7 +127,7 @@ namespace Marana {
         }
 
         public async Task<ExitCode> Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
-            List<Thread> threads = new List<Thread>();
+            List<Task> threads = new List<Task>();
 
             DateTime lastMarketClose = new DateTime();
             object result = API.Alpaca.GetTime_LastMarketClose(settings);
@@ -187,22 +186,21 @@ namespace Marana {
 
                 WriteLine("Updating database.", ConsoleColor.Green);
 
-                Thread thread = new Thread(new ParameterizedThreadStart(db.SetData_TSD));
-                thread.Start(dd);
+                Task thread = new Task(async () => { await db.SetData_Daily(dd); });
+                thread.Start();
                 threads.Add(thread);
 
-                int awaiting = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
+                int awaiting = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
                 if (awaiting >= 10)
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
             }
 
-            int finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
+            int finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             if (finishing > 0) {
                 WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Completing {finishing} remaining background database tasks.");
-                Thread.Sleep(5000);
+                await Task.Delay(5000);
 
-                finishing = threads.FindAll(t => t.ThreadState == ThreadState.Running).Count;
-                WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Library update complete!", ConsoleColor.Green);
+                finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             }
 
             return ExitCode.Completed;
