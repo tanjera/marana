@@ -18,6 +18,42 @@ namespace Marana {
             _Settings = settings;
         }
 
+        public enum ColumnsDaily {
+            ID,
+            Asset,
+            Symbol,
+            Date,
+            Open,
+            High,
+            Low,
+            Close,
+            Volume,
+            SMA7,
+            SMA20,
+            SMA50,
+            SMA100,
+            SMA200,
+            EMA7,
+            EMA20,
+            EMA50,
+            DEMA7,
+            DEMA20,
+            DEMA50,
+            TEMA7,
+            TEMA20,
+            TEMA50,
+            RSI,
+            MACD,
+            MACD_Histogram,
+            MACD_Signal,
+            BollingerBands_Center,
+            BollingerBands_Upper,
+            BollingerBands_Lower,
+            BollingerBands_Percent,
+            BollingerBands_ZScore,
+            BollingerBands_Width,
+        };
+
         public string ConnectionStr {
             get {
                 return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
@@ -60,7 +96,7 @@ namespace Marana {
                     await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
-                        $@"CREATE TABLE IF NOT EXISTS `TSD` (
+                        $@"CREATE TABLE IF NOT EXISTS `Daily` (
                             `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
                             `Asset` VARCHAR(64),
                             `Symbol` VARCHAR(16),
@@ -105,29 +141,6 @@ namespace Marana {
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
-
-                await connection.CloseAsync();
-            }
-        }
-
-        public async Task DeleteStrategy(Data.Strategy strategy) {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    await connection.OpenAsync(); ;
-                } catch (Exception ex) {
-                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return;
-                }
-
-                try {
-                    using (MySqlCommand cmd = new MySqlCommand(
-                           $@"DELETE FROM `Strategies`
-                            WHERE `Name` = '{MySqlHelper.EscapeString(strategy.Name)}';",
-                           connection)) {
-                        await cmd.ExecuteNonQueryAsync();
-                    }
-                } catch (Exception ex) {
-                }
 
                 await connection.CloseAsync();
             }
@@ -182,54 +195,51 @@ namespace Marana {
                     return null;
                 }
 
-                string table = $"TSD:{asset.ID}";
+                string table = $"Daily:{asset.ID}";
                 Data.Daily ds = new Data.Daily() { Asset = asset };
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(
-                            $@"SELECT * FROM `TSD` WHERE Asset = '{asset.ID}';",
+                            $@"SELECT * FROM `Daily` WHERE Asset = '{asset.ID}';",
                             connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                             while (rdr.Read()) {
-                                Data.Daily.Price p = new Data.Daily.Price() {
-                                    Date = rdr.GetDateTime("Date"),
-                                    Open = rdr.GetDecimal("Open"),
-                                    High = rdr.GetDecimal("High"),
-                                    Low = rdr.GetDecimal("Low"),
-                                    Close = rdr.GetDecimal("Close"),
-                                    Volume = rdr.GetInt64("Volume")
-                                };
+                                Data.Daily.Price p = new Data.Daily.Price();
+                                p.Date = rdr.IsDBNull(ColumnsDaily.Date.GetHashCode()) ? p.Date : rdr.GetDateTime("Date");
+                                p.Open = rdr.IsDBNull(ColumnsDaily.Open.GetHashCode()) ? p.Open : rdr.GetDecimal("Open");
+                                p.High = rdr.IsDBNull(ColumnsDaily.High.GetHashCode()) ? p.High : rdr.GetDecimal("High");
+                                p.Low = rdr.IsDBNull(ColumnsDaily.Low.GetHashCode()) ? p.Low : rdr.GetDecimal("Low");
+                                p.Close = rdr.IsDBNull(ColumnsDaily.Close.GetHashCode()) ? p.Close : rdr.GetDecimal("Close");
+                                p.Volume = rdr.IsDBNull(ColumnsDaily.Volume.GetHashCode()) ? p.Volume : rdr.GetInt64("Volume");
 
-                                Data.Daily.Metric m = new Data.Daily.Metric() {
-                                    SMA7 = rdr.GetDecimal("SMA7"),
-                                    SMA20 = rdr.GetDecimal("SMA20"),
-                                    SMA50 = rdr.GetDecimal("SMA50"),
-                                    SMA100 = rdr.GetDecimal("SMA100"),
-                                    SMA200 = rdr.GetDecimal("SMA200"),
-                                    EMA7 = rdr.GetDecimal("EMA7"),
-                                    EMA20 = rdr.GetDecimal("EMA20"),
-                                    EMA50 = rdr.GetDecimal("EMA50"),
-                                    DEMA7 = rdr.GetDecimal("DEMA7"),
-                                    DEMA20 = rdr.GetDecimal("DEMA20"),
-                                    DEMA50 = rdr.GetDecimal("DEMA50"),
-                                    TEMA7 = rdr.GetDecimal("TEMA7"),
-                                    TEMA20 = rdr.GetDecimal("TEMA20"),
-                                    TEMA50 = rdr.GetDecimal("TEMA50"),
-                                    RSI = rdr.GetDecimal("RSI"),
-                                    MACD = new MacdResult() {
-                                        Macd = rdr.GetDecimal("MACD"),
-                                        Histogram = rdr.GetDecimal("MACD_Histogram"),
-                                        Signal = rdr.GetDecimal("MACD_Signal")
-                                    },
-                                    BB = new BollingerBandsResult {
-                                        Sma = rdr.GetDecimal("BollingerBands_Center"),
-                                        UpperBand = rdr.GetDecimal("BollingerBands_Upper"),
-                                        LowerBand = rdr.GetDecimal("BollingerBands_Lower"),
-                                        PercentB = rdr.GetDecimal("BollingerBands_Percent"),
-                                        ZScore = rdr.GetDecimal("BollingerBands_ZScore"),
-                                        Width = rdr.GetDecimal("BollingerBands_Width"),
-                                    }
-                                };
+                                Data.Daily.Metric m = new Data.Daily.Metric();
+                                m.SMA7 = rdr.IsDBNull(ColumnsDaily.SMA7.GetHashCode()) ? m.SMA7 : rdr.GetDecimal("SMA7");
+                                m.SMA20 = rdr.IsDBNull(ColumnsDaily.SMA20.GetHashCode()) ? m.SMA20 : rdr.GetDecimal("SMA20");
+                                m.SMA50 = rdr.IsDBNull(ColumnsDaily.SMA50.GetHashCode()) ? m.SMA50 : rdr.GetDecimal("SMA50");
+                                m.SMA100 = rdr.IsDBNull(ColumnsDaily.SMA100.GetHashCode()) ? m.SMA100 : rdr.GetDecimal("SMA100");
+                                m.SMA200 = rdr.IsDBNull(ColumnsDaily.SMA200.GetHashCode()) ? m.SMA200 : rdr.GetDecimal("SMA200");
+                                m.EMA7 = rdr.IsDBNull(ColumnsDaily.EMA7.GetHashCode()) ? m.EMA7 : rdr.GetDecimal("EMA7");
+                                m.EMA20 = rdr.IsDBNull(ColumnsDaily.EMA20.GetHashCode()) ? m.EMA20 : rdr.GetDecimal("EMA20");
+                                m.EMA50 = rdr.IsDBNull(ColumnsDaily.EMA50.GetHashCode()) ? m.EMA50 : rdr.GetDecimal("EMA50");
+                                m.DEMA7 = rdr.IsDBNull(ColumnsDaily.DEMA7.GetHashCode()) ? m.DEMA7 : rdr.GetDecimal("DEMA7");
+                                m.DEMA20 = rdr.IsDBNull(ColumnsDaily.DEMA20.GetHashCode()) ? m.DEMA20 : rdr.GetDecimal("DEMA20");
+                                m.DEMA50 = rdr.IsDBNull(ColumnsDaily.DEMA50.GetHashCode()) ? m.DEMA50 : rdr.GetDecimal("DEMA50");
+                                m.TEMA7 = rdr.IsDBNull(ColumnsDaily.TEMA7.GetHashCode()) ? m.TEMA7 : rdr.GetDecimal("TEMA7");
+                                m.TEMA20 = rdr.IsDBNull(ColumnsDaily.TEMA20.GetHashCode()) ? m.TEMA20 : rdr.GetDecimal("TEMA20");
+                                m.TEMA50 = rdr.IsDBNull(ColumnsDaily.TEMA50.GetHashCode()) ? m.TEMA50 : rdr.GetDecimal("TEMA50");
+                                m.RSI = rdr.IsDBNull(ColumnsDaily.RSI.GetHashCode()) ? m.RSI : rdr.GetDecimal("RSI");
+                                m.MACD = new MacdResult();
+                                m.MACD.Macd = rdr.IsDBNull(ColumnsDaily.MACD.GetHashCode()) ? m.MACD.Macd : rdr.GetDecimal("MACD");
+                                m.MACD.Histogram = rdr.IsDBNull(ColumnsDaily.MACD_Histogram.GetHashCode()) ? m.MACD.Histogram : rdr.GetDecimal("MACD_Histogram");
+                                m.MACD.Signal = rdr.IsDBNull(ColumnsDaily.MACD_Signal.GetHashCode()) ? m.MACD.Signal : rdr.GetDecimal("MACD_Signal");
+
+                                m.BB = new BollingerBandsResult();
+                                m.BB.Sma = rdr.IsDBNull(ColumnsDaily.BollingerBands_Center.GetHashCode()) ? m.BB.Sma : rdr.GetDecimal("BollingerBands_Center");
+                                m.BB.UpperBand = rdr.IsDBNull(ColumnsDaily.BollingerBands_Upper.GetHashCode()) ? m.BB.UpperBand : rdr.GetDecimal("BollingerBands_Upper");
+                                m.BB.LowerBand = rdr.IsDBNull(ColumnsDaily.BollingerBands_Lower.GetHashCode()) ? m.BB.LowerBand : rdr.GetDecimal("BollingerBands_Lower");
+                                m.BB.PercentB = rdr.IsDBNull(ColumnsDaily.BollingerBands_Percent.GetHashCode()) ? m.BB.PercentB : rdr.GetDecimal("BollingerBands_Percent");
+                                m.BB.ZScore = rdr.IsDBNull(ColumnsDaily.BollingerBands_ZScore.GetHashCode()) ? m.BB.ZScore : rdr.GetDecimal("BollingerBands_ZScore");
+                                m.BB.Width = rdr.IsDBNull(ColumnsDaily.BollingerBands_Width.GetHashCode()) ? m.BB.Width : rdr.GetDecimal("BollingerBands_Width");
 
                                 p.Metric = m;
                                 m.Price = p;
@@ -248,36 +258,6 @@ namespace Marana {
                     // TO-DO: log errors to error log
                 }
             }
-        }
-
-        public async Task<List<Data.Strategy>> GetStrategies() {
-            List<Data.Strategy> result = new List<Data.Strategy>();
-
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    await connection.OpenAsync();
-                } catch (Exception ex) {
-                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return new List<Data.Strategy>();
-                }
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        @"SELECT * FROM `Strategies`;",
-                    connection)) {
-                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                        while (rdr.Read()) {
-                            result.Add(new Data.Strategy() {
-                                Name = rdr.GetString("Name"),
-                                Query = rdr.GetString("Query")
-                            });
-                        }
-                    }
-                }
-
-                await connection.CloseAsync();
-            }
-
-            return result;
         }
 
         public async Task<DateTime> GetValidity(string item) {
@@ -307,11 +287,11 @@ namespace Marana {
         public async Task<DateTime> GetValidity_Assets()
             => await GetValidity("Assets");
 
-        public async Task<DateTime> GetValidity_TSD(Data.Asset asset)
-            => await GetValidity($"TSD:{asset.ID}");
+        public async Task<DateTime> GetValidity_Daily(Data.Asset asset)
+            => await GetValidity($"Daily:{asset.ID}");
 
         public async Task<decimal> GetSize() {
-            Init();                                     // Cannot get size of a schema with no tables!
+            await Init();                                     // Cannot get size of a schema with no tables!
 
             decimal size = 0;
 
@@ -428,7 +408,7 @@ namespace Marana {
                 // Delete data that will be updated or rewritten
 
                 using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DELETE FROM `TSD`
+                        $@"DELETE FROM `Daily`
                             WHERE Asset = '{dataset.Asset.ID}';",
                         connection)) {
                     await cmd.ExecuteNonQueryAsync();
@@ -437,7 +417,7 @@ namespace Marana {
                 // Insert the data into the table
 
                 if (dataset.Prices.Count == 0) {
-                    await SetValidity($"TSD:{dataset.Asset.ID}");
+                    await SetValidity($"Daily:{dataset.Asset.ID}");
                     await connection.CloseAsync();
                     return;
                 }
@@ -481,7 +461,7 @@ namespace Marana {
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(
-                            $@"INSERT INTO `TSD` (
+                            $@"INSERT INTO `Daily` (
                                     Asset, Symbol, Date, Open, High, Low, Close, Volume,
                                     SMA7, SMA20, SMA50, SMA100, SMA200,
                                     EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
@@ -493,43 +473,12 @@ namespace Marana {
                         await cmd.ExecuteNonQueryAsync();
                     }
 
-                    await SetValidity($"TSD:{dataset.Asset.ID}");
+                    await SetValidity($"Daily:{dataset.Asset.ID}");
                 } catch (Exception ex) {
                     // TO-DO: log errors to error log
                 } finally {
                     await connection.CloseAsync();
                 }
-            }
-        }
-
-        public async Task SetStrategy(Data.Strategy strategy) {
-            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
-                try {
-                    await connection.OpenAsync();
-                } catch (Exception ex) {
-                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return;
-                }
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DELETE FROM `Strategies` WHERE `Name` = '{strategy.Name}';",
-                        connection)) {
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        @"INSERT INTO `Strategies` (
-                                `Name`, `Query`
-                                ) VALUES (
-                                ?name, ?query
-                                );",
-                        connection)) {
-                    cmd.Parameters.AddWithValue("?name", strategy.Name);
-                    cmd.Parameters.AddWithValue("?query", strategy.Query);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                await connection.CloseAsync();
             }
         }
 
@@ -612,7 +561,7 @@ namespace Marana {
                     using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
                         await cmd.ExecuteNonQueryAsync();
 
-                    Init();
+                    await Init();
                     await connection.CloseAsync();
                     return true;
                 } catch (Exception ex) {

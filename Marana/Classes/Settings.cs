@@ -24,7 +24,7 @@ namespace Marana {
             Database_Port = 3306;
             Database_Schema = "Marana";
 
-            Entries_TSD = 500;
+            Entries_TSD = 1000;
         }
 
         public static Settings Init() {

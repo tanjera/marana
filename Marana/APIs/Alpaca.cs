@@ -13,7 +13,7 @@ namespace Marana.API {
 
         public static async Task<object> GetAssets(Settings settings) {
             try {
-                var client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
+                var client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
                 var assets = await client.ListAssetsAsync(new AssetsRequest { AssetStatus = AssetStatus.Active });
                 var filtered = assets.Where(asset => asset.IsTradable && (asset.Exchange == Exchange.Nasdaq || asset.Exchange == Exchange.Nyse));
 
@@ -37,9 +37,10 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetData_TSD(Settings settings, Data.Asset sp, int limit = 300) {
+        public static async Task<object> GetData_Daily(Settings settings, Data.Asset sp, int limit = 1000) {
             try {
-                var client = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
+                var client = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Key, settings.API_Alpaca_Secret));
+                var poly = Environments.Live.GetPolygonDataClient(settings.API_Alpaca_Key);
 
                 // Maximum 1000 bars per API call
                 var bars = await client.GetBarSetAsync(new BarSetRequest(sp.Symbol, TimeFrame.Day) { Limit = limit });

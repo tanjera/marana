@@ -12,7 +12,7 @@ namespace Marana.GUI {
         private Marana.Library _Library = new Marana.Library();
         private GUI.Settings guiSettings = new Settings();
         private GUI.Library guiLibrary = new GUI.Library();
-        private GUI.Strategies guiStrategies = new Strategies();
+        private GUI.Queries guiStrategies = new Queries();
 
         public enum WindowTypes {
             Welcome,
@@ -20,8 +20,7 @@ namespace Marana.GUI {
             LibraryUpdate,
             LibraryInformation,
             LibraryEraseDatabase,
-            StrategiesEdit,
-            StrategiesRun,
+            QueriesRun,
             TradingLive,
             TradingPaper
         }
@@ -32,7 +31,6 @@ namespace Marana.GUI {
             "Update the Data Library",
             "Data Library Information",
             "Erase Data Library's Database",
-            "Edit Strategy Queries",
             "Run Strategy Queries",
             "Live Trading",
             "Paper Trading"
@@ -73,12 +71,11 @@ namespace Marana.GUI {
                     new MenuItem ("_Erase Database", "", async () => { await guiLibrary.Erase(settings, db);  })
                 }),
 
-                new MenuBarItem("St_rategies", new MenuItem[] {
-                    new MenuItem ("_Edit Queries", "", async () => { await guiStrategies.Edit(settings, db); }),
+                new MenuBarItem("_Queries", new MenuItem[] {
                     new MenuItem ("_Run Queries", "", async () => { await guiStrategies.Run(settings, db); }),
                 }),
 
-                new MenuBarItem("_Trading", new MenuItem[] {
+                new MenuBarItem("_Automation", new MenuItem[] {
                     new MenuItem("_Live", "", () => { throw new NotImplementedException(); }),
                     new MenuItem("_Paper", "", () => { throw new NotImplementedException(); })
                 })

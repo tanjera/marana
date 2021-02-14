@@ -78,7 +78,7 @@ namespace Marana {
             Status = Statuses.Updating;
 
             WriteLine("Initializing database.");
-            database.Init();
+            await database.Init();
 
             WriteLine("Querying database for list of ticker symbols.");
             List<Data.Asset> assets = await GetAssets(database);
@@ -147,7 +147,7 @@ namespace Marana {
                 /* Check validity timestamp against last known market close
                  */
 
-                DateTime validity = await db.GetValidity_TSD(assets[i]);
+                DateTime validity = await db.GetValidity_Daily(assets[i]);
                 if (validity.CompareTo(lastMarketClose) > 0) {
                     await Task.Delay(10);               // Allows GUI responsiveness
                     WriteLine("Database current. Skipping.");
@@ -157,7 +157,7 @@ namespace Marana {
                 Write("Requesting data. ");
 
                 Data.Daily dd = new Data.Daily();
-                object output = await API.Alpaca.GetData_TSD(settings, assets[i], settings.Entries_TSD);
+                object output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Entries_TSD);
 
                 if (output is Data.Daily)
                     dd = output as Data.Daily;
