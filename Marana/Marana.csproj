@@ -187,7 +187,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Classes\Settings.cs" />
-    <Compile Include="Strategies\Flips.cs" />
     <Compile Include="Classes\Strategy.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -45,8 +45,8 @@ namespace Marana.GUI {
             };
 
             // Link view item functionality
-            List<string> strategies = Strategy.Listing.Select(o => { return o.Key; }).ToList();
-            await lvStrategies.SetSourceAsync(strategies);
+            List<Data.Strategy> strategies = await db.GetStrategies();
+            await lvStrategies.SetSourceAsync(strategies.Select(s => s.Name).ToArray());
 
             btnRun.Clicked += async () => {
                 if (Status == Statuses.Inactive && strategies.Count > lvStrategies.SelectedItem) {
@@ -63,50 +63,10 @@ namespace Marana.GUI {
             Application.Refresh();
         }
 
-        public async Task Execute(Database db, string strategy, ListView output) {
+        public async Task Execute(Database db, Data.Strategy strategy, ListView output) {
             Status = Statuses.Running;
 
-            List<Data.Asset> assets = await db.GetAssets();
-
-            Func<Data.Daily, DateTime, bool> funcStrategy;
-            if (!Strategy.Listing.TryGetValue(strategy, out funcStrategy)) {
-                output.Text += "Unable to select strategy from Strategy listing.\nOperation Aborted";
-                return;
-            }
-
-            List<Data.Asset> outList = new List<Data.Asset>();
-            List<string> outBuffer = new List<string>() { "" };
-            List<Task> tasks = new List<Task>();
-
-            for (int i = 0; i < assets.Count; i++) {
-                outBuffer.Add($"[{i + 1:0000} / {assets.Count:0000}]  Querying and making determination on {assets[i].Symbol}.");
-                await output.SetSourceAsync(outBuffer.GetRange(
-                    Math.Max(0, outBuffer.Count - output.Bounds.Height),
-                    Math.Min(output.Bounds.Height, outBuffer.Count)));
-                Application.Refresh();
-
-                Task t = new Task(async () => {
-                    Data.Daily dd = await db.GetData_Daily(assets[i]);
-
-                    if (dd == null || dd.Prices.Count == 0)
-                        return;
-
-                    if (funcStrategy(dd, new DateTime(2021, 02, 12)))
-                        outList.Add(assets[i]);
-                });
-
-                while (tasks.FindAll(a => a.Status == TaskStatus.Running).Count >= 10)
-                    await Task.Delay(100);
-
-                t.Start();
-                tasks.Add(t);
-            }
-
             Status = Statuses.Inactive;
-            outBuffer = new List<string>() { "Symbols matching this query:" };
-            outBuffer.AddRange(outList.Select(s => s.Symbol));
-            await output.SetSourceAsync(outBuffer);
-            Application.Refresh();
         }
     }
 }

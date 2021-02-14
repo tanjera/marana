@@ -260,6 +260,36 @@ namespace Marana {
             }
         }
 
+        public async Task<List<Data.Strategy>> GetStrategies() {
+            List<Data.Strategy> result = new List<Data.Strategy>();
+
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return new List<Data.Strategy>();
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        @"SELECT * FROM `Strategies`;",
+                    connection)) {
+                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                        while (rdr.Read()) {
+                            result.Add(new Data.Strategy() {
+                                Name = rdr.GetString("Name"),
+                                Query = rdr.GetString("Query")
+                            });
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+            }
+
+            return result;
+        }
+
         public async Task<DateTime> GetValidity(string item) {
             DateTime result = new DateTime();
 
