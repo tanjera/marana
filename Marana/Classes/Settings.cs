@@ -18,16 +18,12 @@ namespace Marana {
         public string Database_Username { get; set; }
         public string Database_Password { get; set; }
 
-        public int Entries_TSD { get; set; }
-
         public Settings() {
             Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
 
             Database_Server = "localhost";
             Database_Port = 3306;
             Database_Schema = "Marana";
-
-            Entries_TSD = 1000;
         }
 
         public static Settings Init() {
@@ -77,8 +73,6 @@ namespace Marana {
                     sw.WriteLine($"Database_Schema: {inc?.Database_Schema?.Trim()}");
                     sw.WriteLine($"Database_User: {inc?.Database_Username?.Trim()}");
                     sw.WriteLine($"Database_Password: {inc?.Database_Password?.Trim()}");
-
-                    sw.WriteLine($"Entries_TSD: {inc?.Entries_TSD.ToString().Trim()}");
                     sw.Close();
                     return true;
                 }
@@ -139,10 +133,6 @@ namespace Marana {
 
                         case "Database_Password":
                             oc.Database_Password = value;
-                            break;
-
-                        case "Entries_TSD":
-                            oc.Entries_TSD = int.Parse(value);
                             break;
                     }
                 }

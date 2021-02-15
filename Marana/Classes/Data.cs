@@ -108,15 +108,15 @@ namespace Marana {
 
         public class Instruction {
             public bool Active { get; set; }
-            public Formats Format { get; set; }
+            public Trading Format { get; set; }
             public List<Asset> Assets { get; set; }
             public Strategy Strategy { get; set; }
             public int Shares { get; set; }
+        }
 
-            public enum Formats {
-                Paper,
-                Live
-            }
+        public enum Trading {
+            Paper,
+            Live
         }
 
         public static void Select_Assets(ref List<Asset> assets, List<string> args) {

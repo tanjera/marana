@@ -130,7 +130,7 @@ namespace Marana {
             List<Task> threads = new List<Task>();
 
             DateTime lastMarketClose = new DateTime();
-            object result = API.Alpaca.GetTime_LastMarketClose(settings);
+            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
             if (result is DateTime) {
                 lastMarketClose = (DateTime)result;
             } else {
@@ -157,7 +157,7 @@ namespace Marana {
                 Write("Requesting data. ");
 
                 Data.Daily dd = new Data.Daily();
-                object output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Entries_TSD);
+                object output = await API.Alpaca.GetData_Daily(settings, assets[i]);
 
                 if (output is Data.Daily)
                     dd = output as Data.Daily;

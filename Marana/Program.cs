@@ -45,11 +45,12 @@ namespace Marana {
                             await new Library().Update(_args, settings, db);
                         }
                     }
-                }
+                } else {
+                    if (opt0 == "debug") {
+                        // space for debugging individual methods
+                    }
 
-                // "help"
-                else {
-                    Help.Default();
+                    Help.Default();                     // "help"
                 }
             }
         }
