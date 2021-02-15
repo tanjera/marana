@@ -111,7 +111,13 @@ namespace Marana {
             public Trading Format { get; set; }
             public List<Asset> Assets { get; set; }
             public Strategy Strategy { get; set; }
-            public int Shares { get; set; }
+            public int Quantity { get; set; }
+        }
+
+        public class Position {
+            public string ID { get; set; }
+            public string Symbol { get; set; }
+            public int Quantity { get; set; }
         }
 
         public enum Trading {

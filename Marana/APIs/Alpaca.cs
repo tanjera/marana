@@ -36,16 +36,16 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetData_Daily(Settings settings, Data.Asset sp, int limit = 500) {
+        public static async Task<object> GetData_Daily(Settings settings, Data.Asset asset, int limit = 500) {
             try {
                 var client = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                 var poly = Environments.Live.GetPolygonDataClient(settings.API_Alpaca_Live_Key);
 
                 // Maximum 1000 bars per API call
-                var bars = await client.GetBarSetAsync(new BarSetRequest(sp.Symbol, TimeFrame.Day) { Limit = limit });
+                var bars = await client.GetBarSetAsync(new BarSetRequest(asset.Symbol, TimeFrame.Day) { Limit = limit });
 
                 Data.Daily ds = new Data.Daily();
-                foreach (var bar in bars[sp.Symbol]) {
+                foreach (var bar in bars[asset.Symbol]) {
                     if (bar.TimeUtc != null)
                         ds.Prices.Add(new Data.Daily.Price() {
                             Date = bar.TimeUtc ?? new DateTime(),
@@ -61,6 +61,27 @@ namespace Marana.API {
             } catch (Exception ex) {
                 return ex.Message;
             }
+        }
+
+        public static async Task<object> GetPositions(Settings settings, Data.Trading format) {
+            IAlpacaTradingClient client = null;
+
+            if (format == Data.Trading.Live) {
+                client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+            } else if (format == Data.Trading.Paper) {
+                client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+            }
+
+            if (client == null)
+                return false;
+
+            var positions = await client.ListPositionsAsync();
+
+            return positions.Select(p => new Data.Position() {
+                ID = p.AssetId.ToString(),
+                Symbol = p.Symbol,
+                Quantity = p.Quantity
+            }).ToList();
         }
 
         public static async Task<object> GetTime_LastMarketClose(Settings settings) {

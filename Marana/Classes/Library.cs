@@ -88,6 +88,41 @@ namespace Marana {
             // If args are used, they manually override the Library Settings
             Write("Updating Time Series Dailies (TSD). ");
 
+            // Get assets to update based on current positions, Paper and Live
+            // Only if not trying to do a manually filtered update (command-line arguments)
+            List<Data.Asset> positionAssets = new List<Data.Asset>();
+            if (args.Count == 0) {
+                object result;
+
+                // Get paper positions, add data to update list
+                result = await API.Alpaca.GetPositions(settings, Data.Trading.Paper);
+                if (result != null && result is List<Data.Position>) {
+                    foreach (Data.Position pPaper in result as List<Data.Position>) {
+                        positionAssets.Add(allAssets.Find(a => a.ID == pPaper.ID));
+                    }
+                }
+
+                // Get live positions, add data to update list
+                result = await API.Alpaca.GetPositions(settings, Data.Trading.Live);
+                if (result != null && result is List<Data.Position>) {
+                    foreach (Data.Position pLive in result as List<Data.Position>) {
+                        positionAssets.Add(allAssets.Find(a => a.ID == pLive.ID));
+                    }
+                }
+
+                positionAssets = positionAssets.Distinct().ToList();        // Remove duplicates
+
+                if (positionAssets.Count > 0) {
+                    WriteLine($"Updating assets with an active trading (live and paper) position.");
+
+                    if (await Update_TSD(positionAssets, settings, database) == ExitCode.Cancelled) {
+                        await Update_Cancel();
+                        return;
+                    }
+                }
+            }
+
+            // Get assets to update based on command-line arguments and options/settings
             List<Data.Asset> updateAssets = new List<Data.Asset>();
             if (args.Count > 0) {
                 updateAssets = allAssets;
