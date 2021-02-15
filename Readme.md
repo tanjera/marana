@@ -3,7 +3,7 @@
 Marana is a cross-platform project written in C#/Mono designed to allow retail investors to use technical analysis of market assets in order to inform and conduct market trading, using the [Alpaca](https://alpaca.markets/) platform for market data and [Skender.Stock.Indicators](https://github.com/DaveSkender/Stock.Indicators) for analytics and metrics. Additionally, Marana uses a MySQL database for its storage and handling of data. Since Marana is comprised of free and/or open source software, this allows retail investors to conduct technical analysis of data with minimal financial barriers to entry.
 
 ## Warnings
-- To quote the distribution license (a.k.a. terms of service), Marana is provided on an "as is" basis "without warranties... [of] fitness for a particular purpose", and "in no event... shall any [developer] be liable to you for damages [(monetary losses)]... out of the use or inability to use the [program]". In other words- use this product at your own risk.
+- To quote the distribution license (a.k.a. end-user license agreement), Marana is provided on an "as is" basis "without warranties... [of] fitness for a particular purpose", and "in no event... shall any [developer] be liable to you for damages [(monetary losses)]... out of the use or inability to use the [program]". In other words- use this product at your own risk.
 - Marana is still in early stages of development and has not reached a stable version. Unstable versions are subject to feature-breaking changes without notice. Unstable and stable versions may have bugs that cause unexpected failure of the program. In other words- use this product at your own risk.
 
 ## Features
