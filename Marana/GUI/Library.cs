@@ -67,6 +67,70 @@ namespace Marana.GUI {
             Application.Refresh();
         }
 
+        public async Task Options(GUI.Main gm) {
+            Window window = Utility.SelectWindow(Main.WindowTypes.LibraryOptions);
+            window.RemoveAll();
+
+            // Layout coordinates
+
+            int x1 = 1;
+            int x2 = 40, w2 = 10;
+
+            // Item labels
+
+            window.Add(
+                new Label("Limit of daily entries to download:") { X = x1, Y = 1 },
+                new Label("Download data for:") { X = x1, Y = 3 }
+
+            );
+
+            // Fields for text entry
+
+            TextField tfDailyEntries = new TextField(gm.Settings.Library_LimitDailyEntries.ToString()) {
+                X = x2, Y = 1, Width = w2
+            };
+
+            RadioGroup rgDownloadFor = new RadioGroup(
+                new NStack.ustring[] { "All Symbols", "Symbols on Watchlist" },
+                gm.Settings.Library_DownloadSymbols.GetHashCode()) {
+                X = x2, Y = 3
+            };
+
+            window.Add(
+                tfDailyEntries,
+                rgDownloadFor
+                );
+
+            // Dialog notification on save success
+
+            Dialog dlgSaved = Utility.CreateDialog_NotificationOkay("Settings saved successfully.", 40, 7, window);
+
+            // Button for saving settings
+
+            Button btnSave = new Button("Save Settings") {
+                X = Pos.Center(), Y = Pos.Bottom(rgDownloadFor) + 2
+            };
+
+            btnSave.Clicked += () => {
+                int resultInt;
+                bool canParse = false;
+
+                canParse = int.TryParse(tfDailyEntries.Text.ToString(), out resultInt);
+                gm.Settings.Library_LimitDailyEntries = canParse ? Math.Max(300, Math.Min(resultInt, 1000)) : gm.Settings.Library_LimitDailyEntries;
+                tfDailyEntries.Text = gm.Settings.Library_LimitDailyEntries.ToString();
+
+                gm.Settings.Library_DownloadSymbols = (Marana.Settings.Option_DownloadSymbols)rgDownloadFor.SelectedItem;
+
+                Marana.Settings.SaveConfig(gm.Settings);
+
+                window.Add(dlgSaved);
+            };
+
+            window.Add(btnSave);
+
+            Application.Refresh();
+        }
+
         public async Task Update(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.LibraryUpdate);
 

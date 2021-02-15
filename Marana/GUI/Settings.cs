@@ -100,26 +100,24 @@ namespace Marana.GUI {
             };
 
             btnSave.Clicked += () => {
+                gm.Settings.Directory_Working = tfWorkingDir.Text.ToString().Trim();
+
+                gm.Settings.API_Alpaca_Live_Key = tfAlpacaLiveKey.Text.ToString().Trim();
+                gm.Settings.API_Alpaca_Live_Secret = tfAlpacaLiveSecret.Text.ToString().Trim();
+
+                gm.Settings.API_Alpaca_Paper_Key = tfAlpacaPaperKey.Text.ToString().Trim();
+                gm.Settings.API_Alpaca_Paper_Secret = tfAlpacaPaperSecret.Text.ToString().Trim();
+
+                gm.Settings.Database_Server = tfDbServer.Text.ToString().Trim();
+                gm.Settings.Database_Schema = tfDbSchema.Text.ToString().Trim();
+                gm.Settings.Database_Username = tfDbUsername.Text.ToString().Trim();
+                gm.Settings.Database_Password = tfDbPassword.Text.ToString().Trim();
+
                 int portResult;
                 bool portParse = int.TryParse(tfDbPort.Text.ToString(), out portResult);
-                Marana.Settings newSettings = new Marana.Settings() {
-                    Directory_Working = tfWorkingDir.Text.ToString().Trim(),
+                gm.Settings.Database_Port = portParse ? portResult : gm.Settings.Database_Port;
 
-                    API_Alpaca_Live_Key = tfAlpacaLiveKey.Text.ToString().Trim(),
-                    API_Alpaca_Live_Secret = tfAlpacaLiveSecret.Text.ToString().Trim(),
-
-                    API_Alpaca_Paper_Key = tfAlpacaPaperKey.Text.ToString().Trim(),
-                    API_Alpaca_Paper_Secret = tfAlpacaPaperSecret.Text.ToString().Trim(),
-
-                    Database_Server = tfDbServer.Text.ToString().Trim(),
-                    Database_Schema = tfDbSchema.Text.ToString().Trim(),
-                    Database_Username = tfDbUsername.Text.ToString().Trim(),
-                    Database_Password = tfDbPassword.Text.ToString().Trim(),
-                };
-
-                newSettings.Database_Port = portParse ? portResult : newSettings.Database_Port;
-
-                Marana.Settings.SaveConfig(newSettings);
+                Marana.Settings.SaveConfig(gm.Settings);
 
                 window.Add(dlgSaved);
             };

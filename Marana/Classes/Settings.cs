@@ -18,12 +18,23 @@ namespace Marana {
         public string Database_Username { get; set; }
         public string Database_Password { get; set; }
 
+        public int Library_LimitDailyEntries { get; set; }
+        public Option_DownloadSymbols Library_DownloadSymbols { get; set; }
+
+        public enum Option_DownloadSymbols {
+            All,
+            Watchlist
+        }
+
         public Settings() {
             Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
 
             Database_Server = "localhost";
             Database_Port = 3306;
             Database_Schema = "Marana";
+
+            Library_LimitDailyEntries = 500;
+            Library_DownloadSymbols = Option_DownloadSymbols.Watchlist;
         }
 
         public static Settings Init() {
@@ -62,17 +73,20 @@ namespace Marana {
                 using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
                     sw.WriteLine($"API_Alpaca_Live_Key: {inc?.API_Alpaca_Live_Key?.Trim()}");
                     sw.WriteLine($"API_Alpaca_Live_Secret: {inc?.API_Alpaca_Live_Secret?.Trim()}");
-
+                    sw.WriteLine($"{Environment.NewLine}");
                     sw.WriteLine($"API_Alpaca_Paper_Key: {inc?.API_Alpaca_Paper_Key?.Trim()}");
                     sw.WriteLine($"API_Alpaca_Paper_Secret: {inc?.API_Alpaca_Paper_Secret?.Trim()}");
-
+                    sw.WriteLine($"{Environment.NewLine}");
                     sw.WriteLine($"Directory_Working: {inc?.Directory_Working?.Trim()}");
-
+                    sw.WriteLine($"{Environment.NewLine}");
                     sw.WriteLine($"Database_Server: {inc?.Database_Server?.Trim()}");
                     sw.WriteLine($"Database_Port: {inc?.Database_Port.ToString().Trim()}");
                     sw.WriteLine($"Database_Schema: {inc?.Database_Schema?.Trim()}");
                     sw.WriteLine($"Database_User: {inc?.Database_Username?.Trim()}");
                     sw.WriteLine($"Database_Password: {inc?.Database_Password?.Trim()}");
+                    sw.WriteLine($"{Environment.NewLine}");
+                    sw.WriteLine($"Library_DailyEntries: {inc?.Library_LimitDailyEntries.ToString().Trim()}");
+                    sw.WriteLine($"Library_DownloadSymbols: {inc?.Library_DownloadSymbols.ToString()}");
                     sw.Close();
                     return true;
                 }
@@ -92,6 +106,10 @@ namespace Marana {
 
                     string key = line.Substring(0, line.IndexOf(':')),
                         value = line.Substring(line.IndexOf(':') + 1).Trim();
+
+                    int resultInt;
+                    object resultObject;
+                    bool canParse = false;
 
                     switch (key) {
                         default: break;
@@ -120,7 +138,8 @@ namespace Marana {
                             break;
 
                         case "Database_Port":
-                            oc.Database_Port = int.Parse(value);
+                            canParse = int.TryParse(value, out resultInt);
+                            oc.Database_Port = canParse ? resultInt : oc.Database_Port;
                             break;
 
                         case "Database_Schema":
@@ -133,6 +152,16 @@ namespace Marana {
 
                         case "Database_Password":
                             oc.Database_Password = value;
+                            break;
+
+                        case "Library_DailyEntries":
+                            canParse = int.TryParse(value, out resultInt);
+                            oc.Library_LimitDailyEntries = canParse ? resultInt : oc.Library_LimitDailyEntries;
+                            break;
+
+                        case "Library_DownloadSymbols":
+                            canParse = Enum.TryParse(typeof(Option_DownloadSymbols), value ?? "", out resultObject);
+                            oc.Library_DownloadSymbols = canParse ? (Option_DownloadSymbols)resultObject : oc.Library_DownloadSymbols;
                             break;
                     }
                 }

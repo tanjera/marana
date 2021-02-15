@@ -21,6 +21,7 @@ namespace Marana.GUI {
         public enum WindowTypes {
             Welcome,
             Settings,
+            LibraryOptions,
             LibraryUpdate,
             LibraryInformation,
             LibraryEraseDatabase,
@@ -31,6 +32,7 @@ namespace Marana.GUI {
         private static string[] WindowTitles = new string[] {
             "Welcome to Marana",
             "Edit Settings",
+            "Data Library Options",
             "Update the Data Library",
             "Data Library Information",
             "Erase Market Data from Library",
@@ -70,6 +72,8 @@ namespace Marana.GUI {
                     }),
 
                 new MenuBarItem ("_Library", new MenuItem [] {
+                    new MenuItem ("_Options", "", new Action(LibraryOptions)),
+                    new MenuItem(),
                     new MenuItem ("_Update", "", new Action(LibraryUpdate)),
                     new MenuItem ("_Information", "", new Action(LibraryInfo)),
                     new MenuItem(),
@@ -103,6 +107,9 @@ namespace Marana.GUI {
 
             Application.Refresh();
         }
+
+        private async void LibraryOptions()
+            => await guiLibrary.Options(this);
 
         private async void LibraryUpdate()
             => await guiLibrary.Update(this);

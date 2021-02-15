@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Marana": {
-      "commandName": "Project",
-      "commandLineArgs": "debug"
+      "commandName": "Project"
     }
   }
 }

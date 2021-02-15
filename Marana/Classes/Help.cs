@@ -10,7 +10,7 @@ namespace Marana {
         public static void Default() {
             Prompt.Write(
                 @"
-Marana: Market Analytics Tools and Trading, by Tanjera
+Marana: Market Analytics and Trading, by Tanjera
 Warning: Use at your own risk. Please read and understand end-user license agreement before use.
 
 Command-line Usage:

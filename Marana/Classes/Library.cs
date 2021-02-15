@@ -80,12 +80,37 @@ namespace Marana {
             WriteLine("Initializing database.");
             await database.Init();
 
+            // Gets all available assets; updates database as needed
             WriteLine("Querying database for list of ticker symbols.");
-            List<Data.Asset> assets = await GetAssets(database);
-            Data.Select_Assets(ref assets, args);
+            List<Data.Asset> allAssets = await GetAssets(database);
 
-            WriteLine("Updating Time Series Dailies (TSD).");
-            if (await Update_TSD(assets, settings, database) == ExitCode.Cancelled) {
+            // Select assets to update data for
+            // If args are used, they manually override the Library Settings
+            Write("Updating Time Series Dailies (TSD). ");
+
+            List<Data.Asset> updateAssets = new List<Data.Asset>();
+            if (args.Count > 0) {
+                updateAssets = allAssets;
+                Data.Select_Assets(ref updateAssets, args);
+                WriteLine("Per command-line arguments, updating range.");
+            } else {
+                switch (settings.Library_DownloadSymbols) {
+                    default: break;
+
+                    case Settings.Option_DownloadSymbols.Watchlist:
+                        List<string> wl = await database.GetWatchlist();
+                        updateAssets = allAssets.Where(a => wl.Contains(a.Symbol)).ToList();
+                        WriteLine("Per options, updating watchlist only.");
+                        break;
+
+                    case Settings.Option_DownloadSymbols.All:
+                        updateAssets = allAssets;
+                        WriteLine("Per options, updating all symbols.");
+                        break;
+                }
+            }
+
+            if (await Update_TSD(updateAssets, settings, database) == ExitCode.Cancelled) {
                 await Update_Cancel();
                 return;
             }
@@ -157,7 +182,7 @@ namespace Marana {
                 Write("Requesting data. ");
 
                 Data.Daily dd = new Data.Daily();
-                object output = await API.Alpaca.GetData_Daily(settings, assets[i]);
+                object output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
 
                 if (output is Data.Daily)
                     dd = output as Data.Daily;

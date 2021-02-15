@@ -78,6 +78,10 @@ namespace Marana {
             Updated
         };
 
+        public enum ColumnsWatchlist {
+            Symbol
+        }
+
         public string ConnectionStr {
             get {
                 return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
@@ -158,16 +162,6 @@ namespace Marana {
                     await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
-                        $@"CREATE TABLE IF NOT EXISTS `Strategies` (
-                            `Name` VARCHAR(256) PRIMARY KEY,
-                            `Entry` TEXT,
-                            `ExitGain` TEXT,
-                            `ExitLoss` TEXT
-                            );",
-                        connection))
-                    await cmd.ExecuteNonQueryAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `Instructions` (
                             `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
                             `Description` VARCHAR(1028),
@@ -180,6 +174,22 @@ namespace Marana {
                         connection))
                     await cmd.ExecuteNonQueryAsync();
 
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"CREATE TABLE IF NOT EXISTS `Strategies` (
+                            `Name` VARCHAR(256) PRIMARY KEY,
+                            `Entry` TEXT,
+                            `ExitGain` TEXT,
+                            `ExitLoss` TEXT
+                            );",
+                        connection))
+                    await cmd.ExecuteNonQueryAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"CREATE TABLE IF NOT EXISTS `Watchlist` (
+                            `Symbol` VARCHAR(10) NOT NULL PRIMARY KEY
+                            );",
+                        connection))
+                    await cmd.ExecuteNonQueryAsync();
                 await connection.CloseAsync();
             }
         }
@@ -361,6 +371,37 @@ namespace Marana {
 
         public async Task<DateTime> GetValidity_Daily(Data.Asset asset)
             => await GetValidity($"Daily:{asset.ID}");
+
+        public async Task<List<string>> GetWatchlist() {
+            List<string> watchlist = new List<string>();
+
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return new List<string>();
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT *
+                            FROM `Watchlist`
+                            ORDER BY `Symbol` ASC;",
+                        connection)) {
+                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                        while (rdr.Read()) {
+                            string read = rdr.IsDBNull(ColumnsWatchlist.Symbol.GetHashCode()) ? "" : rdr.GetString("Symbol");
+                            if (!String.IsNullOrEmpty(read))
+                                watchlist.Add(read);
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+            }
+
+            return watchlist;
+        }
 
         public async Task<decimal> GetSize() {
             await Init();                                     // Cannot get size of a schema with no tables!
@@ -593,6 +634,36 @@ namespace Marana {
                         cmd.Parameters.AddWithValue("?item", item);
                         await cmd.ExecuteNonQueryAsync();
                     }
+                }
+
+                await connection.CloseAsync();
+            }
+        }
+
+        public async Task SetWatchlist(List<string> watchlist) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return;
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DELETE FROM `Watchlist`;",
+                        connection)) {
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                string values = String.Join(", ",
+                    watchlist.Select(s => $"('{MySqlHelper.EscapeString(s.Trim().ToUpper())}')"));
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"INSERT INTO `Watchlist` (
+                            `Symbol`
+                            ) VALUES {values};",
+                        connection)) {
+                    await cmd.ExecuteNonQueryAsync();
                 }
 
                 await connection.CloseAsync();
