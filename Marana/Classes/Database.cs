@@ -18,6 +18,18 @@ namespace Marana {
             _Settings = settings;
         }
 
+        public enum ColumnsAsset {
+            ID,
+            Symbol,
+            Class,
+            Exchange,
+            Status,
+            Tradeable,
+            Marginable,
+            Shortable,
+            EasyToBorrow
+        }
+
         public enum ColumnsDaily {
             ID,
             Asset,
@@ -54,6 +66,18 @@ namespace Marana {
             BollingerBands_Width,
         };
 
+        public enum ColumnsStrategy {
+            Name,
+            Entry,
+            ExitGain,
+            ExitLoss
+        }
+
+        public enum ColumnsValidity {
+            Item,
+            Updated
+        };
+
         public string ConnectionStr {
             get {
                 return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
@@ -73,10 +97,9 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         @"CREATE TABLE IF NOT EXISTS `Validity` (
-                            `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `Item` VARCHAR(64) NOT NULL,
+                            `Item` VARCHAR(64) PRIMARY KEY,
                             `Updated` DATETIME
-                            ) AUTO_INCREMENT = 1;",
+                            );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
 
@@ -137,7 +160,22 @@ namespace Marana {
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `Strategies` (
                             `Name` VARCHAR(256) PRIMARY KEY,
-                            `Query` TEXT
+                            `Entry` TEXT,
+                            `ExitGain` TEXT,
+                            `ExitLoss` TEXT
+                            );",
+                        connection))
+                    await cmd.ExecuteNonQueryAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"CREATE TABLE IF NOT EXISTS `Instructions` (
+                            `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                            `Description` VARCHAR(1028),
+                            `Active` BOOLEAN,
+                            `Format` VARCHAR (16),
+                            `Assets` TEXT,
+                            `Strategy` VARCHAR(256),
+                            `Shares` INTEGER
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
@@ -162,18 +200,19 @@ namespace Marana {
                            @"SELECT * FROM `Assets` ORDER BY Symbol;",
                            connection)) {
                         using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                            while (rdr.Read())
-                                assets.Add(new Data.Asset() {
-                                    ID = rdr.GetString("ID"),
-                                    Symbol = rdr.GetString("Symbol"),
-                                    Class = rdr.GetString("Class"),
-                                    Exchange = rdr.GetString("Exchange"),
-                                    Status = rdr.GetString("Status"),
-                                    Tradeable = rdr.GetBoolean("Tradeable"),
-                                    Marginable = rdr.GetBoolean("Marginable"),
-                                    Shortable = rdr.GetBoolean("Shortable"),
-                                    EasyToBorrow = rdr.GetBoolean("EasyToBorrow")
-                                });
+                            while (rdr.Read()) {
+                                Data.Asset a = new Data.Asset();
+                                a.ID = rdr.IsDBNull(ColumnsAsset.ID.GetHashCode()) ? a.ID : rdr.GetString("ID");
+                                a.Symbol = rdr.IsDBNull(ColumnsAsset.Symbol.GetHashCode()) ? a.Symbol : rdr.GetString("Symbol");
+                                a.Class = rdr.IsDBNull(ColumnsAsset.Class.GetHashCode()) ? a.Class : rdr.GetString("Class");
+                                a.Exchange = rdr.IsDBNull(ColumnsAsset.Exchange.GetHashCode()) ? a.Exchange : rdr.GetString("Exchange");
+                                a.Status = rdr.IsDBNull(ColumnsAsset.Status.GetHashCode()) ? a.Status : rdr.GetString("Status");
+                                a.Tradeable = rdr.IsDBNull(ColumnsAsset.Tradeable.GetHashCode()) ? a.Tradeable : rdr.GetBoolean("Tradeable");
+                                a.Marginable = rdr.IsDBNull(ColumnsAsset.Marginable.GetHashCode()) ? a.Marginable : rdr.GetBoolean("Marginable");
+                                a.Shortable = rdr.IsDBNull(ColumnsAsset.Shortable.GetHashCode()) ? a.Shortable : rdr.GetBoolean("Shortable");
+                                a.EasyToBorrow = rdr.IsDBNull(ColumnsAsset.EasyToBorrow.GetHashCode()) ? a.EasyToBorrow : rdr.GetBoolean("EasyToBorrow");
+                                assets.Add(a);
+                            }
                         }
                     }
 
@@ -276,10 +315,13 @@ namespace Marana {
                     connection)) {
                     using (MySqlDataReader rdr = cmd.ExecuteReader()) {
                         while (rdr.Read()) {
-                            result.Add(new Data.Strategy() {
-                                Name = rdr.GetString("Name"),
-                                Query = rdr.GetString("Query")
-                            });
+                            Data.Strategy s = new Data.Strategy();
+
+                            s.Name = rdr.IsDBNull(ColumnsStrategy.Name.GetHashCode()) ? s.Name : rdr.GetString("Name");
+                            s.Entry = rdr.IsDBNull(ColumnsStrategy.Entry.GetHashCode()) ? s.Entry : rdr.GetString("Entry");
+                            s.ExitGain = rdr.IsDBNull(ColumnsStrategy.ExitGain.GetHashCode()) ? s.ExitGain : rdr.GetString("ExitGain");
+                            s.ExitLoss = rdr.IsDBNull(ColumnsStrategy.ExitLoss.GetHashCode()) ? s.ExitLoss : rdr.GetString("ExitLoss");
+                            result.Add(s);
                         }
                     }
                 }
@@ -523,7 +565,7 @@ namespace Marana {
 
                 bool oldvalidity = false;
                 using (MySqlCommand cmd = new MySqlCommand(
-                        $@"SELECT `ID` FROM `Validity` WHERE `Item` = '{item}';",
+                        $@"SELECT `Item` FROM `Validity` WHERE `Item` = '{item}';",
                         connection))
                     oldvalidity = cmd.ExecuteScalar() != null;
 
@@ -557,6 +599,29 @@ namespace Marana {
             }
         }
 
+        public async Task<object> ValidateQuery(string query) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync(); ;
+                } catch (Exception ex) {
+                    return ex.Message;
+                }
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(query, connection)) {
+                        using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                            // No need to read anything... just dispose/close and return
+                        }
+                    }
+                } catch (Exception ex) {
+                    return ex.Message;
+                }
+
+                await connection.CloseAsync();
+                return true;
+            }
+        }
+
         public async Task<bool> Wipe() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
@@ -566,29 +631,9 @@ namespace Marana {
                 }
 
                 try {
-                    using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 0;", connection))
-                        await cmd.ExecuteNonQueryAsync();
-
-                    List<string> tables = new List<string>();
                     using (MySqlCommand cmd = new MySqlCommand(
-                        $@"SELECT table_name
-                        FROM information_schema.tables
-                        WHERE table_schema = '{_Settings.Database_Schema}';",
-                        connection)) {
-                        using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                            while (rdr.Read())
-                                tables.Add(rdr.GetString(0));
-                        }
-                    }
-
-                    string droplist = String.Join(", ",
-                        tables.Select(t => $"`{MySqlHelper.EscapeString(t)}`"));
-                    using (MySqlCommand cmd = new MySqlCommand(
-                            $@"DROP TABLE IF EXISTS {droplist};",
+                            $@"DROP TABLE IF EXISTS Validity, Assets, Daily;",
                             connection))
-                        await cmd.ExecuteNonQueryAsync();
-
-                    using (MySqlCommand cmd = new MySqlCommand("SET FOREIGN_KEY_CHECKS = 1;", connection))
                         await cmd.ExecuteNonQueryAsync();
 
                     await Init();

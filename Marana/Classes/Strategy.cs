@@ -8,10 +8,10 @@ namespace Marana {
 
     public static class Strategy {
 
-        public static async Task<List<Data.Asset>> Run(Database db, string strategy) {
-            List<Data.Asset> result = new List<Data.Asset>();
-
-            return result;
+        public static async Task<string> Interpret(string query, string symbol) {
+            return query?
+                .Replace("{SYMBOL}", symbol)
+                .Replace("{DATE}", DateTime.Today.ToString("yyyy-MM-dd"));
         }
     }
 }

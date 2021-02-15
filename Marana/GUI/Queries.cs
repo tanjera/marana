@@ -16,7 +16,7 @@ namespace Marana.GUI {
             Running
         }
 
-        public async Task Run(Marana.Settings settings, Database db) {
+        public async Task Test(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.QueriesRun);
             window.RemoveAll();
 
@@ -34,23 +34,23 @@ namespace Marana.GUI {
                 Width = 20, Height = Dim.Fill() - 4
             };
 
-            ListView lvResults = new ListView() {
+            Label lvResults = new Label() {
                 X = Pos.Right(lvStrategies) + 2, Y = 1,
                 Width = Dim.Fill(), Height = Dim.Fill() - 4
             };
 
-            Button btnRun = new Button("Run Current Strategy") {
+            Button btnRun = new Button("Validate Strategy Queries") {
                 X = Pos.Left(lvResults), Y = Pos.Bottom(lvResults) + 2,
                 Width = Dim.Fill(), Height = 1
             };
 
             // Link view item functionality
-            List<Data.Strategy> strategies = await db.GetStrategies();
+            List<Data.Strategy> strategies = await gm.Database.GetStrategies();
             await lvStrategies.SetSourceAsync(strategies.Select(s => s.Name).ToArray());
 
             btnRun.Clicked += async () => {
                 if (Status == Statuses.Inactive && strategies.Count > lvStrategies.SelectedItem) {
-                    await Execute(db, strategies[lvStrategies.SelectedItem], lvResults);
+                    await Execute(gm, strategies[lvStrategies.SelectedItem], lvResults);
                 }
             };
 
@@ -63,8 +63,38 @@ namespace Marana.GUI {
             Application.Refresh();
         }
 
-        public async Task Execute(Database db, Data.Strategy strategy, ListView output) {
+        public async Task Execute(Main gm, Data.Strategy strategy, Label results) {
             Status = Statuses.Running;
+            object result;
+
+            results.Text = String.Concat(results.Text, $"Running Entry query {Environment.NewLine}");
+            result = await gm.Database.ValidateQuery(
+                await Strategy.Interpret(strategy.Entry, "SPY"));
+            if (result is bool) {
+                results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
+            } else if (result is string) {
+                results.Text = String.Concat(results.Text, $"{result} {Environment.NewLine}");
+            }
+            results.Text = string.Concat(results.Text, $"{Environment.NewLine}");
+
+            results.Text = String.Concat(results.Text, $"Running Exit Gain query {Environment.NewLine}");
+            result = await gm.Database.ValidateQuery(
+               await Strategy.Interpret(strategy.ExitGain, "SPY"));
+            if (result is bool) {
+                results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
+            } else if (result is string) {
+                results.Text = String.Concat(results.Text, $"{result} {Environment.NewLine}");
+            }
+            results.Text = string.Concat(results.Text, $"{Environment.NewLine}");
+
+            results.Text = String.Concat(results.Text, $"Running Exit Loss query {Environment.NewLine}");
+            result = await gm.Database.ValidateQuery(
+               await Strategy.Interpret(strategy.ExitLoss, "SPY"));
+            if (result is bool) {
+                results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
+            } else if (result is string) {
+                results.Text = String.Concat(results.Text, $"{result} {Environment.NewLine}");
+            }
 
             Status = Statuses.Inactive;
         }

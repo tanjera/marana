@@ -4,8 +4,11 @@ using System.IO;
 namespace Marana {
 
     public class Settings {
-        public string API_Alpaca_Key { get; set; }
-        public string API_Alpaca_Secret { get; set; }
+        public string API_Alpaca_Live_Key { get; set; }
+        public string API_Alpaca_Live_Secret { get; set; }
+
+        public string API_Alpaca_Paper_Key { get; set; }
+        public string API_Alpaca_Paper_Secret { get; set; }
 
         public string Directory_Working { get; set; }
 
@@ -61,17 +64,21 @@ namespace Marana {
         public static bool SaveConfig(Settings inc) {
             try {
                 using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
-                    sw.WriteLine($"API_Alpaca_Key: {inc.API_Alpaca_Key.Trim()}");
-                    sw.WriteLine($"API_Alpaca_Secret: {inc.API_Alpaca_Secret.Trim()}");
-                    sw.WriteLine($"Directory_Working: {inc.Directory_Working.Trim()}");
+                    sw.WriteLine($"API_Alpaca_Live_Key: {inc?.API_Alpaca_Live_Key?.Trim()}");
+                    sw.WriteLine($"API_Alpaca_Live_Secret: {inc?.API_Alpaca_Live_Secret?.Trim()}");
 
-                    sw.WriteLine($"Database_Server: {inc.Database_Server.Trim()}");
-                    sw.WriteLine($"Database_Port: {inc.Database_Port.ToString().Trim()}");
-                    sw.WriteLine($"Database_Schema: {inc.Database_Schema.Trim()}");
-                    sw.WriteLine($"Database_User: {inc.Database_Username.Trim()}");
-                    sw.WriteLine($"Database_Password: {inc.Database_Password.Trim()}");
+                    sw.WriteLine($"API_Alpaca_Paper_Key: {inc?.API_Alpaca_Paper_Key?.Trim()}");
+                    sw.WriteLine($"API_Alpaca_Paper_Secret: {inc?.API_Alpaca_Paper_Secret?.Trim()}");
 
-                    sw.WriteLine($"Entries_TSD: {inc.Entries_TSD.ToString().Trim()}");
+                    sw.WriteLine($"Directory_Working: {inc?.Directory_Working?.Trim()}");
+
+                    sw.WriteLine($"Database_Server: {inc?.Database_Server?.Trim()}");
+                    sw.WriteLine($"Database_Port: {inc?.Database_Port.ToString().Trim()}");
+                    sw.WriteLine($"Database_Schema: {inc?.Database_Schema?.Trim()}");
+                    sw.WriteLine($"Database_User: {inc?.Database_Username?.Trim()}");
+                    sw.WriteLine($"Database_Password: {inc?.Database_Password?.Trim()}");
+
+                    sw.WriteLine($"Entries_TSD: {inc?.Entries_TSD.ToString().Trim()}");
                     sw.Close();
                     return true;
                 }
@@ -94,12 +101,20 @@ namespace Marana {
 
                     switch (key) {
                         default: break;
-                        case "API_Alpaca_Key":
-                            oc.API_Alpaca_Key = value;
+                        case "API_Alpaca_Live_Key":
+                            oc.API_Alpaca_Live_Key = value;
                             break;
 
-                        case "API_Alpaca_Secret":
-                            oc.API_Alpaca_Secret = value;
+                        case "API_Alpaca_Live_Secret":
+                            oc.API_Alpaca_Live_Secret = value;
+                            break;
+
+                        case "API_Alpaca_Paper_Key":
+                            oc.API_Alpaca_Paper_Key = value;
+                            break;
+
+                        case "API_Alpaca_Paper_Secret":
+                            oc.API_Alpaca_Paper_Secret = value;
                             break;
 
                         case "Directory_Working":

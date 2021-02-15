@@ -10,7 +10,7 @@ namespace Marana.GUI {
 
     internal class Library {
 
-        public async Task Erase(Marana.Settings settings, Database db) {
+        public async Task Erase(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.LibraryEraseDatabase);
             window.RemoveAll();
 
@@ -22,14 +22,15 @@ namespace Marana.GUI {
                 lblResult.Text = "Operation cancelled.";
             });
             Utility.OnButton confirmYes = new Utility.OnButton(async () => {
-                bool wipeResult = await db.Wipe();
+                bool wipeResult = await gm.Database.Wipe();
                 lblResult.Text = wipeResult
-                    ? "Operation completed. Database erased."
+                    ? "Operation completed. Market data erased from database."
                     : "Operation failed. Attempt cancelled.";
             });
 
-            Dialog dlgConfirm = Utility.CreateDialog_OptionYesNo("Are you sure you want to erase the database?",
-                60, 7, window, confirmNo, confirmYes);
+            Dialog dlgConfirm = Utility.CreateDialog_OptionYesNo(
+                "Are you sure you want to erase market data from the database?",
+                70, 7, window, confirmNo, confirmYes);
 
             dlgConfirm.ColorScheme = Colors.Error;
 
@@ -38,7 +39,7 @@ namespace Marana.GUI {
             Application.Refresh();
         }
 
-        public async Task Info(Marana.Settings settings, Database db) {
+        public async Task Info(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.LibraryInformation);
             window.RemoveAll();
 
@@ -54,7 +55,7 @@ namespace Marana.GUI {
 
             // Connect to database, post results
 
-            decimal size = await db.GetSize();
+            decimal size = await gm.Database.GetSize();
 
             window.RemoveAll();
 
@@ -66,30 +67,28 @@ namespace Marana.GUI {
             Application.Refresh();
         }
 
-        public async Task Update(Marana.Library library, Marana.Settings settings, Database db) {
+        public async Task Update(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.LibraryUpdate);
 
-            if (library.Status == Marana.Library.Statuses.Inactive) {
+            if (gm.Library.Status == Marana.Library.Statuses.Inactive) {
                 window.RemoveAll();
 
                 Button btnCancel = new Button("Start Update") { X = Pos.Center(), Y = 1 };
 
-                btnCancel.Clicked += () => {
-                    if (library.Status == Marana.Library.Statuses.Inactive) {
-                        Action _update = async () => { await library.Update(new List<string>(), settings, db); };
-                        _update.Invoke();
-
+                btnCancel.Clicked += async () => {
+                    if (gm.Library.Status == Marana.Library.Statuses.Inactive) {
                         btnCancel.Text = "Cancel Update";
-                    } else if (library.Status == Marana.Library.Statuses.Updating) {
-                        library.CancelUpdate = true;
+                        await gm.Library.Update(new List<string>(), gm.Settings, gm.Database);
+                    } else if (gm.Library.Status == Marana.Library.Statuses.Updating) {
                         btnCancel.Text = "Start Update";
+                        gm.Library.CancelUpdate = true;
                     }
                 };
 
                 Label lblOutput = new Label() { X = 1, Y = 3, Width = Dim.Fill(), Height = Dim.Fill() };
                 window.Add(btnCancel, lblOutput);
 
-                library.StatusUpdate += (sender, e) => {
+                gm.Library.StatusUpdate += (sender, e) => {
                     lblOutput.Text = String.Join(Environment.NewLine, e.Output.GetRange(
                         e.Output.Count < lblOutput.Bounds.Height ? 0 : e.Output.Count - lblOutput.Bounds.Height,
                         e.Output.Count < lblOutput.Bounds.Height ? e.Output.Count : lblOutput.Bounds.Height));

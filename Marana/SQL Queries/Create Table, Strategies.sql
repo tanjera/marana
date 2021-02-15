@@ -1,4 +1,6 @@
 CREATE TABLE IF NOT EXISTS `Strategies` (
     `Name` VARCHAR(256) PRIMARY KEY,
-    `Query` TEXT
+    `Entry` TEXT,
+    `ExitGain` TEXT,
+    `ExitLoss` TEXT
     );

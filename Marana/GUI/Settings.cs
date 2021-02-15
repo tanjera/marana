@@ -10,7 +10,7 @@ namespace Marana.GUI {
 
     internal class Settings {
 
-        public async Task Edit(Marana.Settings settings) {
+        public async Task Edit(GUI.Main gm) {
             Window window = Utility.SelectWindow(Main.WindowTypes.Settings);
             window.RemoveAll();
 
@@ -27,49 +27,61 @@ namespace Marana.GUI {
 
                 new Label("Working Directory") { X = x1, Y = 2 },
 
-                new Label("Alpaca API Key") { X = x1, Y = 4 },
-                new Label("Alpaca API Secret") { X = x1, Y = 5 },
+                new Label("Alpaca API Live Key") { X = x1, Y = 4 },
+                new Label("Alpaca API Live Secret") { X = x1, Y = 5 },
 
-                new Label("Database Server") { X = x1, Y = 7 },
-                new Label("Database Port") { X = x1, Y = 8 },
-                new Label("Database Schema") { X = x1, Y = 9 },
-                new Label("Database Username") { X = x1, Y = 10 },
-                new Label("Database Password") { X = x1, Y = 11 }
+                new Label("Alpaca API Paper Key") { X = x1, Y = 7 },
+                new Label("Alpaca API Paper Secret") { X = x1, Y = 8 },
+
+                new Label("Database Server") { X = x1, Y = 10 },
+                new Label("Database Port") { X = x1, Y = 11 },
+                new Label("Database Schema") { X = x1, Y = 12 },
+                new Label("Database Username") { X = x1, Y = 13 },
+                new Label("Database Password") { X = x1, Y = 14 }
             );
 
             // Fields for text entry
 
-            TextField tfWorkingDir = new TextField(settings.Directory_Working) {
+            TextField tfWorkingDir = new TextField(gm.Settings.Directory_Working ?? "") {
                 X = x2, Y = 2, Width = w2
             };
 
-            TextField tfAlpacaKey = new TextField(settings.API_Alpaca_Key) {
-                X = x2, Y = 4, Width = w2
+            TextField tfAlpacaLiveKey = new TextField(gm.Settings.API_Alpaca_Live_Key ?? "") {
+                X = x2, Y = Pos.Bottom(tfWorkingDir) + 1, Width = w2
             };
-            TextField tfAlpacaSecret = new TextField(settings.API_Alpaca_Secret) {
-                X = x2, Y = 5, Width = w2
+            TextField tfAlpacaLiveSecret = new TextField(gm.Settings.API_Alpaca_Live_Secret ?? "") {
+                X = x2, Y = Pos.Bottom(tfAlpacaLiveKey), Width = w2
             };
 
-            TextField tfDbServer = new TextField(settings.Database_Server) {
-                X = x2, Y = 7, Width = w2
+            TextField tfAlpacaPaperKey = new TextField(gm.Settings.API_Alpaca_Paper_Key ?? "") {
+                X = x2, Y = Pos.Bottom(tfAlpacaLiveSecret) + 1, Width = w2
             };
-            TextField tfDbPort = new TextField(settings.Database_Port.ToString()) {
-                X = x2, Y = 8, Width = w2
+            TextField tfAlpacaPaperSecret = new TextField(gm.Settings.API_Alpaca_Paper_Secret ?? "") {
+                X = x2, Y = Pos.Bottom(tfAlpacaPaperKey), Width = w2
             };
-            TextField tfDbSchema = new TextField(settings.Database_Schema) {
-                X = x2, Y = 9, Width = w2
+
+            TextField tfDbServer = new TextField(gm.Settings.Database_Server ?? "") {
+                X = x2, Y = Pos.Bottom(tfAlpacaPaperSecret) + 1, Width = w2
             };
-            TextField tfDbUsername = new TextField(settings.Database_Username) {
-                X = x2, Y = 10, Width = w2
+            TextField tfDbPort = new TextField(gm.Settings.Database_Port.ToString() ?? "") {
+                X = x2, Y = Pos.Bottom(tfDbServer), Width = w2
             };
-            TextField tfDbPassword = new TextField(settings.Database_Password) {
-                X = x2, Y = 11, Width = w2
+            TextField tfDbSchema = new TextField(gm.Settings.Database_Schema ?? "") {
+                X = x2, Y = Pos.Bottom(tfDbPort), Width = w2
+            };
+            TextField tfDbUsername = new TextField(gm.Settings.Database_Username ?? "") {
+                X = x2, Y = Pos.Bottom(tfDbSchema), Width = w2
+            };
+            TextField tfDbPassword = new TextField(gm.Settings.Database_Password ?? "") {
+                X = x2, Y = Pos.Bottom(tfDbUsername), Width = w2
             };
 
             window.Add(
                 tfWorkingDir,
-                tfAlpacaKey,
-                tfAlpacaSecret,
+                tfAlpacaLiveKey,
+                tfAlpacaLiveSecret,
+                tfAlpacaPaperKey,
+                tfAlpacaPaperSecret,
                 tfDbServer,
                 tfDbPort,
                 tfDbSchema,
@@ -84,7 +96,7 @@ namespace Marana.GUI {
             // Button for saving settings
 
             Button btnSave = new Button("Save Settings") {
-                X = Pos.Center(), Y = 14
+                X = Pos.Center(), Y = Pos.Bottom(tfDbPassword) + 2
             };
 
             btnSave.Clicked += () => {
@@ -92,8 +104,13 @@ namespace Marana.GUI {
                 bool portParse = int.TryParse(tfDbPort.Text.ToString(), out portResult);
                 Marana.Settings newSettings = new Marana.Settings() {
                     Directory_Working = tfWorkingDir.Text.ToString().Trim(),
-                    API_Alpaca_Key = tfAlpacaKey.Text.ToString().Trim(),
-                    API_Alpaca_Secret = tfAlpacaSecret.Text.ToString().Trim(),
+
+                    API_Alpaca_Live_Key = tfAlpacaLiveKey.Text.ToString().Trim(),
+                    API_Alpaca_Live_Secret = tfAlpacaLiveSecret.Text.ToString().Trim(),
+
+                    API_Alpaca_Paper_Key = tfAlpacaPaperKey.Text.ToString().Trim(),
+                    API_Alpaca_Paper_Secret = tfAlpacaPaperSecret.Text.ToString().Trim(),
+
                     Database_Server = tfDbServer.Text.ToString().Trim(),
                     Database_Schema = tfDbSchema.Text.ToString().Trim(),
                     Database_Username = tfDbUsername.Text.ToString().Trim(),
