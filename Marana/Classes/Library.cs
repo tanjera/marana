@@ -95,7 +95,7 @@ namespace Marana {
                 object result;
 
                 // Get paper positions, add data to update list
-                result = await API.Alpaca.GetPositions(settings, Data.Trading.Paper);
+                result = await API.Alpaca.GetPositions(settings, Data.Format.Paper);
                 if (result != null && result is List<Data.Position>) {
                     foreach (Data.Position pPaper in result as List<Data.Position>) {
                         positionAssets.Add(allAssets.Find(a => a.ID == pPaper.ID));
@@ -103,7 +103,7 @@ namespace Marana {
                 }
 
                 // Get live positions, add data to update list
-                result = await API.Alpaca.GetPositions(settings, Data.Trading.Live);
+                result = await API.Alpaca.GetPositions(settings, Data.Format.Live);
                 if (result != null && result is List<Data.Position>) {
                     foreach (Data.Position pLive in result as List<Data.Position>) {
                         positionAssets.Add(allAssets.Find(a => a.ID == pLive.ID));
@@ -189,12 +189,10 @@ namespace Marana {
         public async Task<ExitCode> Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
             List<Task> threads = new List<Task>();
 
-            DateTime lastMarketClose = new DateTime();
+            DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
             object result = await API.Alpaca.GetTime_LastMarketClose(settings);
             if (result is DateTime) {
                 lastMarketClose = (DateTime)result;
-            } else {
-                lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
             }
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library

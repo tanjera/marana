@@ -63,12 +63,12 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetPositions(Settings settings, Data.Trading format) {
+        public static async Task<object> GetPositions(Settings settings, Data.Format format) {
             IAlpacaTradingClient client = null;
 
-            if (format == Data.Trading.Live) {
+            if (format == Data.Format.Live) {
                 client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-            } else if (format == Data.Trading.Paper) {
+            } else if (format == Data.Format.Paper) {
                 client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
@@ -94,12 +94,12 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<bool> PlaceOrder_BuyMarket(Settings settings, Data.Trading format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
+        public static async Task<bool> PlaceOrder_BuyMarket(Settings settings, Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient client = null;
 
-            if (format == Data.Trading.Live) {
+            if (format == Data.Format.Live) {
                 client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-            } else if (format == Data.Trading.Paper) {
+            } else if (format == Data.Format.Paper) {
                 client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
@@ -110,12 +110,12 @@ namespace Marana.API {
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellMarket(Settings settings, Data.Trading format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
+        public static async Task<bool> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient client = null;
 
-            if (format == Data.Trading.Live) {
+            if (format == Data.Format.Live) {
                 client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-            } else if (format == Data.Trading.Paper) {
+            } else if (format == Data.Format.Paper) {
                 client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
@@ -126,12 +126,12 @@ namespace Marana.API {
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellLimit(Settings settings, Data.Trading format, string symbol, int shares, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
+        public static async Task<bool> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient client = null;
 
-            if (format == Data.Trading.Live) {
+            if (format == Data.Format.Live) {
                 client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-            } else if (format == Data.Trading.Paper) {
+            } else if (format == Data.Format.Paper) {
                 client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
@@ -142,12 +142,12 @@ namespace Marana.API {
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellStopLimit(Settings settings, Data.Trading format, string symbol, int shares, decimal stopPrice, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
+        public static async Task<bool> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient client = null;
 
-            if (format == Data.Trading.Live) {
+            if (format == Data.Format.Live) {
                 client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-            } else if (format == Data.Trading.Paper) {
+            } else if (format == Data.Format.Paper) {
                 client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 

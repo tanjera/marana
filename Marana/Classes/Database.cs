@@ -66,6 +66,17 @@ namespace Marana {
             BollingerBands_Width,
         };
 
+        public enum ColumnsInstructions {
+            ID,
+            Description,
+            Active,
+            Format,
+            Symbol,
+            Strategy,
+            Quantity,
+            Frequency
+        };
+
         public enum ColumnsStrategy {
             Name,
             Entry,
@@ -167,9 +178,10 @@ namespace Marana {
                             `Description` VARCHAR(1028),
                             `Active` BOOLEAN,
                             `Format` VARCHAR (16),
-                            `Assets` TEXT,
+                            `Symbol` VARCHAR(10),
                             `Strategy` VARCHAR(256),
-                            `Shares` INTEGER
+                            `Quantity` INTEGER,
+                            `Frequency` VARCHAR (16)
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
@@ -307,6 +319,43 @@ namespace Marana {
                     // TO-DO: log errors to error log
                 }
             }
+        }
+
+        public async Task<List<Data.Instruction>> GetInstructions() {
+            List<Data.Instruction> result = new List<Data.Instruction>();
+
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    return new List<Data.Instruction>();
+                }
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        @"SELECT * FROM `Instructions`;",
+                    connection)) {
+                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                        while (rdr.Read()) {
+                            Data.Instruction i = new Data.Instruction();
+
+                            i.Description = rdr.IsDBNull(ColumnsInstructions.Description.GetHashCode()) ? i.Description : rdr.GetString("Description");
+                            i.Active = rdr.IsDBNull(ColumnsInstructions.Active.GetHashCode()) ? i.Active : rdr.GetBoolean("Active");
+                            i.Format = rdr.IsDBNull(ColumnsInstructions.Format.GetHashCode()) ? i.Format : (Data.Format)Enum.Parse(typeof(Data.Format), rdr.GetString("Format"));
+                            i.Symbol = rdr.IsDBNull(ColumnsInstructions.Symbol.GetHashCode()) ? "" : rdr.GetString("Symbol");
+                            i.Strategy = rdr.IsDBNull(ColumnsInstructions.Strategy.GetHashCode()) ? i.Strategy : rdr.GetString("Strategy");
+                            i.Quantity = rdr.IsDBNull(ColumnsInstructions.Quantity.GetHashCode()) ? i.Quantity : rdr.GetInt16("Quantity");
+                            i.Frequency = rdr.IsDBNull(ColumnsInstructions.Frequency.GetHashCode()) ? i.Frequency : (Data.Frequency)Enum.Parse(typeof(Data.Frequency), rdr.GetString("Frequency"));
+
+                            result.Add(i);
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+            }
+
+            return result;
         }
 
         public async Task<List<Data.Strategy>> GetStrategies() {
@@ -453,6 +502,28 @@ namespace Marana {
             }
 
             return size;
+        }
+
+        public async Task<bool> ScalarQuery(string query) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync(); ;
+                } catch (Exception ex) {
+                    return false;
+                }
+
+                bool result = false;
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(query, connection)) {
+                        result = await cmd.ExecuteScalarAsync() != null;
+                    }
+                } catch (Exception ex) {
+                    return false;
+                }
+
+                await connection.CloseAsync();
+                return result;
+            }
         }
 
         public async Task SetAssets(List<Data.Asset> assets) {

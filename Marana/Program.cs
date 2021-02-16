@@ -45,6 +45,21 @@ namespace Marana {
                             await new Library().Update(_args, settings, db);
                         }
                     }
+                } else if (opt0 == "execute") {
+                    if (_args.Count == 0) {
+                        Help.Default();
+                    } else {
+                        string opt1 = TrimArgs(ref _args);
+
+                        if (opt1 == "paper") {
+                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
+                        } else if (opt1 == "live") {
+                            await new Trade().RunAutomation(settings, db, Data.Format.Live);
+                        } else if (opt1 == "all") {
+                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
+                            await new Trade().RunAutomation(settings, db, Data.Format.Live);
+                        }
+                    }
                 } else {
                     if (opt0 == "debug") {
                         // space for debugging individual methods

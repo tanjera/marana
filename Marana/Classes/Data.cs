@@ -108,10 +108,17 @@ namespace Marana {
 
         public class Instruction {
             public bool Active { get; set; }
-            public Trading Format { get; set; }
-            public List<Asset> Assets { get; set; }
-            public Strategy Strategy { get; set; }
+            public string Description { get; set; }
+            public Format Format { get; set; }
+            public string Symbol { get; set; }
+            public string Strategy { get; set; }
             public int Quantity { get; set; }
+            public Frequency Frequency { get; set; }
+
+            public Instruction() {
+                Active = false;
+                Format = Format.Paper;
+            }
         }
 
         public class Position {
@@ -120,7 +127,12 @@ namespace Marana {
             public int Quantity { get; set; }
         }
 
-        public enum Trading {
+        public enum Frequency {
+            Daily,
+            Intraday
+        }
+
+        public enum Format {
             Paper,
             Live
         }
