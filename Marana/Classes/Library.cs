@@ -96,18 +96,22 @@ namespace Marana {
 
                 // Get paper positions, add data to update list
                 result = await API.Alpaca.GetPositions(settings, Data.Format.Paper);
-                if (result != null && result is List<Data.Position>) {
+                if (result is List<Data.Position>) {
                     foreach (Data.Position pPaper in result as List<Data.Position>) {
                         positionAssets.Add(allAssets.Find(a => a.ID == pPaper.ID));
                     }
+                } else {
+                    WriteLine($"Error: Unable to access current positions (paper) via Alpaca API");
                 }
 
                 // Get live positions, add data to update list
                 result = await API.Alpaca.GetPositions(settings, Data.Format.Live);
-                if (result != null && result is List<Data.Position>) {
+                if (result is List<Data.Position>) {
                     foreach (Data.Position pLive in result as List<Data.Position>) {
                         positionAssets.Add(allAssets.Find(a => a.ID == pLive.ID));
                     }
+                } else {
+                    WriteLine($"Error: Unable to access current positions (live) via Alpaca API");
                 }
 
                 positionAssets = positionAssets.Distinct().ToList();        // Remove duplicates
@@ -193,6 +197,8 @@ namespace Marana {
             object result = await API.Alpaca.GetTime_LastMarketClose(settings);
             if (result is DateTime) {
                 lastMarketClose = (DateTime)result;
+            } else {
+                WriteLine("Unable to access market schedule/times via Alpaca API");
             }
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library

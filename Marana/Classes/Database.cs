@@ -212,7 +212,7 @@ namespace Marana {
                     await connection.OpenAsync(); ;
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return new List<Data.Asset>();
+                    return null;
                 }
 
                 List<Data.Asset> assets = new List<Data.Asset>();
@@ -242,7 +242,7 @@ namespace Marana {
                     return assets;
                 } catch (Exception ex) {
                     await connection.CloseAsync();
-                    return new List<Data.Asset>();
+                    return null;
                 }
             }
         }
