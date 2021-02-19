@@ -2,7 +2,7 @@
   "profiles": {
     "Marana": {
       "commandName": "Project",
-      "commandLineArgs": "execute paper"
+      "commandLineArgs": "execute all"
     }
   }
 }

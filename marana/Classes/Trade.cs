@@ -9,7 +9,7 @@ namespace Marana {
     public class Trade {
 
         public async Task RunAutomation(Settings settings, Database db, Data.Format format) {
-            Prompt.WriteLine($"Running automated rules for {format.ToString()} trades.");
+            Prompt.WriteLine($"\nRunning automated rules for {format.ToString()} trades.");
 
             List<Data.Asset> assets = await db.GetAssets();
             List<Data.Instruction> instructions = (await db.GetInstructions())?.Where(i => i.Format == format).ToList();
@@ -44,7 +44,7 @@ namespace Marana {
                 Data.Asset asset = assets.Find(a => a.Symbol == instructions[i].Symbol);
                 Data.Position position = positions.Find(p => p.Symbol == instructions[i].Symbol);
 
-                Prompt.WriteLine($"[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format.ToString()}): "
+                Prompt.WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format.ToString()}): "
                     + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency.ToString()})");
 
                 if (strategy == null) {
@@ -76,7 +76,12 @@ namespace Marana {
             // Check data validity (last update time) to ensure it is most recent
             DateTime validity = await db.GetValidity_Daily(asset);
 
-            if (validity.CompareTo(lastMarketClose) > 0) {
+            if (validity.CompareTo(lastMarketClose) < 0) {              // If data is invalid
+                Prompt.WriteLine("Latest market data for this symbol needs updating. Updating now.");
+                await new Library().Update_TSD(new List<Data.Asset>() { asset }, settings, db);
+            }
+
+            if (validity.CompareTo(lastMarketClose) > 0) {       // If validity is current, data is valid
                 bool toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol));
                 bool toSell = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol))
                     || await db.ScalarQuery(await Strategy.Interpret(strategy.ExitLoss, instruction.Symbol));
@@ -87,18 +92,23 @@ namespace Marana {
                 }
 
                 if (toBuy) {
-                    if (position == null) {
-                        Prompt.WriteLine("Buy trigger detected; no current position found; placing Buy order.");
+                    // Warning: API buy/sell orders use negative quantity to indicate short positions
+                    // And/or may just throw exceptions when attempting to sell to negative
+
+                    if (position == null || position.Quantity <= 0) {
+                        Prompt.WriteLine("Buy trigger detected; no current position owned; placing Buy order.");
                         await API.Alpaca.PlaceOrder_BuyMarket(settings, instruction.Format, instruction.Symbol, instruction.Quantity);
-                    } else if (position != null) {
+                    } else if (position != null && position.Quantity > 0) {
                         Prompt.WriteLine("Buy trigger detected; active position already exists; doing nothing.");
                     }
                 } else if (toSell) {
-                    if (position == null) {
-                        Prompt.WriteLine("Sell trigger detected; no current position found; doing nothing.");
-                    } else if (position != null)
+                    if (position == null || position.Quantity <= 0) {
+                        Prompt.WriteLine("Sell trigger detected; no current position owned; doing nothing.");
+                    } else if (position != null && position.Quantity > 0) {
                         Prompt.WriteLine("Sell trigger detected; active position found; placing Sell order.");
-                    await API.Alpaca.PlaceOrder_SellMarket(settings, instruction.Format, instruction.Symbol, instruction.Quantity);
+                        // Sell position.quantity in case position.Quantity != instruction.Quantity
+                        await API.Alpaca.PlaceOrder_SellMarket(settings, instruction.Format, instruction.Symbol, position.Quantity);
+                    }
                 } else {
                     Prompt.WriteLine("No triggers detected.");
                 }

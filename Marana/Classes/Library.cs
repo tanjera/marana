@@ -86,7 +86,7 @@ namespace Marana {
 
             // Select assets to update data for
             // If args are used, they manually override the Library Settings
-            Write("Updating Time Series Dailies (TSD). ");
+            WriteLine("Updating Time Series Dailies (TSD).");
 
             // Get assets to update based on current positions, Paper and Live
             // Only if not trying to do a manually filtered update (command-line arguments)
@@ -138,7 +138,14 @@ namespace Marana {
 
                     case Settings.Option_DownloadSymbols.Watchlist:
                         List<string> wl = await database.GetWatchlist();
+                        if (wl == null) {
+                            WriteLine("Unable to retrieve Watchlist from database. Aborting.");
+                            await Update_Cancel();
+                            return;
+                        }
+
                         updateAssets = allAssets.Where(a => wl.Contains(a.Symbol)).ToList();
+
                         WriteLine("Per options, updating watchlist only.");
                         break;
 

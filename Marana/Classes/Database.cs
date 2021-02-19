@@ -429,7 +429,7 @@ namespace Marana {
                     await connection.OpenAsync();
                 } catch (Exception ex) {
                     Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                    return new List<string>();
+                    return null;
                 }
 
                 using (MySqlCommand cmd = new MySqlCommand(

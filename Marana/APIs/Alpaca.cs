@@ -13,8 +13,17 @@ namespace Marana.API {
 
         public static async Task<object> GetAssets(Settings settings) {
             try {
-                var client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                var assets = await client.ListAssetsAsync(new AssetsRequest { AssetStatus = AssetStatus.Active });
+                IAlpacaTradingClient trading = null;
+
+                if (settings.API_Alpaca_Live_Key != null && settings.API_Alpaca_Live_Secret != null) {
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                } else if (settings.API_Alpaca_Paper_Key != null && settings.API_Alpaca_Paper_Secret != null) {
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                } else {
+                    return new ArgumentNullException();
+                }
+
+                var assets = await trading.ListAssetsAsync(new AssetsRequest { AssetStatus = AssetStatus.Active });
 
                 List<Data.Asset> output = new List<Data.Asset>();
                 foreach (var asset in assets) {
@@ -38,11 +47,18 @@ namespace Marana.API {
 
         public static async Task<object> GetData_Daily(Settings settings, Data.Asset asset, int limit = 500) {
             try {
-                var client = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                var poly = Environments.Live.GetPolygonDataClient(settings.API_Alpaca_Live_Key);
+                IAlpacaDataClient data = null;
+
+                if (settings.API_Alpaca_Live_Key != null && settings.API_Alpaca_Live_Secret != null) {
+                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                } else if (settings.API_Alpaca_Paper_Key != null && settings.API_Alpaca_Paper_Secret != null) {
+                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                } else {
+                    return new ArgumentNullException();
+                }
 
                 // Maximum 1000 bars per API call
-                var bars = await client.GetBarSetAsync(new BarSetRequest(asset.Symbol, TimeFrame.Day) { Limit = limit });
+                var bars = await data.GetBarSetAsync(new BarSetRequest(asset.Symbol, TimeFrame.Day) { Limit = limit });
 
                 Data.Daily ds = new Data.Daily();
                 foreach (var bar in bars[asset.Symbol]) {
@@ -94,67 +110,98 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<bool> PlaceOrder_BuyMarket(Settings settings, Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
-            IAlpacaTradingClient client = null;
+        public static async Task<bool> PlaceOrder_BuyMarket(Settings settings, Data.Format format, string symbol, int shares,
+            TimeInForce timeInForce = TimeInForce.Gtc, bool useMargin = false) {
+            IAlpacaTradingClient trading = null;
+            IAlpacaDataClient data = null;
 
             if (format == Data.Format.Live) {
-                client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
             } else if (format == Data.Format.Paper) {
-                client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
             }
 
-            if (client == null)
+            var account = await trading.GetAccountAsync();
+
+            if (trading == null || account == null
+                || account.IsAccountBlocked || account.IsTradingBlocked
+                || account.TradeSuspendedByUser)
                 return false;
 
-            var order = await client.PostOrderAsync(MarketOrder.Buy(symbol, shares).WithDuration(timeInForce));
+            if (!useMargin) {       // If not using margin trading
+                var quote = await data.GetLastQuoteAsync(symbol);
+
+                // Ensure there is (as best as can be approximated) enough cash in account for transaction
+                if (account.TradableCash < shares * quote.AskPrice)
+                    return false;
+            }
+
+            var order = await trading.PostOrderAsync(MarketOrder.Buy(symbol, shares).WithDuration(timeInForce));
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
-            IAlpacaTradingClient client = null;
+        public static async Task<bool> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares,
+            TimeInForce timeInForce = TimeInForce.Gtc) {
+            IAlpacaTradingClient trading = null;
 
             if (format == Data.Format.Live) {
-                client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
             } else if (format == Data.Format.Paper) {
-                client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
-            if (client == null)
+            var account = await trading.GetAccountAsync();
+
+            if (trading == null || account == null
+                || account.IsAccountBlocked || account.IsTradingBlocked
+                || account.TradeSuspendedByUser)
                 return false;
 
-            var order = await client.PostOrderAsync(MarketOrder.Sell(symbol, shares).WithDuration(timeInForce));
+            var order = await trading.PostOrderAsync(MarketOrder.Sell(symbol, shares).WithDuration(timeInForce));
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
-            IAlpacaTradingClient client = null;
+        public static async Task<bool> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice,
+            TimeInForce timeInForce = TimeInForce.Gtc) {
+            IAlpacaTradingClient trading = null;
 
             if (format == Data.Format.Live) {
-                client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
             } else if (format == Data.Format.Paper) {
-                client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
-            if (client == null)
+            var account = await trading.GetAccountAsync();
+
+            if (trading == null || account == null
+                || account.IsAccountBlocked || account.IsTradingBlocked
+                || account.TradeSuspendedByUser)
                 return false;
 
-            var order = await client.PostOrderAsync(LimitOrder.Sell(symbol, shares, limitPrice).WithDuration(timeInForce));
+            var order = await trading.PostOrderAsync(LimitOrder.Sell(symbol, shares, limitPrice).WithDuration(timeInForce));
             return true;
         }
 
-        public static async Task<bool> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
-            IAlpacaTradingClient client = null;
+        public static async Task<bool> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice,
+            TimeInForce timeInForce = TimeInForce.Gtc) {
+            IAlpacaTradingClient trading = null;
 
             if (format == Data.Format.Live) {
-                client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
             } else if (format == Data.Format.Paper) {
-                client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
-            if (client == null)
+            var account = await trading.GetAccountAsync();
+
+            if (trading == null || account == null
+                || account.IsAccountBlocked || account.IsTradingBlocked
+                || account.TradeSuspendedByUser)
                 return false;
 
-            var order = await client.PostOrderAsync(StopLimitOrder.Sell(symbol, shares, stopPrice, limitPrice).WithDuration(timeInForce));
+            var order = await trading.PostOrderAsync(StopLimitOrder.Sell(symbol, shares, stopPrice, limitPrice).WithDuration(timeInForce));
             return true;
         }
     }
