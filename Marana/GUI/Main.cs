@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -89,8 +90,10 @@ namespace Marana.GUI {
                 })
             });
 
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+
             Label lblWelcome = new Label(
-                $"Welcome to Marana{Environment.NewLine}"
+                $"Welcome to Marana (v {version.Major}.{version.Minor}.{version.Build}) {Environment.NewLine}"
                 + $"Market Analytics Tools and Trading, by Tanjera{Environment.NewLine}"
                 + $"{Environment.NewLine}{Environment.NewLine}"
                 + $"This program is provided as-is without any warranty{Environment.NewLine}"

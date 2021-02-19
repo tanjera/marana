@@ -1,16 +1,23 @@
 ﻿using System;
+
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 
 namespace Marana {
 
     public class Help {
 
         public static void Default() {
+            Version version = Assembly.GetExecutingAssembly().GetName().Version;
+
             Prompt.Write(
-                @"
-Marana: Market Analytics and Trading, by Tanjera
+                $@"
+Marana (v{version.Major}.{version.Minor}.{version.Build})
+
+Market Analytics and Trading, by Tanjera
 Warning: Use at your own risk. Please read and understand end-user license agreement before use.
 
 Command-line Usage:

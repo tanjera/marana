@@ -40,6 +40,9 @@ namespace Marana {
             Low,
             Close,
             Volume,
+
+            // Moving Averages
+
             SMA7,
             SMA20,
             SMA50,
@@ -54,16 +57,25 @@ namespace Marana {
             TEMA7,
             TEMA20,
             TEMA50,
-            RSI,
-            MACD,
-            MACD_Histogram,
-            MACD_Signal,
+
+            // Additional Indicators (alphabetic order)
+
             BollingerBands_Center,
             BollingerBands_Upper,
             BollingerBands_Lower,
             BollingerBands_Percent,
             BollingerBands_ZScore,
             BollingerBands_Width,
+
+            Choppiness,
+
+            MACD,
+            MACD_Histogram,
+            MACD_Signal,
+
+            ROC14,
+            RSI,
+
             Stochastic_Oscillator,
             Stochastic_Signal,
             Stochastic_PercentJ
@@ -163,20 +175,28 @@ namespace Marana {
                             `TEMA7` DECIMAL(16, 6),
                             `TEMA20` DECIMAL(16, 6),
                             `TEMA50` DECIMAL(16, 6),
-                            `RSI` DECIMAL(16, 6),
-                            `MACD` DECIMAL(16, 6),
-                            `MACD_Histogram` DECIMAL(16, 6),
-                            `MACD_Signal` DECIMAL(16, 6),
+
                             `BollingerBands_Center` DECIMAL(16, 6),
                             `BollingerBands_Upper` DECIMAL(16, 6),
                             `BollingerBands_Lower` DECIMAL(16, 6),
                             `BollingerBands_Percent` DECIMAL(16, 6),
                             `BollingerBands_ZScore` DECIMAL(16, 6),
                             `BollingerBands_Width` DECIMAL(16, 6),
+
+                            `Choppiness` DECIMAL(16, 6),
+
+                            `MACD` DECIMAL(16, 6),
+                            `MACD_Histogram` DECIMAL(16, 6),
+                            `MACD_Signal` DECIMAL(16, 6),
+
+                            `ROC14` DECIMAL(16, 6),
+                            `RSI` DECIMAL(16, 6),
+
                             `Stochastic_Oscillator` DECIMAL(16, 6),
                             `Stochastic_Signal` DECIMAL(16, 6),
                             `Stochastic_PercentJ` DECIMAL(16, 6),
                             INDEX(`Asset`));",
+
                             connection))
                         await cmd.ExecuteNonQueryAsync();
 
@@ -304,11 +324,6 @@ namespace Marana {
                                 m.TEMA7 = rdr.IsDBNull(ColumnsDaily.TEMA7.GetHashCode()) ? m.TEMA7 : rdr.GetDecimal("TEMA7");
                                 m.TEMA20 = rdr.IsDBNull(ColumnsDaily.TEMA20.GetHashCode()) ? m.TEMA20 : rdr.GetDecimal("TEMA20");
                                 m.TEMA50 = rdr.IsDBNull(ColumnsDaily.TEMA50.GetHashCode()) ? m.TEMA50 : rdr.GetDecimal("TEMA50");
-                                m.RSI = rdr.IsDBNull(ColumnsDaily.RSI.GetHashCode()) ? m.RSI : rdr.GetDecimal("RSI");
-                                m.MACD = new MacdResult();
-                                m.MACD.Macd = rdr.IsDBNull(ColumnsDaily.MACD.GetHashCode()) ? m.MACD.Macd : rdr.GetDecimal("MACD");
-                                m.MACD.Histogram = rdr.IsDBNull(ColumnsDaily.MACD_Histogram.GetHashCode()) ? m.MACD.Histogram : rdr.GetDecimal("MACD_Histogram");
-                                m.MACD.Signal = rdr.IsDBNull(ColumnsDaily.MACD_Signal.GetHashCode()) ? m.MACD.Signal : rdr.GetDecimal("MACD_Signal");
 
                                 m.BB = new BollingerBandsResult();
                                 m.BB.Sma = rdr.IsDBNull(ColumnsDaily.BollingerBands_Center.GetHashCode()) ? m.BB.Sma : rdr.GetDecimal("BollingerBands_Center");
@@ -317,6 +332,16 @@ namespace Marana {
                                 m.BB.PercentB = rdr.IsDBNull(ColumnsDaily.BollingerBands_Percent.GetHashCode()) ? m.BB.PercentB : rdr.GetDecimal("BollingerBands_Percent");
                                 m.BB.ZScore = rdr.IsDBNull(ColumnsDaily.BollingerBands_ZScore.GetHashCode()) ? m.BB.ZScore : rdr.GetDecimal("BollingerBands_ZScore");
                                 m.BB.Width = rdr.IsDBNull(ColumnsDaily.BollingerBands_Width.GetHashCode()) ? m.BB.Width : rdr.GetDecimal("BollingerBands_Width");
+
+                                m.Choppiness = rdr.IsDBNull(ColumnsDaily.Choppiness.GetHashCode()) ? m.Choppiness : rdr.GetDecimal("Choppiness");
+
+                                m.MACD = new MacdResult();
+                                m.MACD.Macd = rdr.IsDBNull(ColumnsDaily.MACD.GetHashCode()) ? m.MACD.Macd : rdr.GetDecimal("MACD");
+                                m.MACD.Histogram = rdr.IsDBNull(ColumnsDaily.MACD_Histogram.GetHashCode()) ? m.MACD.Histogram : rdr.GetDecimal("MACD_Histogram");
+                                m.MACD.Signal = rdr.IsDBNull(ColumnsDaily.MACD_Signal.GetHashCode()) ? m.MACD.Signal : rdr.GetDecimal("MACD_Signal");
+
+                                m.ROC14 = rdr.IsDBNull(ColumnsDaily.ROC14.GetHashCode()) ? m.ROC14 : rdr.GetDecimal("ROC14");
+                                m.RSI = rdr.IsDBNull(ColumnsDaily.RSI.GetHashCode()) ? m.RSI : rdr.GetDecimal("RSI");
 
                                 m.Stochastic = new StochResult();
                                 m.Stochastic.Oscillator = rdr.IsDBNull(ColumnsDaily.Stochastic_Oscillator.GetHashCode()) ? m.Stochastic.Oscillator : rdr.GetDecimal("Stochastic_Oscillator");
@@ -695,16 +720,23 @@ namespace Marana {
                         {(v.Metric?.TEMA7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA7.ToString())}'" : "null")},
                         {(v.Metric?.TEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA20.ToString())}'" : "null")},
                         {(v.Metric?.TEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA50.ToString())}'" : "null")},
-                        {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Macd != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Macd.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
-                        {(v.Metric?.MACD?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Signal.ToString())}'" : "null")},
+
                         {(v.Metric?.BB?.Sma != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Sma.ToString())}'" : "null")},
                         {(v.Metric?.BB?.UpperBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.UpperBand.ToString())}'" : "null")},
                         {(v.Metric?.BB?.LowerBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.LowerBand.ToString())}'" : "null")},
                         {(v.Metric?.BB?.PercentB != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.PercentB.ToString())}'" : "null")},
                         {(v.Metric?.BB?.ZScore != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.ZScore.ToString())}'" : "null")},
                         {(v.Metric?.BB?.Width != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Width.ToString())}'" : "null")},
+
+                        {(v.Metric?.Choppiness != null ? $"'{MySqlHelper.EscapeString(v.Metric.Choppiness.ToString())}'" : "null")},
+
+                        {(v.Metric?.MACD?.Macd != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Macd.ToString())}'" : "null")},
+                        {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
+                        {(v.Metric?.MACD?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Signal.ToString())}'" : "null")},
+
+                        {(v.Metric?.ROC14 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC14.ToString())}'" : "null")},
+                        {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
+
                         {(v.Metric?.Stochastic?.Oscillator != null ? $"'{MySqlHelper.EscapeString(v.Metric.Stochastic.Oscillator.ToString())}'" : "null")},
                         {(v.Metric?.Stochastic?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.Stochastic.Signal.ToString())}'" : "null")},
                         {(v.Metric?.Stochastic?.PercentJ != null ? $"'{MySqlHelper.EscapeString(v.Metric.Stochastic.PercentJ.ToString())}'" : "null")}
@@ -716,9 +748,12 @@ namespace Marana {
                                     Asset, Symbol, Date, Open, High, Low, Close, Volume,
                                     SMA7, SMA20, SMA50, SMA100, SMA200,
                                     EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
-                                    RSI,
-                                    MACD, MACD_Histogram, MACD_Signal,
+
                                     BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width,
+                                    Choppiness,
+                                    MACD, MACD_Histogram, MACD_Signal,
+                                    ROC14,
+                                    RSI,
                                     Stochastic_Oscillator, Stochastic_Signal, Stochastic_PercentJ
                                     ) VALUES {values};",
                             connection)) {

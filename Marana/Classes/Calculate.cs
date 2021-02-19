@@ -45,12 +45,12 @@ namespace Marana {
             EmaResult[] tema50 = amount > 250 ? Indicator.GetTripleEma(dd.Prices, 50).ToArray() : null;
 
             RsiResult[] rsi = amount > 140 ? Indicator.GetRsi(dd.Prices).ToArray() : null;
+            RocResult[] roc14 = amount > 15 ? Indicator.GetRoc(dd.Prices, 14).ToArray() : null;
 
             BollingerBandsResult[] bb = amount > 20 ? Indicator.GetBollingerBands(dd.Prices).ToArray() : null;
-
             MacdResult[] macd = amount > 140 ? Indicator.GetMacd(dd.Prices).ToArray() : null;
-
             StochResult[] stoch = amount > 20 ? Indicator.GetStoch(dd.Prices).ToArray() : null;
+            ChopResult[] chop = amount > 15 ? Indicator.GetChop(dd.Prices).ToArray() : null;
 
             // Put indicator data back into data set for usability
 
@@ -74,12 +74,12 @@ namespace Marana {
                     dd.Metrics[i].TEMA20 = tema20 != null ? tema20[i].Ema : null;
                     dd.Metrics[i].TEMA50 = tema50 != null ? tema50[i].Ema : null;
 
+                    dd.Metrics[i].Choppiness = chop != null ? chop[i].Chop : null;
                     dd.Metrics[i].RSI = rsi != null ? rsi[i].Rsi : null;
+                    dd.Metrics[i].ROC14 = roc14 != null ? roc14[i].Roc : null;
 
                     dd.Metrics[i].BB = bb != null ? bb[i] : null;
-
                     dd.Metrics[i].MACD = macd != null ? macd[i] : null;
-
                     dd.Metrics[i].Stochastic = stoch != null ? stoch[i] : null;
                 } catch (Exception ex) {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);

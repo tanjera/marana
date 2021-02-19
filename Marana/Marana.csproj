@@ -4,6 +4,17 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>marana</AssemblyName>
+    <Version>0.2.1</Version>
+    <AssemblyVersion>0.2.1.0</AssemblyVersion>
+    <Authors>Tanjera</Authors>
+    <Product>Marana</Product>
+    <Description>Market Analytics and Trading Tools</Description>
+    <Copyright>(c) 2021 Ibi Keller</Copyright>
+    <PackageLicenseFile>License.md</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/tanjera/marana</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/tanjera/marana</RepositoryUrl>
+    <RepositoryType>GitHub</RepositoryType>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +22,13 @@
     <PackageReference Include="MySql.Data" Version="8.0.23" />
     <PackageReference Include="Skender.Stock.Indicators" Version="1.8.0" />
     <PackageReference Include="Terminal.Gui" Version="0.90.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\License.md">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
