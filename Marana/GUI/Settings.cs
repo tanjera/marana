@@ -99,7 +99,7 @@ namespace Marana.GUI {
                 X = Pos.Center(), Y = Pos.Bottom(tfDbPassword) + 2
             };
 
-            btnSave.Clicked += () => {
+            btnSave.Clicked += async () => {
                 gm.Settings.Directory_Working = tfWorkingDir.Text.ToString().Trim();
 
                 gm.Settings.API_Alpaca_Live_Key = tfAlpacaLiveKey.Text.ToString().Trim();
@@ -117,7 +117,7 @@ namespace Marana.GUI {
                 bool portParse = int.TryParse(tfDbPort.Text.ToString(), out portResult);
                 gm.Settings.Database_Port = portParse ? portResult : gm.Settings.Database_Port;
 
-                Marana.Settings.SaveConfig(gm.Settings);
+                await Marana.Settings.SaveConfig(gm.Settings);
 
                 window.Add(dlgSaved);
             };

@@ -9,7 +9,7 @@ namespace Marana {
     internal class Program {
 
         private static async Task Main(string[] args) {
-            Settings settings = Settings.Init();
+            Settings settings = await Settings.Init();
             Database db = new Database(settings);
 
             if (args.Length > 0)

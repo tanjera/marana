@@ -111,7 +111,7 @@ namespace Marana.GUI {
                 X = Pos.Center(), Y = Pos.Bottom(rgDownloadFor) + 2
             };
 
-            btnSave.Clicked += () => {
+            btnSave.Clicked += async () => {
                 int resultInt;
                 bool canParse = false;
 
@@ -121,7 +121,7 @@ namespace Marana.GUI {
 
                 gm.Settings.Library_DownloadSymbols = (Marana.Settings.Option_DownloadSymbols)rgDownloadFor.SelectedItem;
 
-                Marana.Settings.SaveConfig(gm.Settings);
+                await Marana.Settings.SaveConfig(gm.Settings);
 
                 window.Add(dlgSaved);
             };

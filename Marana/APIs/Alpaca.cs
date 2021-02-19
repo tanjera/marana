@@ -152,11 +152,20 @@ namespace Marana.API {
                 trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
+            // Prevents exceptions or unwanted behavior with Alpaca API
             var account = await trading.GetAccountAsync();
-
             if (trading == null || account == null
                 || account.IsAccountBlocked || account.IsTradingBlocked
                 || account.TradeSuspendedByUser)
+                return false;
+
+            // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
+            var positions = await trading.ListPositionsAsync();
+            if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
+                return false;
+
+            var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
+            if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
                 return false;
 
             var order = await trading.PostOrderAsync(MarketOrder.Sell(symbol, shares).WithDuration(timeInForce));
@@ -173,11 +182,20 @@ namespace Marana.API {
                 trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
+            // Prevents exceptions or unwanted behavior with Alpaca API
             var account = await trading.GetAccountAsync();
-
             if (trading == null || account == null
                 || account.IsAccountBlocked || account.IsTradingBlocked
                 || account.TradeSuspendedByUser)
+                return false;
+
+            // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
+            var positions = await trading.ListPositionsAsync();
+            if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
+                return false;
+
+            var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
+            if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
                 return false;
 
             var order = await trading.PostOrderAsync(LimitOrder.Sell(symbol, shares, limitPrice).WithDuration(timeInForce));
@@ -194,11 +212,20 @@ namespace Marana.API {
                 trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
             }
 
+            // Prevents exceptions or unwanted behavior with Alpaca API
             var account = await trading.GetAccountAsync();
-
             if (trading == null || account == null
                 || account.IsAccountBlocked || account.IsTradingBlocked
                 || account.TradeSuspendedByUser)
+                return false;
+
+            // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
+            var positions = await trading.ListPositionsAsync();
+            if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
+                return false;
+
+            var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
+            if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
                 return false;
 
             var order = await trading.PostOrderAsync(StopLimitOrder.Sell(symbol, shares, stopPrice, limitPrice).WithDuration(timeInForce));

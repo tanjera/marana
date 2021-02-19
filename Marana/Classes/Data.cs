@@ -80,6 +80,10 @@ namespace Marana {
 
                 public MacdResult MACD { get; set; }
 
+                // Stochastic Indicator
+
+                public StochResult Stochastic { get; set; }
+
                 public Metric() {
                     BB = new BollingerBandsResult();
                     MACD = new MacdResult();

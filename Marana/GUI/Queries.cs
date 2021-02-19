@@ -46,7 +46,11 @@ namespace Marana.GUI {
 
             // Link view item functionality
             List<Data.Strategy> strategies = await gm.Database.GetStrategies();
-            await lvStrategies.SetSourceAsync(strategies.Select(s => s.Name).ToArray());
+
+            if (strategies == null)
+                strategies = new List<Data.Strategy>();
+
+            await lvStrategies.SetSourceAsync(strategies?.Select(s => s.Name).ToArray());
 
             btnRun.Clicked += async () => {
                 if (Status == Statuses.Inactive && strategies.Count > lvStrategies.SelectedItem) {

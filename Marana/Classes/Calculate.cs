@@ -50,6 +50,8 @@ namespace Marana {
 
             MacdResult[] macd = amount > 140 ? Indicator.GetMacd(dd.Prices).ToArray() : null;
 
+            StochResult[] stoch = amount > 20 ? Indicator.GetStoch(dd.Prices).ToArray() : null;
+
             // Put indicator data back into data set for usability
 
             for (int i = 0; i < dd.Metrics.Count; i++) {
@@ -77,8 +79,11 @@ namespace Marana {
                     dd.Metrics[i].BB = bb != null ? bb[i] : null;
 
                     dd.Metrics[i].MACD = macd != null ? macd[i] : null;
+
+                    dd.Metrics[i].Stochastic = stoch != null ? stoch[i] : null;
                 } catch (Exception ex) {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);
+                    await Error.Log("Calculate.cs, Metrics", ex.Message);
                 }
             }
 
