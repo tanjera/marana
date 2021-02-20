@@ -13,17 +13,16 @@ namespace Marana {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Marana", "error.log");
         }
 
-        public static async Task Log(string methodInfo, string message)
-            => await Log($"{methodInfo}{Environment.NewLine}{message}");
+        public static async Task Log(string methodInfo, Exception ex)
+            => await Log($"[{DateTime.Now:yyyy-MM-dd HH:mm}]  {methodInfo}{Environment.NewLine}{ex.Message} {Environment.NewLine}{ex.StackTrace}");
 
         public static async Task Log(string message) {
-            using (StreamWriter sw = new StreamWriter(GetErrorPath(), true)) {
-                try {
-                    await sw.WriteLineAsync($"{Environment.NewLine}{Environment.NewLine}{message}");
-                    sw.Close();
-                } catch {
-                    sw.Close();
-                }
+            using StreamWriter sw = new StreamWriter(GetErrorPath(), true);
+            try {
+                await sw.WriteLineAsync($"{Environment.NewLine}{Environment.NewLine}{message}");
+                sw.Close();
+            } catch {
+                sw.Close();
             }
         }
     }

@@ -53,7 +53,7 @@ namespace Marana {
             if (Output.Count == 0)
                 Output.Add("");
 
-            Output[Output.Count - 1] = $"{Output[Output.Count - 1]}{message}";
+            Output[^1] = $"{Output[^1]}{message}";
             OnStatusUpdate();
 
             Prompt.Write(message, color);
@@ -63,7 +63,7 @@ namespace Marana {
             if (Output.Count == 0)
                 Output.Add("");
 
-            Output[Output.Count - 1] = $"{Output[Output.Count - 1]}{message}";
+            Output[^1] = $"{Output[^1]}{message}";
             Output.Add("");
             OnStatusUpdate();
 
@@ -198,8 +198,8 @@ namespace Marana {
             while (repeat) {
                 object output = await API.Alpaca.GetLastQuote(db._Settings, symbol);
 
-                if (output is Data.Quote) {
-                    await db.SetLastQuote((Data.Quote)output);
+                if (output is Data.Quote quote) {
+                    await db.SetLastQuote(quote);
                     WriteLine("Completed.", ConsoleColor.Green);
                     repeat = false;
                 } else if (output is string) {
@@ -218,8 +218,8 @@ namespace Marana {
             Write("Updating list of ticker symbols. ");
 
             object output = await API.Alpaca.GetAssets(db._Settings);
-            if (output is List<Data.Asset>) {
-                await db.SetAssets((List<Data.Asset>)output);
+            if (output is List<Data.Asset> list) {
+                await db.SetAssets(list);
                 WriteLine("Completed", ConsoleColor.Green);
                 return ExitCode.Completed;
             } else {
@@ -233,8 +233,8 @@ namespace Marana {
 
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
             object result = await API.Alpaca.GetTime_LastMarketClose(settings);
-            if (result is DateTime) {
-                lastMarketClose = (DateTime)result;
+            if (result is DateTime dt) {
+                lastMarketClose = dt;
             } else {
                 WriteLine("Unable to access market schedule/times via Alpaca API");
             }
@@ -244,7 +244,7 @@ namespace Marana {
                 if (CancelUpdate)
                     return ExitCode.Cancelled;
 
-                Write($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm")} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
+                Write($"{DateTime.Now:MM/dd/yyyy HH:mm} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
                 /* Check validity timestamp against last known market close
                  */
@@ -299,7 +299,7 @@ namespace Marana {
 
             int finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             if (finishing > 0) {
-                WriteLine($"{DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss")}:  Completing {finishing} remaining background database tasks.");
+                WriteLine($"{DateTime.Now:MM/dd/yyyy HH:mm:ss}:  Completing {finishing} remaining background database tasks.");
                 await Task.Delay(5000);
 
                 finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;

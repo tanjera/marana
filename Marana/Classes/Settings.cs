@@ -71,28 +71,27 @@ namespace Marana {
 
         public static async Task<bool> SaveConfig(Settings inc) {
             try {
-                using (StreamWriter sw = new StreamWriter(GetConfigPath())) {
-                    sw.WriteLine($"API_Alpaca_Live_Key: {inc?.API_Alpaca_Live_Key?.Trim()}");
-                    sw.WriteLine($"API_Alpaca_Live_Secret: {inc?.API_Alpaca_Live_Secret?.Trim()}");
-                    sw.WriteLine($"{Environment.NewLine}");
-                    sw.WriteLine($"API_Alpaca_Paper_Key: {inc?.API_Alpaca_Paper_Key?.Trim()}");
-                    sw.WriteLine($"API_Alpaca_Paper_Secret: {inc?.API_Alpaca_Paper_Secret?.Trim()}");
-                    sw.WriteLine($"{Environment.NewLine}");
-                    sw.WriteLine($"Directory_Working: {inc?.Directory_Working?.Trim()}");
-                    sw.WriteLine($"{Environment.NewLine}");
-                    sw.WriteLine($"Database_Server: {inc?.Database_Server?.Trim()}");
-                    sw.WriteLine($"Database_Port: {inc?.Database_Port.ToString().Trim()}");
-                    sw.WriteLine($"Database_Schema: {inc?.Database_Schema?.Trim()}");
-                    sw.WriteLine($"Database_User: {inc?.Database_Username?.Trim()}");
-                    sw.WriteLine($"Database_Password: {inc?.Database_Password?.Trim()}");
-                    sw.WriteLine($"{Environment.NewLine}");
-                    sw.WriteLine($"Library_DailyEntries: {inc?.Library_LimitDailyEntries.ToString().Trim()}");
-                    sw.WriteLine($"Library_DownloadSymbols: {inc?.Library_DownloadSymbols.ToString()}");
-                    sw.Close();
-                    return true;
-                }
+                using StreamWriter sw = new StreamWriter(GetConfigPath());
+                sw.WriteLine($"API_Alpaca_Live_Key: {inc?.API_Alpaca_Live_Key?.Trim()}");
+                sw.WriteLine($"API_Alpaca_Live_Secret: {inc?.API_Alpaca_Live_Secret?.Trim()}");
+                sw.WriteLine($"{Environment.NewLine}");
+                sw.WriteLine($"API_Alpaca_Paper_Key: {inc?.API_Alpaca_Paper_Key?.Trim()}");
+                sw.WriteLine($"API_Alpaca_Paper_Secret: {inc?.API_Alpaca_Paper_Secret?.Trim()}");
+                sw.WriteLine($"{Environment.NewLine}");
+                sw.WriteLine($"Directory_Working: {inc?.Directory_Working?.Trim()}");
+                sw.WriteLine($"{Environment.NewLine}");
+                sw.WriteLine($"Database_Server: {inc?.Database_Server?.Trim()}");
+                sw.WriteLine($"Database_Port: {inc?.Database_Port.ToString().Trim()}");
+                sw.WriteLine($"Database_Schema: {inc?.Database_Schema?.Trim()}");
+                sw.WriteLine($"Database_User: {inc?.Database_Username?.Trim()}");
+                sw.WriteLine($"Database_Password: {inc?.Database_Password?.Trim()}");
+                sw.WriteLine($"{Environment.NewLine}");
+                sw.WriteLine($"Library_DailyEntries: {inc?.Library_LimitDailyEntries.ToString().Trim()}");
+                sw.WriteLine($"Library_DownloadSymbols: {inc?.Library_DownloadSymbols.ToString()}");
+                sw.Close();
+                return true;
             } catch (Exception ex) {
-                await Error.Log("Database.cs, SaveConfig", ex.Message);
+                await Error.Log("Database.cs, SaveConfig", ex);
                 return false;
             }
         }
@@ -104,11 +103,11 @@ namespace Marana {
                     string[] lines = sr.ReadToEnd().Split('\n', '\r');
 
                     foreach (string line in lines) {
-                        if (line.Trim() == "" || line.IndexOf(':') == -1)
+                        if (line.Trim() == "" || !line.Contains(':'))
                             continue;
 
                         string key = line.Substring(0, line.IndexOf(':')),
-                            value = line.Substring(line.IndexOf(':') + 1).Trim();
+                            value = line[(line.IndexOf(':') + 1)..].Trim();
 
                         int resultInt;
                         object resultObject;
@@ -172,7 +171,7 @@ namespace Marana {
 
                 return oc;
             } catch (Exception ex) {
-                await Error.Log("Settings.cs, LoadConfig", ex.Message);
+                await Error.Log("Settings.cs, LoadConfig", ex);
                 return new Settings();
             }
         }

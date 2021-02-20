@@ -16,12 +16,20 @@ Marana is currently under development. Here are running lists of implemented fea
 - Uses a command-line interface (CLI) that can be run by OS task scheduling, cron jobs
 - Stores all market data in a MySQL database via network connection
   - Raw data can be queried by any SQL interface (e.g. MySQL Workbench)
+  - Can populate a watchlist to only maintain data for specific symbols
 - Performs technical analysis of all assets, including:
   - Simple Moving Averages (SMA; 7d, 20d, 50d, 100d, 200d)
   - Exponential Moving Averages, Double and Triple (EMA, DEMA, TEMA; 7d, 20d, 50d)
   - Relative Strength Index (RSI)
+  - Rate of Change (ROC)
   - Bollinger Bands®
   - Moving Average Convergence/Divergence (MACD)
+  - Stochastic Oscillator
+  - Choppiness Index
+- Execution of automated trading instructions based on pre-defined strategies
+  - Strategies in database as sets of SQL queries to determine buy/sell signals
+  - Automated trading instructions will buy/sell based on strategy signals
+  - Can validate strategy SQL queries in GUI to ensure no erroneous SQL syntax
 
 ### Future, Planned Features
 - Additional technical analysis indicators and metrics

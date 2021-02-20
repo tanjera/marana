@@ -41,7 +41,7 @@ namespace Marana.API {
                 }
                 return output;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetAssets", ex.Message);
+                await Error.Log("Alpaca.cs: GetAssets", ex);
                 return ex.Message;
             }
         }
@@ -68,7 +68,7 @@ namespace Marana.API {
 
                 return account.TradableCash;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetTradeableCash", ex.Message);
+                await Error.Log("Alpaca.cs: GetTradeableCash", ex);
                 return ex.Message;
             }
         }
@@ -103,13 +103,13 @@ namespace Marana.API {
 
                 return ds;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetData_Daily", ex.Message);
+                await Error.Log("Alpaca.cs: GetData_Daily", ex);
                 return ex.Message;
             }
         }
 
         public static async Task<object> GetLastQuote(Settings settings, string symbol) {
-            IAlpacaDataClient data = null;
+            IAlpacaDataClient data;
 
             try {
                 if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
@@ -123,7 +123,7 @@ namespace Marana.API {
                 var quote = await data.GetLastQuoteAsync(symbol);
                 return new Data.Quote() { Symbol = symbol, Price = quote.AskPrice, Timestamp = DateTime.UtcNow };
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetLastQuote", ex.Message);
+                await Error.Log("Alpaca.cs: GetLastQuote", ex);
                 return ex.Message;
             }
         }
@@ -157,7 +157,7 @@ namespace Marana.API {
                     Quantity = p.Quantity
                 }).ToList();
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetPositions", ex.Message);
+                await Error.Log("Alpaca.cs: GetPositions", ex);
                 return null;
             }
         }
@@ -177,7 +177,7 @@ namespace Marana.API {
                 var calendars = client.ListCalendarAsync(new CalendarRequest().SetInclusiveTimeInterval(DateTime.UtcNow - new TimeSpan(30, 0, 0, 0), DateTime.UtcNow)).Result;
                 return calendars.Where(c => c.TradingCloseTimeUtc.CompareTo(DateTime.UtcNow) <= 0).Last().TradingCloseTimeUtc;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetTime_LastMarketClose", ex.Message);
+                await Error.Log("Alpaca.cs: GetTime_LastMarketClose", ex);
                 return ex.Message;
             }
         }
@@ -209,7 +209,7 @@ namespace Marana.API {
                     .Select<IOrder, Data.Order>((q) => { return new Data.Order() { Symbol = q.Symbol, Quantity = (int)q.Quantity }; })
                     .ToList();
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, GetOrders_OpenBuy", ex.Message);
+                await Error.Log("Alpaca.cs: GetOrders_OpenBuy", ex);
                 return ex.Message;
             }
         }
@@ -258,7 +258,7 @@ namespace Marana.API {
                 var order = await trading.PostOrderAsync(MarketOrder.Buy(symbol, shares).WithDuration(timeInForce));
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, PlaceOrder_BuyMarket", ex.Message);
+                await Error.Log("Alpaca.cs: PlaceOrder_BuyMarket", ex);
                 return false;
             }
         }
@@ -300,7 +300,7 @@ namespace Marana.API {
                 var order = await trading.PostOrderAsync(MarketOrder.Sell(symbol, shares).WithDuration(timeInForce));
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, PlaceOrder_SellMarket", ex.Message);
+                await Error.Log("Alpaca.cs: PlaceOrder_SellMarket", ex);
                 return false;
             }
         }
@@ -343,7 +343,7 @@ namespace Marana.API {
                 var order = await trading.PostOrderAsync(LimitOrder.Sell(symbol, shares, limitPrice).WithDuration(timeInForce));
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, PlaceOrder_SellLimit", ex.Message);
+                await Error.Log("Alpaca.cs: PlaceOrder_SellLimit", ex);
                 return false;
             }
         }
@@ -386,7 +386,7 @@ namespace Marana.API {
                 var order = await trading.PostOrderAsync(StopLimitOrder.Sell(symbol, shares, stopPrice, limitPrice).WithDuration(timeInForce));
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs, PlaceOrder_SellStopLimit", ex.Message);
+                await Error.Log("Alpaca.cs: PlaceOrder_SellStopLimit", ex);
                 return false;
             }
         }

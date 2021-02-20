@@ -52,12 +52,12 @@ namespace Marana {
                         string opt1 = TrimArgs(ref _args);
 
                         if (opt1 == "paper") {
-                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
+                            await Trade.RunAutomation(settings, db, Data.Format.Paper);
                         } else if (opt1 == "live") {
-                            await new Trade().RunAutomation(settings, db, Data.Format.Live);
+                            await Trade.RunAutomation(settings, db, Data.Format.Live);
                         } else if (opt1 == "all") {
-                            await new Trade().RunAutomation(settings, db, Data.Format.Live);
-                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
+                            await Trade.RunAutomation(settings, db, Data.Format.Live);
+                            await Trade.RunAutomation(settings, db, Data.Format.Paper);
                         }
                     }
                 } else {

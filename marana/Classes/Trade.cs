@@ -11,18 +11,18 @@ namespace Marana {
         public static async Task<decimal?> GetAvailableCash(Settings settings, Database db, Data.Format format) {
             object result;
 
-            decimal cash = 0m;
+            decimal cash;
             result = await API.Alpaca.GetTradeableCash(settings, format);
-            if (result is decimal) {
-                cash = (decimal)result;
+            if (result is decimal r) {
+                cash = r;
             } else {
                 return null;
             }
 
             List<Data.Order> orders;
             result = await API.Alpaca.GetOrders_OpenBuy(settings, format);
-            if (result is List<Data.Order>) {
-                orders = (List<Data.Order>)result;
+            if (result is List<Data.Order> l) {
+                orders = l;
             } else {
                 return null;
             }
@@ -40,8 +40,8 @@ namespace Marana {
             return cash - marked;
         }
 
-        public async Task RunAutomation(Settings settings, Database db, Data.Format format) {
-            Prompt.WriteLine($"\nRunning automated rules for {format.ToString()} trades.");
+        public static async Task RunAutomation(Settings settings, Database db, Data.Format format) {
+            Prompt.WriteLine($"\nRunning automated rules for {format} trades.");
             List<Data.Instruction> instructions = (await db.GetInstructions())?.Where(i => i.Format == format).ToList();
             List<Data.Strategy> strategies = await db.GetStrategies();
 
@@ -76,8 +76,8 @@ namespace Marana {
                 Data.Asset asset = assets.Find(a => a.Symbol == instructions[i].Symbol);
                 Data.Position position = positions.Find(p => p.Symbol == instructions[i].Symbol);
 
-                Prompt.WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format.ToString()}): "
-                    + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency.ToString()})");
+                Prompt.WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format}): "
+                    + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency})");
 
                 if (strategy == null) {
                     Prompt.WriteLine($"Strategy '{instructions[i].Strategy}' not found in database. Aborting.");
@@ -95,14 +95,14 @@ namespace Marana {
             }
         }
 
-        public async Task RunAutomation_Daily(Settings settings, Database db,
+        public static async Task RunAutomation_Daily(Settings settings, Database db,
             Data.Instruction instruction, Data.Strategy strategy, Data.Asset asset, Data.Position position) {
             // Get last market close to ensure most up-to-date data exists
             // And that today's potential data exists (since SQL query interprets to query for today's prices!)
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
             object result = await API.Alpaca.GetTime_LastMarketClose(settings);
-            if (result is DateTime) {
-                lastMarketClose = (DateTime)result;
+            if (result is DateTime r) {
+                lastMarketClose = r;
             }
 
             // Check data validity (last update time) to ensure it is most recent
