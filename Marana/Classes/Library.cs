@@ -183,6 +183,37 @@ namespace Marana {
             return await db.GetAssets();
         }
 
+        public async Task<Data.Quote> GetLastQuote(Database db, string symbol) {
+            // Update ticker symbols weekly
+            if (DateTime.UtcNow - db.GetValidity_Quote(symbol).Result > new TimeSpan(0, 15, 0))
+                await Update_LastQuote(db, symbol);
+
+            return await db.GetLastQuote(symbol);
+        }
+
+        public async Task Update_LastQuote(Database db, string symbol) {
+            Write($"Updating latest quote, needed for calculations, for {symbol}. ");
+
+            bool repeat = true;
+            while (repeat) {
+                object output = await API.Alpaca.GetLastQuote(db._Settings, symbol);
+
+                if (output is Data.Quote) {
+                    await db.SetLastQuote((Data.Quote)output);
+                    WriteLine("Completed.", ConsoleColor.Green);
+                    repeat = false;
+                } else if (output is string) {
+                    if (output as string == "Too Many Requests") {
+                        WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
+                        await Task.Delay(30000);
+                    } else {
+                        WriteLine("Error.", ConsoleColor.Red);
+                        repeat = false;
+                    }
+                }
+            }
+        }
+
         public async Task<ExitCode> Update_Symbols(Database db) {
             Write("Updating list of ticker symbols. ");
 

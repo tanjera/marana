@@ -29,9 +29,9 @@ namespace Marana {
                 public decimal Close { get; set; }
                 public decimal Volume { get; set; }
 
-                public Quote Quote {
+                public Skender.Stock.Indicators.Quote Quote {
                     get {
-                        return new Quote() {
+                        return new Skender.Stock.Indicators.Quote() {
                             Date = Date,
                             Open = Open,
                             High = High,
@@ -117,10 +117,21 @@ namespace Marana {
             }
         }
 
+        public class Order {
+            public string Symbol { get; set; }
+            public int Quantity { get; set; }
+        }
+
         public class Position {
             public string ID { get; set; }
             public string Symbol { get; set; }
             public int Quantity { get; set; }
+        }
+
+        public class Quote {
+            public string Symbol { get; set; }
+            public decimal? Price { get; set; }
+            public DateTime Timestamp { get; set; }
         }
 
         public enum Frequency {

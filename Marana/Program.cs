@@ -56,8 +56,8 @@ namespace Marana {
                         } else if (opt1 == "live") {
                             await new Trade().RunAutomation(settings, db, Data.Format.Live);
                         } else if (opt1 == "all") {
-                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
                             await new Trade().RunAutomation(settings, db, Data.Format.Live);
+                            await new Trade().RunAutomation(settings, db, Data.Format.Paper);
                         }
                     }
                 } else {

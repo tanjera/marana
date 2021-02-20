@@ -108,6 +108,12 @@ namespace Marana {
             Symbol
         }
 
+        public enum ColumnsQuotes {
+            Symbol,
+            Timestamp,
+            Price
+        }
+
         public string ConnectionStr {
             get {
                 return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
@@ -230,6 +236,16 @@ namespace Marana {
                             );",
                             connection))
                         await cmd.ExecuteNonQueryAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"CREATE TABLE IF NOT EXISTS `Quotes` (
+                            `Symbol` VARCHAR(10) NOT NULL PRIMARY KEY,
+                            `Timestamp` DATETIME,
+                            `Price` DECIMAL(16, 6)
+                            );",
+                            connection))
+                        await cmd.ExecuteNonQueryAsync();
+
                     await connection.CloseAsync();
                 } catch (Exception ex) {
                     await connection.CloseAsync();
@@ -449,6 +465,40 @@ namespace Marana {
             }
         }
 
+        public async Task<Data.Quote> GetLastQuote(string symbol) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    await Error.Log("Database.cs, GetLastQuote", ex.Message);
+                    return null;
+                }
+
+                try {
+                    Data.Quote result = new Data.Quote() { Symbol = symbol };
+                    using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT *
+                            FROM `Quotes`
+                            WHERE `Symbol` = '{symbol}';",
+                        connection))
+                    using (MySqlDataReader rdr = cmd.ExecuteReader()) {
+                        while (rdr.Read()) {
+                            result.Price = rdr.IsDBNull(ColumnsQuotes.Price.GetHashCode()) ? result.Price : rdr.GetDecimal("Price");
+                            result.Timestamp = rdr.IsDBNull(ColumnsQuotes.Timestamp.GetHashCode()) ? result.Timestamp : rdr.GetDateTime("Timestamp");
+                        }
+                    }
+
+                    await connection.CloseAsync();
+                    return result;
+                } catch (Exception ex) {
+                    await Error.Log("Database.cs, GetLastQuote", ex.Message);
+                    await connection.CloseAsync();
+                    return null;
+                }
+            }
+        }
+
         public async Task<DateTime> GetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
@@ -483,6 +533,9 @@ namespace Marana {
 
         public async Task<DateTime> GetValidity_Daily(Data.Asset asset)
             => await GetValidity($"Daily:{asset.ID}");
+
+        public async Task<DateTime> GetValidity_Quote(string symbol)
+            => await GetValidity($"Quote:{symbol}");
 
         public async Task<List<string>> GetWatchlist() {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
@@ -769,6 +822,40 @@ namespace Marana {
             }
         }
 
+        public async Task SetLastQuote(Data.Quote quote) {
+            using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
+                try {
+                    await connection.OpenAsync();
+                } catch (Exception ex) {
+                    Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                    await Error.Log("Database.cs, SetLastQuote", ex.Message);
+                    return;
+                }
+
+                try {
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"DELETE FROM `Quotes` WHERE `Symbol` = '{MySqlHelper.EscapeString(quote.Symbol)}';",
+                            connection)) {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    using (MySqlCommand cmd = new MySqlCommand(
+                            $@"INSERT INTO `Quotes` (
+                            `Symbol`, `Timestamp`, `Price`
+                            ) VALUES ( '{MySqlHelper.EscapeString(quote.Symbol)}', '{quote.Timestamp:yyyy-MM-dd HH:mm}', '{quote?.Price}' );",
+                            connection)) {
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+
+                    await SetValidity($"Quote:{quote.Symbol}");
+                    await connection.CloseAsync();
+                } catch (Exception ex) {
+                    await Error.Log("Database.cs, SetLastQuote", ex.Message);
+                    await connection.CloseAsync();
+                }
+            }
+        }
+
         public async Task SetValidity(string item) {
             using (MySqlConnection connection = new MySqlConnection(ConnectionStr)) {
                 try {
@@ -894,7 +981,7 @@ namespace Marana {
 
                 try {
                     using (MySqlCommand cmd = new MySqlCommand(
-                            $@"DROP TABLE IF EXISTS Validity, Assets, Daily;",
+                            $@"DROP TABLE IF EXISTS Validity, Assets, Daily, Quotes;",
                             connection))
                         await cmd.ExecuteNonQueryAsync();
 

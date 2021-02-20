@@ -56,31 +56,31 @@ namespace Marana {
 
             for (int i = 0; i < dd.Metrics.Count; i++) {
                 try {
-                    dd.Metrics[i].SMA7 = sma7 != null ? sma7[i].Sma : null;
-                    dd.Metrics[i].SMA20 = sma20 != null ? sma20[i].Sma : null;
-                    dd.Metrics[i].SMA50 = sma50 != null ? sma50[i].Sma : null;
-                    dd.Metrics[i].SMA100 = sma100 != null ? sma100[i].Sma : null;
-                    dd.Metrics[i].SMA200 = sma200 != null ? sma200[i].Sma : null;
+                    dd.Metrics[i].SMA7 = sma7?[i].Sma;
+                    dd.Metrics[i].SMA20 = sma20?[i].Sma;
+                    dd.Metrics[i].SMA50 = sma50?[i].Sma;
+                    dd.Metrics[i].SMA100 = sma100?[i].Sma;
+                    dd.Metrics[i].SMA200 = sma200?[i].Sma;
 
-                    dd.Metrics[i].EMA7 = ema7 != null ? ema7[i].Ema : null;
-                    dd.Metrics[i].EMA20 = ema20 != null ? ema20[i].Ema : null;
-                    dd.Metrics[i].EMA50 = ema50 != null ? ema50[i].Ema : null;
+                    dd.Metrics[i].EMA7 = ema7?[i].Ema;
+                    dd.Metrics[i].EMA20 = ema20?[i].Ema;
+                    dd.Metrics[i].EMA50 = ema50?[i].Ema;
 
-                    dd.Metrics[i].DEMA7 = dema7 != null ? dema7[i].Ema : null;
-                    dd.Metrics[i].DEMA20 = dema20 != null ? dema20[i].Ema : null;
-                    dd.Metrics[i].DEMA50 = dema50 != null ? dema50[i].Ema : null;
+                    dd.Metrics[i].DEMA7 = dema7?[i].Ema;
+                    dd.Metrics[i].DEMA20 = dema20?[i].Ema;
+                    dd.Metrics[i].DEMA50 = dema50?[i].Ema;
 
-                    dd.Metrics[i].TEMA7 = tema7 != null ? tema7[i].Ema : null;
-                    dd.Metrics[i].TEMA20 = tema20 != null ? tema20[i].Ema : null;
-                    dd.Metrics[i].TEMA50 = tema50 != null ? tema50[i].Ema : null;
+                    dd.Metrics[i].TEMA7 = tema7?[i].Ema;
+                    dd.Metrics[i].TEMA20 = tema20?[i].Ema;
+                    dd.Metrics[i].TEMA50 = tema50?[i].Ema;
 
-                    dd.Metrics[i].Choppiness = chop != null ? chop[i].Chop : null;
-                    dd.Metrics[i].RSI = rsi != null ? rsi[i].Rsi : null;
-                    dd.Metrics[i].ROC14 = roc14 != null ? roc14[i].Roc : null;
+                    dd.Metrics[i].Choppiness = chop?[i].Chop;
+                    dd.Metrics[i].RSI = rsi?[i].Rsi;
+                    dd.Metrics[i].ROC14 = roc14?[i].Roc;
 
-                    dd.Metrics[i].BB = bb != null ? bb[i] : null;
-                    dd.Metrics[i].MACD = macd != null ? macd[i] : null;
-                    dd.Metrics[i].Stochastic = stoch != null ? stoch[i] : null;
+                    dd.Metrics[i].BB = bb?[i];
+                    dd.Metrics[i].MACD = macd?[i];
+                    dd.Metrics[i].Stochastic = stoch?[i];
                 } catch (Exception ex) {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);
                     await Error.Log("Calculate.cs, Metrics", ex.Message);
