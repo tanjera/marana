@@ -37,7 +37,7 @@ namespace Marana {
         }
 
         public Settings() {
-            Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Marana");
+            Directory_Working = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), GetOSStyling("Marana"));
 
             Database_Server = "localhost";
             Database_Port = 3306;
@@ -63,12 +63,30 @@ namespace Marana {
             return true;
         }
 
+        public static string GetOSStyling(string input) {
+            if (String.IsNullOrWhiteSpace(input))
+                return input;
+
+            OperatingSystem os = Environment.OSVersion;
+            if (os.Platform == PlatformID.Win32NT) {
+                if (input.Length == 1) {
+                    return input.ToUpper();
+                } else if (input.Length > 1) {          // e.g. "Marana"
+                    return $"{input.Substring(0, 1).ToUpper()}{input.Substring(1).ToLower()}";
+                }
+            } else {
+                return input.ToLower();                 // e.g. "marana"
+            }
+
+            return input;
+        }
+
         public static string GetConfigDirectory() {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Marana");
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"));
         }
 
         public static string GetConfigPath() {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Marana", "config.cfg");
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"), GetOSStyling("config.cfg"));
         }
 
         private static DirectoryInfo CreateConfigDirectory() {

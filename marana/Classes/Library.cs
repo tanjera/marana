@@ -91,21 +91,25 @@ namespace Marana {
             // If args are used, they manually override the Library Settings
             WriteLine("Updating Time Series Dailies (TSD).\n");
 
-            // Get assets to update based on current automated instructions
-            // Only if not trying to do a manually filtered update (command-line arguments)
-            List<Data.Asset> instructionAssets = new List<Data.Asset>();
-            if (args.Count == 0) {
-                // Get all instructions, add symbols to update list
+            // Get assets to update based on command-line arguments and options/settings
+            List<Data.Asset> updateAssets = new List<Data.Asset>();
+            if (args.Count > 0) {                                                       // Update re: CLI args
+                updateAssets = allAssets;
+                Data.Select_Assets(ref updateAssets, args);
+                WriteLine("\nPer command-line arguments, updating range.\n");
+            } else {
+                // Update assets used in automated instructions
+                List<Data.Asset> instructionAssets = new List<Data.Asset>();
                 List<Data.Instruction> instructions = await database.GetInstructions();
 
                 if (instructions != null && instructions.Count > 0) {
-                    foreach (Data.Instruction instruction in instructions) {
+                    foreach (Data.Instruction instruction in instructions) {            // Collect the symbols
                         instructionAssets.Add(allAssets.Find(a => a.Symbol == instruction.Symbol));
                     }
 
-                    instructionAssets = instructionAssets.Distinct().ToList();        // Remove duplicates
+                    instructionAssets = instructionAssets.Distinct().ToList();          // Remove duplicates
 
-                    if (instructionAssets.Count > 0) {
+                    if (instructionAssets.Count > 0) {                                  // Update library
                         WriteLine($"Updating assets with active automated trading instructions (live and paper).\n");
 
                         if (await Update_TSD(instructionAssets, settings, database) == ExitCode.Cancelled) {
@@ -114,19 +118,11 @@ namespace Marana {
                         }
                     }
                 }
-            }
 
-            // Get assets to update based on command-line arguments and options/settings
-            List<Data.Asset> updateAssets = new List<Data.Asset>();
-            if (args.Count > 0) {
-                updateAssets = allAssets;
-                Data.Select_Assets(ref updateAssets, args);
-                WriteLine("Per command-line arguments, updating range.\n");
-            } else {
                 switch (settings.Library_DownloadSymbols) {
                     default: break;
 
-                    case Settings.Option_DownloadSymbols.Watchlist:
+                    case Settings.Option_DownloadSymbols.Watchlist:                     // (Option) Update watchlist only
                         List<string> wl = await database.GetWatchlist();
                         if (wl == null) {
                             WriteLine("Unable to retrieve Watchlist from database. Aborting.\n");
@@ -136,12 +132,12 @@ namespace Marana {
 
                         updateAssets = allAssets.Where(a => wl.Contains(a.Symbol)).ToList();
 
-                        WriteLine("Per options, updating watchlist only.\n");
+                        WriteLine("\nPer options, updating watchlist only.\n");
                         break;
 
-                    case Settings.Option_DownloadSymbols.All:
+                    case Settings.Option_DownloadSymbols.All:                           // (Option) Update all symbols
                         updateAssets = allAssets;
-                        WriteLine("Per options, updating all symbols.\n");
+                        WriteLine("\nPer options, updating all symbols.\n");
                         break;
                 }
             }
