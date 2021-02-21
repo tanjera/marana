@@ -1,6 +1,9 @@
 # Marana (Market Technical Analytics and Trading)
 
-Marana is a cross-platform project written in C#/Mono designed to allow retail investors to use technical analysis of market assets in order to inform and conduct market trading, using the [Alpaca](https://alpaca.markets/) platform for market data and [Skender.Stock.Indicators](https://github.com/DaveSkender/Stock.Indicators) for analytics and metrics. Additionally, Marana uses a MySQL database for its storage and handling of data. Since Marana is comprised of free and/or open source software, this allows retail investors to conduct technical analysis of data with minimal financial barriers to entry.
+Marana is a cross-platform project written in C#/Mono designed to allow retail investors to use technical analysis of market assets in order to inform and conduct market trading, using the [Alpaca](https://alpaca.markets/) and [Alpha Vantage](https://www.alphavantage.co/) platforms for market data and [Skender.Stock.Indicators](https://github.com/DaveSkender/Stock.Indicators) for analytics and metrics. Marana stores and handles cached and calculated data using a MySQL database. Using SQL queries and instruction sets that can be developed by the user and stored in the MySQL database, Marana can execute automated trades using the [Alpaca](https://alpaca.markets/) trading platform.
+
+Since Marana is comprised of free and/or open source software, this allows retail investors to conduct technical analysis of data with minimal financial barriers to entry.
+
 
 ## Warnings
 - To quote the distribution license (a.k.a. end-user license agreement), Marana is provided on an "as is" basis "without warranties... [of] fitness for a particular purpose", and "in no event... shall any [developer] be liable to you for damages [(monetary losses)]... out of the use or inability to use the [program]". In other words- use this product at your own risk.
@@ -11,13 +14,18 @@ Marana is a cross-platform project written in C#/Mono designed to allow retail i
 Marana is currently under development. Here are running lists of implemented features and planned features:
 
 ### Current, Implemented Features
-- Connection to [Alpaca API](https://alpaca.markets/docs/about-us/)'s free service for retrieval of daily market data.
-- Retrieves last 300-1000 trading days (~1 yr+) of market data (NASDAQ, NYSE) for all assets
+- Data Library management and updating using a variety of options, including data providers:
+  - Connection to [Alpaca API](https://alpaca.markets/docs/about-us/)'s free service for retrieval of daily market data.
+  - Connection to [Alpha Vantage API](https://www.alphavantage.co/documentation/)'s free service for retrieval of daily market data.
+- Retrieves last 300-1000 trading days (~1 yr+) of market data (NASDAQ, NYSE) for assets
+  - Can retrieve all market data
+  - Can retrieve only symbols specified on a watchlist
 - Uses a command-line interface (CLI) that can be run by OS task scheduling, cron jobs
+  - Allows for updating data library and executing automated trading on specific intervals
 - Stores all market data in a MySQL database via network connection
   - Raw data can be queried by any SQL interface (e.g. MySQL Workbench)
   - Can populate a watchlist to only maintain data for specific symbols
-- Performs technical analysis of all assets, including:
+- Performs technical analysis of all assets and stores results in MySQL database, including:
   - Simple Moving Averages (SMA; 7d, 20d, 50d, 100d, 200d)
   - Exponential Moving Averages, Double and Triple (EMA, DEMA, TEMA; 7d, 20d, 50d)
   - Relative Strength Index (RSI)
@@ -29,13 +37,14 @@ Marana is currently under development. Here are running lists of implemented fea
 - Execution of automated trading instructions based on pre-defined strategies
   - Strategies in database as sets of SQL queries to determine buy/sell signals
   - Automated trading instructions will buy/sell based on strategy signals
+    - Numerous condition checks prevent accidental duplicate orders or margin trading
+    - Verbose console output gives transparency to automated results and actions
   - Can validate strategy SQL queries in GUI to ensure no erroneous SQL syntax
 
 ### Future, Planned Features
+- Graphical interface panes for additional database tasks
 - Additional technical analysis indicators and metrics
-- Intra-day market data
-- Entry and execution of automated trading strategies, written as SQL queries
-- Data analysis targeted to a portfolio
+- Intra-day market data and trading
 
 ## Instructions for Use
 Although Marana aims to reduce barriers to data analysis for retail investors, **using Marana still requires a fair amount of computing skills, especially writing database queries** including a minimum ability to use the command prompt, install a MySQL database service, and be able to write basic SQL (database) queries. Although using Marana and its connected services are all free, it is not a turnkey operation.
@@ -64,3 +73,39 @@ Although Marana aims to reduce barriers to data analysis for retail investors, *
    2) If you forget the list of command-line arguments, you can run `marana.exe help`
    ![image](docs/cli_commands.png)
    *`marana.exe help`*
+
+5) Access Marana's Data Library
+   1) It is recommended to use a graphical interface like [MySQL Workbench](https://www.mysql.com/products/workbench/) for accessing the database
+   2) Accessing Marana's MySQL database directly allows you to run queries directly against raw market data, which is useful for:
+      1) Screening stocks based on specific values and indicators
+      2) Selecting stocks for further research
+      3) Developing queries to function as entry and exit queries for automated strategies
+   3) Some sample queries include:
+      1) Selecting all stocks whose [Moving Average Convergence/Divergence (MACD)](https://www.investopedia.com/terms/m/macd.asp) is over the MACD Signal
+         ```
+         SELECT             
+            today.Symbol,
+            today.Date,            
+            today.MACD,
+            today.MACD_Signal
+         FROM
+            Marana.Daily today
+         WHERE            
+            today.Date = CURDATE()
+            AND today.MACD > today.MACD_Signal               
+         ;
+         ```
+      2) Selecting all stocks whose [Stochastic Oscillator](https://www.investopedia.com/terms/s/stochasticoscillator.asp) is under 25, a common signal to buy.
+         ```
+         SELECT             
+            today.Symbol,
+            today.Date,
+            today.Stochastic_Oscillator
+         FROM
+            Marana.Daily today
+         WHERE            
+            today.Date = CURDATE()
+            AND today.Stochastic_Oscillator < 25               
+         ;
+
+         ```
