@@ -52,7 +52,9 @@ namespace Marana {
         }
 
         public static async Task RunAutomation(Settings settings, Database db, Data.Format format, DateTime day) {
-            Prompt.WriteLine($"\nRunning automated rules for {format} trades.");
+            Prompt.WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            Prompt.WriteLine($">>> Running automated rules for {format} instructions\n");
+
             List<Data.Instruction> instructions = (await db.GetInstructions())?.Where(i => i.Format == format).ToList();
             List<Data.Strategy> strategies = await db.GetStrategies();
 
@@ -66,7 +68,7 @@ namespace Marana {
             if (result is List<Data.Position> pmldp) {
                 positions = pmldp;
             } else {
-                Prompt.WriteLine("Unable to retrieve current trade positions from Alpaca API. Aborting.");
+                Prompt.WriteLine("Unable to retrieve current trade positions from Alpaca API. Aborting.\n");
                 return;
             }
 
@@ -74,22 +76,22 @@ namespace Marana {
             if (result is List<Data.Order> pmldo) {
                 orders = pmldo;
             } else {
-                Prompt.WriteLine("Unable to retrieve current open orders from Alpaca API. Aborting.");
+                Prompt.WriteLine("Unable to retrieve current open orders from Alpaca API. Aborting.\n");
                 return;
             }
 
             if (assets == null || assets.Count == 0) {
-                Prompt.WriteLine("Unable to retrieve asset list from database.");
+                Prompt.WriteLine("Unable to retrieve asset list from database.\n");
                 return;
             }
 
             if (instructions == null || instructions.Count == 0) {
-                Prompt.WriteLine("No automated instruction rules found in database. Aborting.");
+                Prompt.WriteLine("No automated instruction rules found in database. Aborting.\n");
                 return;
             }
 
             if (strategies == null || strategies.Count == 0) {
-                Prompt.WriteLine("No automation strategies found in database. Aborting.");
+                Prompt.WriteLine("No automation strategies found in database. Aborting.\n");
                 return;
             }
 
@@ -103,19 +105,26 @@ namespace Marana {
                     + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency})");
 
                 if (strategy == null) {
-                    Prompt.WriteLine($"Strategy '{instructions[i].Strategy}' not found in database. Aborting.");
+                    Prompt.WriteLine($"Strategy '{instructions[i].Strategy}' not found in database. Aborting.\n");
                     continue;
                 }
 
                 if (asset == null) {
-                    Prompt.WriteLine($"Asset '{instructions[i].Symbol}' not found in database. Aborting.");
+                    Prompt.WriteLine($"Asset '{instructions[i].Symbol}' not found in database. Aborting.\n");
                     continue;
                 }
 
                 if (instructions[i].Frequency == Data.Frequency.Daily) {
-                    await RunAutomation_Daily(settings, db, format, instructions[i], strategy, day, asset, position, order);
+                    if (!instructions[i].Active) {
+                        Prompt.WriteLine($"Instruction marked as 'Inactive'. Skipping.\n");
+                    } else if (instructions[i].Active) {
+                        await RunAutomation_Daily(settings, db, format, instructions[i], strategy, day, asset, position, order);
+                    }
                 }
             }
+
+            Prompt.WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            Prompt.WriteLine($">>> Completed running automated rules for {format} instructions\n");
         }
 
         public static async Task RunAutomation_Daily(Settings settings, Database db,

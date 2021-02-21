@@ -84,10 +84,11 @@ namespace Marana.GUI {
                 new MenuBarItem("S_trategies", new MenuItem[] {
                     new MenuItem ("_Test Queries", "", new Action(StrategiesTest)),
                 }),
-
+                /*  Needs GUI implementation
                 new MenuBarItem("Tra_ding", new MenuItem[] {
                     new MenuItem("_Enter Automated Trade", "", new Action(TradingEnterAutomation)),
                 })
+                */
             });
 
             Version version = Assembly.GetExecutingAssembly().GetName().Version;

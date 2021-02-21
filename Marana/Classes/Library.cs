@@ -77,51 +77,41 @@ namespace Marana {
         public async Task Update(List<string> args, Settings settings, Database database) {
             Status = Statuses.Updating;
 
-            WriteLine("Initializing database.");
+            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            WriteLine(">>> Library update starting\n");
+
+            WriteLine("Initializing database.\n");
             await database.Init();
 
             // Gets all available assets; updates database as needed
-            WriteLine("Querying database for list of ticker symbols.");
+            WriteLine("Querying database for list of ticker symbols.\n");
             List<Data.Asset> allAssets = await GetAssets(database);
 
             // Select assets to update data for
             // If args are used, they manually override the Library Settings
-            WriteLine("Updating Time Series Dailies (TSD).");
+            WriteLine("Updating Time Series Dailies (TSD).\n");
 
-            // Get assets to update based on current positions, Paper and Live
+            // Get assets to update based on current automated instructions
             // Only if not trying to do a manually filtered update (command-line arguments)
-            List<Data.Asset> positionAssets = new List<Data.Asset>();
+            List<Data.Asset> instructionAssets = new List<Data.Asset>();
             if (args.Count == 0) {
-                object result;
+                // Get all instructions, add symbols to update list
+                List<Data.Instruction> instructions = await database.GetInstructions();
 
-                // Get paper positions, add data to update list
-                result = await API.Alpaca.GetPositions(settings, Data.Format.Paper);
-                if (result is List<Data.Position>) {
-                    foreach (Data.Position pPaper in result as List<Data.Position>) {
-                        positionAssets.Add(allAssets.Find(a => a.ID == pPaper.ID));
+                if (instructions != null && instructions.Count > 0) {
+                    foreach (Data.Instruction instruction in instructions) {
+                        instructionAssets.Add(allAssets.Find(a => a.Symbol == instruction.Symbol));
                     }
-                } else {
-                    WriteLine($"Error: Unable to access current positions (paper) via Alpaca API");
-                }
 
-                // Get live positions, add data to update list
-                result = await API.Alpaca.GetPositions(settings, Data.Format.Live);
-                if (result is List<Data.Position>) {
-                    foreach (Data.Position pLive in result as List<Data.Position>) {
-                        positionAssets.Add(allAssets.Find(a => a.ID == pLive.ID));
-                    }
-                } else {
-                    WriteLine($"Error: Unable to access current positions (live) via Alpaca API");
-                }
+                    instructionAssets = instructionAssets.Distinct().ToList();        // Remove duplicates
 
-                positionAssets = positionAssets.Distinct().ToList();        // Remove duplicates
+                    if (instructionAssets.Count > 0) {
+                        WriteLine($"Updating assets with active automated trading instructions (live and paper).\n");
 
-                if (positionAssets.Count > 0) {
-                    WriteLine($"Updating assets with an active trading (live and paper) position.");
-
-                    if (await Update_TSD(positionAssets, settings, database) == ExitCode.Cancelled) {
-                        await Update_Cancel();
-                        return;
+                        if (await Update_TSD(instructionAssets, settings, database) == ExitCode.Cancelled) {
+                            await Update_Cancel();
+                            return;
+                        }
                     }
                 }
             }
@@ -131,7 +121,7 @@ namespace Marana {
             if (args.Count > 0) {
                 updateAssets = allAssets;
                 Data.Select_Assets(ref updateAssets, args);
-                WriteLine("Per command-line arguments, updating range.");
+                WriteLine("Per command-line arguments, updating range.\n");
             } else {
                 switch (settings.Library_DownloadSymbols) {
                     default: break;
@@ -139,19 +129,19 @@ namespace Marana {
                     case Settings.Option_DownloadSymbols.Watchlist:
                         List<string> wl = await database.GetWatchlist();
                         if (wl == null) {
-                            WriteLine("Unable to retrieve Watchlist from database. Aborting.");
+                            WriteLine("Unable to retrieve Watchlist from database. Aborting.\n");
                             await Update_Cancel();
                             return;
                         }
 
                         updateAssets = allAssets.Where(a => wl.Contains(a.Symbol)).ToList();
 
-                        WriteLine("Per options, updating watchlist only.");
+                        WriteLine("Per options, updating watchlist only.\n");
                         break;
 
                     case Settings.Option_DownloadSymbols.All:
                         updateAssets = allAssets;
-                        WriteLine("Per options, updating all symbols.");
+                        WriteLine("Per options, updating all symbols.\n");
                         break;
                 }
             }
@@ -165,13 +155,15 @@ namespace Marana {
         }
 
         public async Task Update_Cancel() {
-            WriteLine("Library update cancelled.");
+            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            WriteLine(">>> Library update cancelled\n");
             Status = Statuses.Inactive;
             CancelUpdate = false;
         }
 
         public async Task Update_Complete() {
-            WriteLine("Library update complete.");
+            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            WriteLine(">>> Library update complete\n");
             Status = Statuses.Inactive;
         }
 
@@ -270,7 +262,7 @@ namespace Marana {
                 if (CancelUpdate)
                     return ExitCode.Cancelled;
 
-                Write($"{DateTime.Now:MM/dd/yyyy HH:mm} [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
+                Write($"  [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
                 /* Check validity timestamp against last known market close
                  */
@@ -331,7 +323,7 @@ namespace Marana {
 
             int finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             if (finishing > 0) {
-                WriteLine($"{DateTime.Now:MM/dd/yyyy HH:mm:ss}:  Completing {finishing} remaining background database tasks.");
+                WriteLine($"  Completing {finishing} remaining background database tasks.");
                 await Task.Delay(5000);
 
                 finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
