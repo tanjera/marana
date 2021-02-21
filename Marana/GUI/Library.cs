@@ -80,7 +80,8 @@ namespace Marana.GUI {
 
             window.Add(
                 new Label("Limit of daily entries to download:") { X = x1, Y = 1 },
-                new Label("Download data for:") { X = x1, Y = 3 }
+                new Label("Download data for:") { X = x1, Y = 3 },
+                new Label("Data Provider:") { X = x1, Y = 6 }
 
             );
 
@@ -96,9 +97,16 @@ namespace Marana.GUI {
                 X = x2, Y = 3
             };
 
+            RadioGroup rgDataProvider = new RadioGroup(
+                new NStack.ustring[] { "Alpaca", "Alpha Vantage" },
+                gm.Settings.Library_DataProvider.GetHashCode()) {
+                X = x2, Y = 6
+            };
+
             window.Add(
                 tfDailyEntries,
-                rgDownloadFor
+                rgDownloadFor,
+                rgDataProvider
                 );
 
             // Dialog notification on save success
@@ -108,7 +116,7 @@ namespace Marana.GUI {
             // Button for saving settings
 
             Button btnSave = new Button("Save Settings") {
-                X = Pos.Center(), Y = Pos.Bottom(rgDownloadFor) + 2
+                X = Pos.Center(), Y = Pos.Bottom(rgDataProvider) + 2
             };
 
             btnSave.Clicked += async () => {
@@ -120,6 +128,7 @@ namespace Marana.GUI {
                 tfDailyEntries.Text = gm.Settings.Library_LimitDailyEntries.ToString();
 
                 gm.Settings.Library_DownloadSymbols = (Marana.Settings.Option_DownloadSymbols)rgDownloadFor.SelectedItem;
+                gm.Settings.Library_DataProvider = (Marana.Settings.Option_DataProvider)rgDataProvider.SelectedItem;
 
                 await Marana.Settings.SaveConfig(gm.Settings);
 

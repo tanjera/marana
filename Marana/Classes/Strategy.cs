@@ -8,10 +8,10 @@ namespace Marana {
 
     public static class Strategy {
 
-        public static async Task<string> Interpret(string query, string symbol) {
+        public static async Task<string> Interpret(string query, string symbol, DateTime day) {
             return query?
                 .Replace("{SYMBOL}", symbol)
-                .Replace("{DATE}", DateTime.Today.ToString("yyyy-MM-dd"));
+                .Replace("{DATE}", day.ToString("yyyy-MM-dd"));
         }
     }
 }

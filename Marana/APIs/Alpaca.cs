@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +11,32 @@ using Alpaca.Markets;
 namespace Marana.API {
 
     public class Alpaca {
+
+        public static async Task ClearOrders(Settings settings, Data.Format format) {
+            IAlpacaTradingClient trading = null;
+
+            try {
+                if (format == Data.Format.Live) {
+                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                        return;
+                    }
+
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                } else if (format == Data.Format.Paper) {
+                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                        return;
+                    }
+
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                }
+
+                await trading.DeleteAllOrdersAsync();
+                return;
+            } catch (Exception ex) {
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return;
+            }
+        }
 
         public static async Task<object> GetAssets(Settings settings) {
             try {
@@ -41,7 +68,7 @@ namespace Marana.API {
                 }
                 return output;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetAssets", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
         }
@@ -68,7 +95,7 @@ namespace Marana.API {
 
                 return account.TradableCash;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetTradeableCash", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
         }
@@ -103,27 +130,7 @@ namespace Marana.API {
 
                 return ds;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetData_Daily", ex);
-                return ex.Message;
-            }
-        }
-
-        public static async Task<object> GetLastQuote(Settings settings, string symbol) {
-            IAlpacaDataClient data;
-
-            try {
-                if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                } else if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
-                } else {
-                    return new ArgumentNullException();
-                }
-
-                var quote = await data.GetLastQuoteAsync(symbol);
-                return new Data.Quote() { Symbol = symbol, Price = quote.AskPrice, Timestamp = DateTime.UtcNow };
-            } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetLastQuote", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
         }
@@ -157,7 +164,7 @@ namespace Marana.API {
                     Quantity = p.Quantity
                 }).ToList();
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetPositions", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -177,7 +184,7 @@ namespace Marana.API {
                 var calendars = client.ListCalendarAsync(new CalendarRequest().SetInclusiveTimeInterval(DateTime.UtcNow - new TimeSpan(30, 0, 0, 0), DateTime.UtcNow)).Result;
                 return calendars.Where(c => c.TradingCloseTimeUtc.CompareTo(DateTime.UtcNow) <= 0).Last().TradingCloseTimeUtc;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetTime_LastMarketClose", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
         }
@@ -209,12 +216,12 @@ namespace Marana.API {
                     .Select<IOrder, Data.Order>((q) => { return new Data.Order() { Symbol = q.Symbol, Quantity = (int)q.Quantity }; })
                     .ToList();
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: GetOrders_OpenBuy", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
         }
 
-        public static async Task<bool> PlaceOrder_BuyMarket(Settings settings, Database db, Data.Format format, string symbol, int shares,
+        public static async Task<Trade.OrderResult> PlaceOrder_BuyMarket(Settings settings, Database db, Data.Format format, string symbol, int shares,
             TimeInForce timeInForce = TimeInForce.Gtc, bool useMargin = false) {
             IAlpacaTradingClient trading = null;
             IAlpacaDataClient data = null;
@@ -222,14 +229,14 @@ namespace Marana.API {
             try {
                 if (format == Data.Format.Live) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                     data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
@@ -241,41 +248,29 @@ namespace Marana.API {
                 if (trading == null || account == null
                     || account.IsAccountBlocked || account.IsTradingBlocked
                     || account.TradeSuspendedByUser)
-                    return false;
-
-                if (!useMargin) {       // If not using margin trading
-                                        // Ensure there is (as best as can be approximated) enough cash in account for transaction
-                    decimal? cash = await Trade.GetAvailableCash(settings, db, format);
-                    if (cash == null) {
-                        return false;
-                    }
-
-                    var quote = await data.GetLastQuoteAsync(symbol);
-                    if (cash < shares * quote.AskPrice)
-                        return false;
-                }
+                    return Trade.OrderResult.Fail;
 
                 var order = await trading.PostOrderAsync(MarketOrder.Buy(symbol, shares).WithDuration(timeInForce));
-                return true;
+                return Trade.OrderResult.Success;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: PlaceOrder_BuyMarket", ex);
-                return false;
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return Trade.OrderResult.Fail;
             }
         }
 
-        public static async Task<bool> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares,
+        public static async Task<Trade.OrderResult> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares,
             TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
             try {
                 if (format == Data.Format.Live) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
@@ -286,39 +281,39 @@ namespace Marana.API {
                 if (trading == null || account == null
                     || account.IsAccountBlocked || account.IsTradingBlocked
                     || account.TradeSuspendedByUser)
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
                 var positions = await trading.ListPositionsAsync();
                 if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
                 if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var order = await trading.PostOrderAsync(MarketOrder.Sell(symbol, shares).WithDuration(timeInForce));
-                return true;
+                return Trade.OrderResult.Success;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: PlaceOrder_SellMarket", ex);
-                return false;
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return Trade.OrderResult.Fail;
             }
         }
 
-        public static async Task<bool> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice,
+        public static async Task<Trade.OrderResult> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice,
             TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
@@ -329,39 +324,39 @@ namespace Marana.API {
                 if (trading == null || account == null
                     || account.IsAccountBlocked || account.IsTradingBlocked
                     || account.TradeSuspendedByUser)
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
                 var positions = await trading.ListPositionsAsync();
                 if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
                 if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var order = await trading.PostOrderAsync(LimitOrder.Sell(symbol, shares, limitPrice).WithDuration(timeInForce));
-                return true;
+                return Trade.OrderResult.Success;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: PlaceOrder_SellLimit", ex);
-                return false;
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return Trade.OrderResult.Fail;
             }
         }
 
-        public static async Task<bool> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice,
+        public static async Task<Trade.OrderResult> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice,
             TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
                     if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                        return false;
+                        return Trade.OrderResult.Fail;
                     }
 
                     trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
@@ -372,22 +367,22 @@ namespace Marana.API {
                 if (trading == null || account == null
                     || account.IsAccountBlocked || account.IsTradingBlocked
                     || account.TradeSuspendedByUser)
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 // Prevents unintentionally short selling (selling into negative digits, the API interprets that as intent to short-sell)
                 var positions = await trading.ListPositionsAsync();
                 if (!positions.Any(p => p.Symbol == symbol))                // If there is no position for this symbol
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var position = await trading.GetPositionAsync(symbol);      // If there were no position, this would throw an Exception!
                 if (position == null || position.Quantity < shares)         // If the current position doesn't have enough shares
-                    return false;
+                    return Trade.OrderResult.Fail;
 
                 var order = await trading.PostOrderAsync(StopLimitOrder.Sell(symbol, shares, stopPrice, limitPrice).WithDuration(timeInForce));
-                return true;
+                return Trade.OrderResult.Success;
             } catch (Exception ex) {
-                await Error.Log("Alpaca.cs: PlaceOrder_SellStopLimit", ex);
-                return false;
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return Trade.OrderResult.Fail;
             }
         }
     }

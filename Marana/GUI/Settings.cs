@@ -33,11 +33,13 @@ namespace Marana.GUI {
                 new Label("Alpaca API Paper Key") { X = x1, Y = 7 },
                 new Label("Alpaca API Paper Secret") { X = x1, Y = 8 },
 
-                new Label("Database Server") { X = x1, Y = 10 },
-                new Label("Database Port") { X = x1, Y = 11 },
-                new Label("Database Schema") { X = x1, Y = 12 },
-                new Label("Database Username") { X = x1, Y = 13 },
-                new Label("Database Password") { X = x1, Y = 14 }
+                new Label("Alpha Vantage API Key") { X = x1, Y = 10 },
+
+                new Label("Database Server") { X = x1, Y = 12 },
+                new Label("Database Port") { X = x1, Y = 13 },
+                new Label("Database Schema") { X = x1, Y = 14 },
+                new Label("Database Username") { X = x1, Y = 15 },
+                new Label("Database Password") { X = x1, Y = 16 }
             );
 
             // Fields for text entry
@@ -60,8 +62,12 @@ namespace Marana.GUI {
                 X = x2, Y = Pos.Bottom(tfAlpacaPaperKey), Width = w2
             };
 
-            TextField tfDbServer = new TextField(gm.Settings.Database_Server ?? "") {
+            TextField tfAlphaVantageKey = new TextField(gm.Settings.API_AlphaVantage_Key ?? "") {
                 X = x2, Y = Pos.Bottom(tfAlpacaPaperSecret) + 1, Width = w2
+            };
+
+            TextField tfDbServer = new TextField(gm.Settings.Database_Server ?? "") {
+                X = x2, Y = Pos.Bottom(tfAlphaVantageKey) + 1, Width = w2
             };
             TextField tfDbPort = new TextField(gm.Settings.Database_Port.ToString() ?? "") {
                 X = x2, Y = Pos.Bottom(tfDbServer), Width = w2
@@ -82,6 +88,7 @@ namespace Marana.GUI {
                 tfAlpacaLiveSecret,
                 tfAlpacaPaperKey,
                 tfAlpacaPaperSecret,
+                tfAlphaVantageKey,
                 tfDbServer,
                 tfDbPort,
                 tfDbSchema,
@@ -107,6 +114,8 @@ namespace Marana.GUI {
 
                 gm.Settings.API_Alpaca_Paper_Key = tfAlpacaPaperKey.Text.ToString().Trim();
                 gm.Settings.API_Alpaca_Paper_Secret = tfAlpacaPaperSecret.Text.ToString().Trim();
+
+                gm.Settings.API_AlphaVantage_Key = tfAlphaVantageKey.Text.ToString().Trim();
 
                 gm.Settings.Database_Server = tfDbServer.Text.ToString().Trim();
                 gm.Settings.Database_Schema = tfDbSchema.Text.ToString().Trim();

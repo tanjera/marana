@@ -8,6 +8,12 @@ namespace Marana {
 
     public class Trade {
 
+        public enum OrderResult {
+            Success,
+            Fail,
+            FailInsufficientFunds
+        }
+
         public static async Task<decimal?> GetAvailableCash(Settings settings, Database db, Data.Format format) {
             object result;
 
@@ -21,38 +27,54 @@ namespace Marana {
 
             List<Data.Order> orders;
             result = await API.Alpaca.GetOrders_OpenBuy(settings, format);
-            if (result is List<Data.Order> l) {
-                orders = l;
+            if (result is List<Data.Order> pml) {
+                orders = pml;
             } else {
                 return null;
             }
 
             decimal marked = 0m;
             Library library = new Library();
-            foreach (Data.Order order in orders) {
-                decimal? price = (await library.GetLastQuote(db, order.Symbol)).Price;
-                if (price == null)
+
+            List<Data.Asset> assets = (await library.GetAssets(db))?.Where(a => orders.Any(o => o.Symbol == a.Symbol)).ToList();
+            Dictionary<string, decimal?> prices = await library.GetLastPrices(settings, db, assets);
+
+            for (int i = 0; i < orders.Count; i++) {
+                Data.Asset asset = assets.Find(a => a.Symbol == orders[i].Symbol);
+
+                if (asset == null || prices == null || !prices.ContainsKey(asset.ID))
                     return null;
 
-                marked += order.Quantity * price ?? 999999m;
+                marked += orders[i].Quantity * prices[asset.ID] ?? 999999m;
             }
 
             return cash - marked;
         }
 
-        public static async Task RunAutomation(Settings settings, Database db, Data.Format format) {
+        public static async Task RunAutomation(Settings settings, Database db, Data.Format format, DateTime day) {
             Prompt.WriteLine($"\nRunning automated rules for {format} trades.");
             List<Data.Instruction> instructions = (await db.GetInstructions())?.Where(i => i.Format == format).ToList();
             List<Data.Strategy> strategies = await db.GetStrategies();
 
             List<Data.Asset> assets = await new Library().GetAssets(db);
             List<Data.Position> positions;
+            List<Data.Order> orders;
 
-            object result = await API.Alpaca.GetPositions(settings, format);
-            if (result is List<Data.Position>) {
-                positions = result as List<Data.Position>;
+            object result;
+
+            result = await API.Alpaca.GetPositions(settings, format);
+            if (result is List<Data.Position> pmldp) {
+                positions = pmldp;
             } else {
                 Prompt.WriteLine("Unable to retrieve current trade positions from Alpaca API. Aborting.");
+                return;
+            }
+
+            result = await API.Alpaca.GetOrders_OpenBuy(settings, format);
+            if (result is List<Data.Order> pmldo) {
+                orders = pmldo;
+            } else {
+                Prompt.WriteLine("Unable to retrieve current open orders from Alpaca API. Aborting.");
                 return;
             }
 
@@ -75,6 +97,7 @@ namespace Marana {
                 Data.Strategy strategy = strategies.Find(s => s.Name == instructions[i].Strategy);
                 Data.Asset asset = assets.Find(a => a.Symbol == instructions[i].Symbol);
                 Data.Position position = positions.Find(p => p.Symbol == instructions[i].Symbol);
+                Data.Order order = orders.Find(o => o.Symbol == instructions[i].Symbol && o.Quantity == instructions[i].Quantity);
 
                 Prompt.WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format}): "
                     + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency})");
@@ -90,13 +113,15 @@ namespace Marana {
                 }
 
                 if (instructions[i].Frequency == Data.Frequency.Daily) {
-                    await RunAutomation_Daily(settings, db, instructions[i], strategy, asset, position);
+                    await RunAutomation_Daily(settings, db, format, instructions[i], strategy, day, asset, position, order);
                 }
             }
         }
 
         public static async Task RunAutomation_Daily(Settings settings, Database db,
-            Data.Instruction instruction, Data.Strategy strategy, Data.Asset asset, Data.Position position) {
+                Data.Format format, Data.Instruction instruction, Data.Strategy strategy,
+                DateTime day, Data.Asset asset, Data.Position position, Data.Order order,
+                bool useMargin = false) {
             // Get last market close to ensure most up-to-date data exists
             // And that today's potential data exists (since SQL query interprets to query for today's prices!)
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
@@ -106,19 +131,20 @@ namespace Marana {
             }
 
             // Check data validity (last update time) to ensure it is most recent
+            Library library = new Library();
             DateTime validity = await db.GetValidity_Daily(asset);
 
             if (validity.CompareTo(lastMarketClose) < 0) {              // If data is invalid
                 Prompt.WriteLine("Latest market data for this symbol needs updating. Updating now.");
-                await new Library().Update_TSD(new List<Data.Asset>() { asset }, settings, db);
+                await library.Update_TSD(new List<Data.Asset>() { asset }, settings, db);
                 await Task.Delay(10000);                         // Allow library update's database threads to get ahead
                 validity = await db.GetValidity_Daily(asset);
             }
 
             if (validity.CompareTo(lastMarketClose) > 0) {       // If validity is current, data is valid
-                bool toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol));
-                bool toSell = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol))
-                    || await db.ScalarQuery(await Strategy.Interpret(strategy.ExitLoss, instruction.Symbol));
+                bool toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
+                bool toSell = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day))
+                    || await db.ScalarQuery(await Strategy.Interpret(strategy.ExitLoss, instruction.Symbol, day));
 
                 if (toBuy && toSell) {   // Cannot simultaneously buy and sell ... erroneous queries?
                     Prompt.WriteLine("Buy AND Sell triggers met- doing nothing. Check strategy for errors?");
@@ -129,30 +155,70 @@ namespace Marana {
                     // Warning: API buy/sell orders use negative quantity to indicate short positions
                     // And/or may just throw exceptions when attempting to sell to negative
 
-                    if (position == null || position.Quantity <= 0) {
-                        Prompt.WriteLine("Buy trigger detected; no current position owned; placing Buy order.");
-                        if (await API.Alpaca.PlaceOrder_BuyMarket(settings, db, instruction.Format, instruction.Symbol, instruction.Quantity)) {
-                            Prompt.WriteLine("Order successfully placed.", ConsoleColor.Green);
-                        } else {
-                            Prompt.WriteLine("Order placement unsuccessful.", ConsoleColor.Red);
+                    if (position != null && position.Quantity > 0) {
+                        Prompt.WriteLine("  Buy trigger detected; active position already exists; doing nothing.");
+                    } else if (order != null) {
+                        Prompt.WriteLine("  Buy trigger detected; identical open buy order already exists; doing nothing.");
+                    } else if (order == null && (position == null || position.Quantity <= 0)) {
+                        Prompt.WriteLine("  Buy trigger detected; no current position owned; placing Buy order.");
+
+                        // If not using margin trading
+                        // Ensure there is (as best as can be approximated) enough cash in account for transaction
+
+                        decimal? availableCash = await GetAvailableCash(settings, db, format);
+
+                        if (!useMargin && availableCash == null) {
+                            Prompt.WriteLine("    Error calculating available cash; instructed not to trade on margin; aborting.");
+                            return;
                         }
-                    } else if (position != null && position.Quantity > 0) {
-                        Prompt.WriteLine("Buy trigger detected; active position already exists; doing nothing.");
+
+                        decimal? lastPrice = (await library.GetLastPrice(settings, db, asset)).Close;
+                        decimal? orderPrice = instruction.Quantity * lastPrice;
+
+                        if (!useMargin && (lastPrice == null || orderPrice == null)) {
+                            Prompt.WriteLine("    Error calculating estimated cost of buy order; unable to determine if margin trading needed; aborting.");
+                            return;
+                        }
+
+                        if (!useMargin && (availableCash < orderPrice)) {
+                            Prompt.WriteLine($"    Available cash ${availableCash:n0} insufficient for buy order ${orderPrice:n0}; aborting.");
+                            return;
+                        }
+
+                        Prompt.WriteLine($"    Available cash ${availableCash:n0} sufficient for buy order ${orderPrice:n0}.");
+
+                        switch (await API.Alpaca.PlaceOrder_BuyMarket(settings, db, instruction.Format, instruction.Symbol, instruction.Quantity)) {
+                            case OrderResult.Success:
+                                Prompt.WriteLine(">> Order successfully placed.", ConsoleColor.Green);
+                                break;
+
+                            case OrderResult.Fail:
+                                Prompt.WriteLine(">> Order placement unsuccessful.", ConsoleColor.Red);
+                                break;
+
+                            case OrderResult.FailInsufficientFunds:
+                                Prompt.WriteLine(">> Order placement unsuccessful; Insufficient available funds.", ConsoleColor.Red);
+                                break;
+                        }
                     }
                 } else if (toSell) {
                     if (position == null || position.Quantity <= 0) {
-                        Prompt.WriteLine("Sell trigger detected; no current position owned; doing nothing.");
+                        Prompt.WriteLine("  Sell trigger detected; no current position owned; doing nothing.");
                     } else if (position != null && position.Quantity > 0) {
-                        Prompt.WriteLine("Sell trigger detected; active position found; placing Sell order.");
+                        Prompt.WriteLine("  Sell trigger detected; active position found; placing Sell order.");
                         // Sell position.quantity in case position.Quantity != instruction.Quantity
-                        if (await API.Alpaca.PlaceOrder_SellMarket(settings, instruction.Format, instruction.Symbol, position.Quantity)) {
-                            Prompt.WriteLine("Order successfully placed.", ConsoleColor.Green);
-                        } else {
-                            Prompt.WriteLine("Order placement unsuccessful.", ConsoleColor.Red);
+                        switch (await API.Alpaca.PlaceOrder_SellMarket(settings, instruction.Format, instruction.Symbol, position.Quantity)) {
+                            case OrderResult.Success:
+                                Prompt.WriteLine(">> Order successfully placed.", ConsoleColor.Green);
+                                break;
+
+                            case OrderResult.Fail:
+                                Prompt.WriteLine(">> Order placement unsuccessful.", ConsoleColor.Red);
+                                break;
                         }
                     }
                 } else {
-                    Prompt.WriteLine("No triggers detected.");
+                    Prompt.WriteLine("  No triggers detected.");
                 }
             }
         }

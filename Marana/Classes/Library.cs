@@ -175,6 +175,11 @@ namespace Marana {
             Status = Statuses.Inactive;
         }
 
+        public async Task<Data.Asset> GetAsset(Database db, string symbol) {
+            List<Data.Asset> assets = await GetAssets(db);
+            return assets.Find(a => a.Symbol == symbol);
+        }
+
         public async Task<List<Data.Asset>> GetAssets(Database db) {
             // Update ticker symbols weekly
             if (DateTime.UtcNow - db.GetValidity_Assets().Result > new TimeSpan(7, 0, 0, 0))
@@ -183,35 +188,56 @@ namespace Marana {
             return await db.GetAssets();
         }
 
-        public async Task<Data.Quote> GetLastQuote(Database db, string symbol) {
-            // Update ticker symbols weekly
-            if (DateTime.UtcNow - db.GetValidity_Quote(symbol).Result > new TimeSpan(0, 15, 0))
-                await Update_LastQuote(db, symbol);
+        public async Task<Data.Daily.Price> GetLastPrice(Settings settings, Database db, Data.Asset asset) {
+            DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
+            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
 
-            return await db.GetLastQuote(symbol);
+            if (result is DateTime dt) {
+                lastMarketClose = dt;
+            } else {
+                WriteLine("Unable to access market schedule/times via Alpaca API");
+            }
+
+            DateTime validity = await db.GetValidity_Daily(asset);
+            if (validity.CompareTo(lastMarketClose) < 0) {
+                await Update_TSD(new List<Data.Asset>() { asset }, settings, db);
+                await Task.Delay(2000);                 // Allow database update thread to get ahead
+            }
+
+            Data.Daily dd = await db.GetData_Daily(asset);
+            return dd.Prices.Last();
         }
 
-        public async Task Update_LastQuote(Database db, string symbol) {
-            Write($"Updating latest quote, needed for calculations, for {symbol}. ");
+        /// <summary>
+        /// Gets the latest prices from the database (and updating per validity) of a list of assets
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="db"></param>
+        /// <param name="assets">List of assets to get prices for</param>
+        /// <returns>Dictionary of asset ID, closing price</returns>
+        public async Task<Dictionary<string, decimal?>> GetLastPrices(Settings settings, Database db, List<Data.Asset> assets) {
+            DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
+            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
 
-            bool repeat = true;
-            while (repeat) {
-                object output = await API.Alpaca.GetLastQuote(db._Settings, symbol);
+            if (result is DateTime dt) {
+                lastMarketClose = dt;
+            } else {
+                WriteLine("Unable to access market schedule/times via Alpaca API");
+            }
 
-                if (output is Data.Quote quote) {
-                    await db.SetLastQuote(quote);
-                    WriteLine("Completed.", ConsoleColor.Green);
-                    repeat = false;
-                } else if (output is string) {
-                    if (output as string == "Too Many Requests") {
-                        WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
-                        await Task.Delay(30000);
-                    } else {
-                        WriteLine("Error.", ConsoleColor.Red);
-                        repeat = false;
-                    }
+            Dictionary<string, DateTime> validities = await db.GetValidities();
+
+            for (int i = 0; i < assets.Count; i++) {
+                string validityKey = await db.GetValidityKey_Daily(assets[i]);
+                DateTime validity = validities.ContainsKey(validityKey) ? validities[validityKey] : new DateTime();
+                if (validity.CompareTo(lastMarketClose) < 0) {
+                    await Update_TSD(new List<Data.Asset>() { assets[i] }, settings, db);
                 }
             }
+
+            await Task.Delay(2000);                 // Allow database update thread to get ahead
+
+            return await db.GetPrices_Daily_Latest(assets);
         }
 
         public async Task<ExitCode> Update_Symbols(Database db) {
@@ -258,13 +284,19 @@ namespace Marana {
 
                 Write("Requesting data. ");
 
+                object output = null;
                 Data.Daily dd = new Data.Daily();
-                object output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
 
-                if (output is Data.Daily)
-                    dd = output as Data.Daily;
-                else if (output is string) {
-                    if (output as string == "Too Many Requests") {
+                if (settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca)
+                    output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
+                else if (settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage)
+                    output = await API.AlphaVantage.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
+
+                if (output is Data.Daily pmdd)
+                    dd = pmdd;
+                else if (output is string pms) {
+                    if (pms == "Too Many Requests"                  // Alpaca's return message for exceeding API calls
+                            || pms == "ERROR:EXCEEDEDCALLS") {      // Alpha Vantage's return message for exceeding API calls
                         WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
                         await Task.Delay(30000);
                         i--;

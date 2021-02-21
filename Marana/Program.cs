@@ -51,13 +51,17 @@ namespace Marana {
                     } else {
                         string opt1 = TrimArgs(ref _args);
 
+                        int priordays;      // For executing instructions to process signals from previous days
+                        int.TryParse(TrimArgs(ref _args), out priordays);
+                        DateTime day = DateTime.Today - new TimeSpan(Math.Abs(priordays), 0, 0, 0);
+
                         if (opt1 == "paper") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Paper);
+                            await Trade.RunAutomation(settings, db, Data.Format.Paper, day);
                         } else if (opt1 == "live") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Live);
+                            await Trade.RunAutomation(settings, db, Data.Format.Live, day);
                         } else if (opt1 == "all") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Live);
-                            await Trade.RunAutomation(settings, db, Data.Format.Paper);
+                            await Trade.RunAutomation(settings, db, Data.Format.Live, day);
+                            await Trade.RunAutomation(settings, db, Data.Format.Paper, day);
                         }
                     }
                 } else {

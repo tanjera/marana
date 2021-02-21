@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>marana</AssemblyName>
-    <Version>0.2.3</Version>
-    <AssemblyVersion>0.2.3.0</AssemblyVersion>
+    <Version>0.2.4</Version>
+    <AssemblyVersion>0.2.4.0</AssemblyVersion>
     <Authors>Tanjera</Authors>
     <Product>Marana</Product>
     <Description>Market Analytics and Trading Tools</Description>
@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Alpaca.Markets" Version="4.0.3" />
+    <PackageReference Include="CsvHelper" Version="24.0.1" />
     <PackageReference Include="MySql.Data" Version="8.0.23" />
     <PackageReference Include="Skender.Stock.Indicators" Version="1.8.0" />
     <PackageReference Include="Terminal.Gui" Version="0.90.3" />

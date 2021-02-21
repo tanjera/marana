@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -108,12 +109,6 @@ namespace Marana {
             Symbol
         }
 
-        public enum ColumnsQuotes {
-            Symbol,
-            Timestamp,
-            Price
-        }
-
         public string ConnectionStr {
             get {
                 return $"server={_Settings.Database_Server}; user={_Settings.Database_Username}; "
@@ -128,7 +123,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: Init", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -237,19 +232,10 @@ namespace Marana {
                         connection))
                     await cmd.ExecuteNonQueryAsync();
 
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"CREATE TABLE IF NOT EXISTS `Quotes` (
-                            `Symbol` VARCHAR(10) NOT NULL PRIMARY KEY,
-                            `Timestamp` DATETIME,
-                            `Price` DECIMAL(16, 6)
-                            );",
-                        connection))
-                    await cmd.ExecuteNonQueryAsync();
-
                 await connection.CloseAsync();
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log("Database.cs: Init", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
         }
@@ -260,7 +246,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetAssets", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -290,7 +276,7 @@ namespace Marana {
                 return assets;
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log("Database.cs: GetAssets", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -301,11 +287,10 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetData_Daily", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
-            string table = $"Daily:{asset.ID}";
             Data.Daily ds = new Data.Daily() { Asset = asset };
 
             try {
@@ -373,7 +358,7 @@ namespace Marana {
                 return ds;
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log("Database.cs: GetData_Daily", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -386,7 +371,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetInstructions", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Instruction>();
             }
 
@@ -413,8 +398,56 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: GetInstructions", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
+                return null;
+            }
+        }
+
+        public async Task<Dictionary<string, decimal?>> GetPrices_Daily_Latest(List<Data.Asset> assets) {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync(); ;
+            } catch (Exception ex) {
+                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return null;
+            }
+
+            DateTime latest = new DateTime();
+
+            try {
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT  `Date` FROM `Daily` ORDER BY `Date` DESC LIMIT 1;",
+                        connection)) {
+                    object result = await cmd.ExecuteScalarAsync();
+                    if (result is DateTime pmdt)
+                        latest = pmdt;
+                    else
+                        return null;
+                }
+
+                Dictionary<string, decimal?> output = new Dictionary<string, decimal?>();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT `Asset`, `Close`
+                                FROM `Daily` WHERE `Date` = '{latest:yyyy-MM-dd}';",
+                        connection)) {
+                    using MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read()) {
+                        string asset = rdr.IsDBNull(ColumnsDaily.Asset.GetHashCode()) ? "" : rdr.GetString("Asset");
+                        if (assets.Any(a => a.ID == asset)) {
+                            decimal? close = rdr.IsDBNull(1) ? null : rdr.GetDecimal("Close");
+                            output.Add(asset, close);
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+                return output;
+            } catch (Exception ex) {
+                await connection.CloseAsync();
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -427,7 +460,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetStrategies", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Strategy>();
             }
 
@@ -450,40 +483,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: GetStrategies", ex);
-                await connection.CloseAsync();
-                return null;
-            }
-        }
-
-        public async Task<Data.Quote> GetLastQuote(string symbol) {
-            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
-            try {
-                await connection.OpenAsync();
-            } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetLastQuote", ex);
-                return null;
-            }
-
-            try {
-                Data.Quote result = new Data.Quote() { Symbol = symbol };
-                using (MySqlCommand cmd = new MySqlCommand(
-                    $@"SELECT *
-                            FROM `Quotes`
-                            WHERE `Symbol` = '{symbol}';",
-                    connection))
-                using (MySqlDataReader rdr = cmd.ExecuteReader()) {
-                    while (rdr.Read()) {
-                        result.Price = rdr.IsDBNull(ColumnsQuotes.Price.GetHashCode()) ? result.Price : rdr.GetDecimal("Price");
-                        result.Timestamp = rdr.IsDBNull(ColumnsQuotes.Timestamp.GetHashCode()) ? result.Timestamp : rdr.GetDateTime("Timestamp");
-                    }
-                }
-
-                await connection.CloseAsync();
-                return result;
-            } catch (Exception ex) {
-                await Error.Log("Database.cs: GetLastQuote", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return null;
             }
@@ -495,7 +495,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetValidity", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new DateTime();
             }
 
@@ -511,7 +511,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: GetValidity", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return new DateTime();
             }
@@ -523,8 +523,42 @@ namespace Marana {
         public async Task<DateTime> GetValidity_Daily(Data.Asset asset)
             => await GetValidity($"Daily:{asset.ID}");
 
-        public async Task<DateTime> GetValidity_Quote(string symbol)
-            => await GetValidity($"Quote:{symbol}");
+        public async Task<string> GetValidityKey_Daily(Data.Asset asset) {
+            return $"Daily:{asset.ID}";
+        }
+
+        public async Task<Dictionary<string, DateTime>> GetValidities() {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync();
+            } catch (Exception ex) {
+                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return new Dictionary<string, DateTime>();
+            }
+
+            try {
+                Dictionary<string, DateTime> result = new Dictionary<string, DateTime>();
+                using (MySqlCommand cmd = new MySqlCommand(
+                    $@"SELECT *
+                            FROM `Validity`;",
+                    connection)) {
+                    using MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read()) {
+                        string item = rdr.IsDBNull(ColumnsValidity.Item.GetHashCode()) ? "" : rdr.GetString("Item");
+                        DateTime updated = rdr.IsDBNull(ColumnsValidity.Updated.GetHashCode()) ? new DateTime() : rdr.GetDateTime("Updated");
+                        result.Add(item, updated);
+                    }
+                }
+
+                await connection.CloseAsync();
+                return result;
+            } catch (Exception ex) {
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await connection.CloseAsync();
+                return new Dictionary<string, DateTime>();
+            }
+        }
 
         public async Task<List<string>> GetWatchlist() {
             using MySqlConnection connection = new MySqlConnection(ConnectionStr);
@@ -532,7 +566,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetWatchlist", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -554,7 +588,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return watchlist;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: GetWatchlist", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return null;
             }
@@ -568,7 +602,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: GetSize", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return 0;
             }
 
@@ -609,7 +643,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return size;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: GetSize", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return 0m;
             }
@@ -620,7 +654,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: ScalarQuery", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
 
@@ -630,14 +664,14 @@ namespace Marana {
                     using MySqlCommand cmd = new MySqlCommand(query, connection);
                     result = await cmd.ExecuteScalarAsync() != null;
                 } catch (Exception ex) {
-                    await Error.Log("Database.cs: ScalarQuery", ex);
+                    await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                     return false;
                 }
 
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: ScalarQuery", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return false;
             }
@@ -649,7 +683,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: SetAssets", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -694,7 +728,7 @@ namespace Marana {
                 await SetValidity("Assets");
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log("Database.cs: SetAssets", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -708,7 +742,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: SetData_Daily", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -797,40 +831,7 @@ namespace Marana {
                 await SetValidity($"Daily:{dataset.Asset.ID}");
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log("Database.cs: SetData_Daily", ex);
-                await connection.CloseAsync();
-            }
-        }
-
-        public async Task SetLastQuote(Data.Quote quote) {
-            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
-            try {
-                await connection.OpenAsync();
-            } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: SetLastQuote", ex);
-                return;
-            }
-
-            try {
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DELETE FROM `Quotes` WHERE `Symbol` = '{MySqlHelper.EscapeString(quote.Symbol)}';",
-                        connection)) {
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"INSERT INTO `Quotes` (
-                            `Symbol`, `Timestamp`, `Price`
-                            ) VALUES ( '{MySqlHelper.EscapeString(quote.Symbol)}', '{quote.Timestamp:yyyy-MM-dd HH:mm}', '{quote?.Price}' );",
-                        connection)) {
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                await SetValidity($"Quote:{quote.Symbol}");
-                await connection.CloseAsync();
-            } catch (Exception ex) {
-                await Error.Log("Database.cs: SetLastQuote", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -841,7 +842,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: SetValidity", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -878,7 +879,7 @@ namespace Marana {
 
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log("Database.cs: SetValidity", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -889,7 +890,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log("Database.cs: SetWatchlist", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -913,7 +914,7 @@ namespace Marana {
 
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log("Database.cs: SetWatchlist", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -923,7 +924,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: ValidateQuery", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
 
@@ -947,13 +948,13 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: Wipe", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
 
             try {
                 using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DROP TABLE IF EXISTS Validity, Assets, Daily, Quotes;",
+                        $@"DROP TABLE IF EXISTS Validity, Assets, Daily;",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
 
@@ -961,7 +962,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Database.cs: Wipe", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return false;
             }

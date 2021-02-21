@@ -27,9 +27,10 @@ Options:
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
 
-    execute all                         Execute all automated trading instructions (live and paper)
-    execute live                        Execute automated trading instructions for live account
-    execute paper                       Execute automated trading instructions for paper account
+    execute all [n]                     Execute all automated trading instructions (live and paper)
+                                        [n]: Use signals from [n] days ago (e.g. 1 for yesterday)
+    execute live [n]                    Execute automated trading instructions for live account
+    execute paper [n]                   Execute automated trading instructions for paper account
 ");
         }
     }

@@ -71,9 +71,11 @@ namespace Marana.GUI {
             Status = Statuses.Running;
             object result;
 
+            results.Text = $"Testing strategy {strategy.Name} {Environment.NewLine}{Environment.NewLine}";
+
             results.Text = String.Concat(results.Text, $"Running Entry query {Environment.NewLine}");
             result = await gm.Database.ValidateQuery(
-                await Strategy.Interpret(strategy.Entry, "SPY"));
+                await Strategy.Interpret(strategy.Entry, "SPY", DateTime.Today));
             if (result is bool) {
                 results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
             } else if (result is string) {
@@ -83,7 +85,7 @@ namespace Marana.GUI {
 
             results.Text = String.Concat(results.Text, $"Running Exit Gain query {Environment.NewLine}");
             result = await gm.Database.ValidateQuery(
-               await Strategy.Interpret(strategy.ExitGain, "SPY"));
+               await Strategy.Interpret(strategy.ExitGain, "SPY", DateTime.Today));
             if (result is bool) {
                 results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
             } else if (result is string) {
@@ -93,7 +95,7 @@ namespace Marana.GUI {
 
             results.Text = String.Concat(results.Text, $"Running Exit Loss query {Environment.NewLine}");
             result = await gm.Database.ValidateQuery(
-               await Strategy.Interpret(strategy.ExitLoss, "SPY"));
+               await Strategy.Interpret(strategy.ExitLoss, "SPY", DateTime.Today));
             if (result is bool) {
                 results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
             } else if (result is string) {

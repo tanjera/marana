@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Marana {
@@ -11,6 +12,8 @@ namespace Marana {
         public string API_Alpaca_Paper_Key { get; set; }
         public string API_Alpaca_Paper_Secret { get; set; }
 
+        public string API_AlphaVantage_Key { get; set; }
+
         public string Directory_Working { get; set; }
 
         public string Database_Server { get; set; }
@@ -21,10 +24,16 @@ namespace Marana {
 
         public int Library_LimitDailyEntries { get; set; }
         public Option_DownloadSymbols Library_DownloadSymbols { get; set; }
+        public Option_DataProvider Library_DataProvider { get; set; }
 
         public enum Option_DownloadSymbols {
             All,
             Watchlist
+        }
+
+        public enum Option_DataProvider {
+            Alpaca,
+            AlphaVantage
         }
 
         public Settings() {
@@ -78,6 +87,8 @@ namespace Marana {
                 sw.WriteLine($"API_Alpaca_Paper_Key: {inc?.API_Alpaca_Paper_Key?.Trim()}");
                 sw.WriteLine($"API_Alpaca_Paper_Secret: {inc?.API_Alpaca_Paper_Secret?.Trim()}");
                 sw.WriteLine($"{Environment.NewLine}");
+                sw.WriteLine($"API_AlphaVantage_Key: {inc?.API_AlphaVantage_Key?.Trim()}");
+                sw.WriteLine($"{Environment.NewLine}");
                 sw.WriteLine($"Directory_Working: {inc?.Directory_Working?.Trim()}");
                 sw.WriteLine($"{Environment.NewLine}");
                 sw.WriteLine($"Database_Server: {inc?.Database_Server?.Trim()}");
@@ -88,10 +99,11 @@ namespace Marana {
                 sw.WriteLine($"{Environment.NewLine}");
                 sw.WriteLine($"Library_DailyEntries: {inc?.Library_LimitDailyEntries.ToString().Trim()}");
                 sw.WriteLine($"Library_DownloadSymbols: {inc?.Library_DownloadSymbols.ToString()}");
+                sw.WriteLine($"Library_DataProvider: {inc?.Library_DataProvider.ToString()}");
                 sw.Close();
                 return true;
             } catch (Exception ex) {
-                await Error.Log("Database.cs, SaveConfig", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
         }
@@ -131,6 +143,10 @@ namespace Marana {
                                 oc.API_Alpaca_Paper_Secret = value;
                                 break;
 
+                            case "API_AlphaVantage_Key":
+                                oc.API_AlphaVantage_Key = value;
+                                break;
+
                             case "Directory_Working":
                                 oc.Directory_Working = value;
                                 break;
@@ -165,13 +181,18 @@ namespace Marana {
                                 canParse = Enum.TryParse(typeof(Option_DownloadSymbols), value ?? "", out resultObject);
                                 oc.Library_DownloadSymbols = canParse ? (Option_DownloadSymbols)resultObject : oc.Library_DownloadSymbols;
                                 break;
+
+                            case "Library_DataProvider":
+                                canParse = Enum.TryParse(typeof(Option_DataProvider), value ?? "", out resultObject);
+                                oc.Library_DataProvider = canParse ? (Option_DataProvider)resultObject : oc.Library_DataProvider;
+                                break;
                         }
                     }
                 }
 
                 return oc;
             } catch (Exception ex) {
-                await Error.Log("Settings.cs, LoadConfig", ex);
+                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new Settings();
             }
         }
