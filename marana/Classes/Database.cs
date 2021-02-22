@@ -59,6 +59,14 @@ namespace Marana {
             TEMA20,
             TEMA50,
 
+            // Rates of Change
+
+            ROC7,
+            ROC14,
+            ROC50,
+            ROC100,
+            ROC200,
+
             // Additional Indicators (alphabetic order)
 
             BollingerBands_Center,
@@ -74,7 +82,6 @@ namespace Marana {
             MACD_Histogram,
             MACD_Signal,
 
-            ROC14,
             RSI,
 
             Stochastic_Oscillator,
@@ -123,7 +130,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -162,6 +169,7 @@ namespace Marana {
                             `Low` DECIMAL(16, 6),
                             `Close` DECIMAL(16, 6),
                             `Volume` BIGINT,
+
                             `SMA7` DECIMAL(16, 6),
                             `SMA20` DECIMAL(16, 6),
                             `SMA50` DECIMAL(16, 6),
@@ -177,6 +185,12 @@ namespace Marana {
                             `TEMA20` DECIMAL(16, 6),
                             `TEMA50` DECIMAL(16, 6),
 
+                            `ROC7` DECIMAL(16, 6),
+                            `ROC14` DECIMAL(16, 6),
+                            `ROC50` DECIMAL(16, 6),
+                            `ROC100` DECIMAL(16, 6),
+                            `ROC200` DECIMAL(16, 6),
+
                             `BollingerBands_Center` DECIMAL(16, 6),
                             `BollingerBands_Upper` DECIMAL(16, 6),
                             `BollingerBands_Lower` DECIMAL(16, 6),
@@ -190,7 +204,6 @@ namespace Marana {
                             `MACD_Histogram` DECIMAL(16, 6),
                             `MACD_Signal` DECIMAL(16, 6),
 
-                            `ROC14` DECIMAL(16, 6),
                             `RSI` DECIMAL(16, 6),
 
                             `Stochastic_Oscillator` DECIMAL(16, 6),
@@ -235,7 +248,7 @@ namespace Marana {
                 await connection.CloseAsync();
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
         }
@@ -246,7 +259,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -276,7 +289,7 @@ namespace Marana {
                 return assets;
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -287,7 +300,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -323,6 +336,12 @@ namespace Marana {
                         m.TEMA20 = rdr.IsDBNull(ColumnsDaily.TEMA20.GetHashCode()) ? m.TEMA20 : rdr.GetDecimal("TEMA20");
                         m.TEMA50 = rdr.IsDBNull(ColumnsDaily.TEMA50.GetHashCode()) ? m.TEMA50 : rdr.GetDecimal("TEMA50");
 
+                        m.ROC7 = rdr.IsDBNull(ColumnsDaily.ROC7.GetHashCode()) ? m.ROC7 : rdr.GetDecimal("ROC7");
+                        m.ROC14 = rdr.IsDBNull(ColumnsDaily.ROC14.GetHashCode()) ? m.ROC14 : rdr.GetDecimal("ROC14");
+                        m.ROC50 = rdr.IsDBNull(ColumnsDaily.ROC50.GetHashCode()) ? m.ROC50 : rdr.GetDecimal("ROC50");
+                        m.ROC100 = rdr.IsDBNull(ColumnsDaily.ROC100.GetHashCode()) ? m.ROC100 : rdr.GetDecimal("ROC100");
+                        m.ROC200 = rdr.IsDBNull(ColumnsDaily.ROC200.GetHashCode()) ? m.ROC200 : rdr.GetDecimal("ROC200");
+
                         m.BB = new BollingerBandsResult();
                         m.BB.Sma = rdr.IsDBNull(ColumnsDaily.BollingerBands_Center.GetHashCode()) ? m.BB.Sma : rdr.GetDecimal("BollingerBands_Center");
                         m.BB.UpperBand = rdr.IsDBNull(ColumnsDaily.BollingerBands_Upper.GetHashCode()) ? m.BB.UpperBand : rdr.GetDecimal("BollingerBands_Upper");
@@ -338,7 +357,6 @@ namespace Marana {
                         m.MACD.Histogram = rdr.IsDBNull(ColumnsDaily.MACD_Histogram.GetHashCode()) ? m.MACD.Histogram : rdr.GetDecimal("MACD_Histogram");
                         m.MACD.Signal = rdr.IsDBNull(ColumnsDaily.MACD_Signal.GetHashCode()) ? m.MACD.Signal : rdr.GetDecimal("MACD_Signal");
 
-                        m.ROC14 = rdr.IsDBNull(ColumnsDaily.ROC14.GetHashCode()) ? m.ROC14 : rdr.GetDecimal("ROC14");
                         m.RSI = rdr.IsDBNull(ColumnsDaily.RSI.GetHashCode()) ? m.RSI : rdr.GetDecimal("RSI");
 
                         m.Stochastic = new StochResult();
@@ -358,7 +376,7 @@ namespace Marana {
                 return ds;
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -371,7 +389,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Instruction>();
             }
 
@@ -398,7 +416,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return null;
             }
@@ -410,7 +428,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -447,7 +465,7 @@ namespace Marana {
                 return output;
             } catch (Exception ex) {
                 await connection.CloseAsync();
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
         }
@@ -460,7 +478,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Strategy>();
             }
 
@@ -483,7 +501,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return null;
             }
@@ -495,7 +513,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new DateTime();
             }
 
@@ -511,7 +529,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return new DateTime();
             }
@@ -533,7 +551,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new Dictionary<string, DateTime>();
             }
 
@@ -554,7 +572,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return new Dictionary<string, DateTime>();
             }
@@ -566,7 +584,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
 
@@ -588,7 +606,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return watchlist;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return null;
             }
@@ -602,7 +620,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return 0;
             }
 
@@ -643,7 +661,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return size;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return 0m;
             }
@@ -654,7 +672,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
 
@@ -664,14 +682,14 @@ namespace Marana {
                     using MySqlCommand cmd = new MySqlCommand(query, connection);
                     result = await cmd.ExecuteScalarAsync() != null;
                 } catch (Exception ex) {
-                    await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                    await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                     return false;
                 }
 
                 await connection.CloseAsync();
                 return result;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return false;
             }
@@ -683,7 +701,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -728,7 +746,7 @@ namespace Marana {
                 await SetValidity("Assets");
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -742,7 +760,7 @@ namespace Marana {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -789,6 +807,12 @@ namespace Marana {
                         {(v.Metric?.TEMA20 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA20.ToString())}'" : "null")},
                         {(v.Metric?.TEMA50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.TEMA50.ToString())}'" : "null")},
 
+                        {(v.Metric?.ROC7 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC7.ToString())}'" : "null")},
+                        {(v.Metric?.ROC14 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC14.ToString())}'" : "null")},
+                        {(v.Metric?.ROC50 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC50.ToString())}'" : "null")},
+                        {(v.Metric?.ROC100 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC100.ToString())}'" : "null")},
+                        {(v.Metric?.ROC200 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC200.ToString())}'" : "null")},
+
                         {(v.Metric?.BB?.Sma != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.Sma.ToString())}'" : "null")},
                         {(v.Metric?.BB?.UpperBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.UpperBand.ToString())}'" : "null")},
                         {(v.Metric?.BB?.LowerBand != null ? $"'{MySqlHelper.EscapeString(v.Metric.BB.LowerBand.ToString())}'" : "null")},
@@ -802,7 +826,6 @@ namespace Marana {
                         {(v.Metric?.MACD?.Histogram != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Histogram.ToString())}'" : "null")},
                         {(v.Metric?.MACD?.Signal != null ? $"'{MySqlHelper.EscapeString(v.Metric.MACD.Signal.ToString())}'" : "null")},
 
-                        {(v.Metric?.ROC14 != null ? $"'{MySqlHelper.EscapeString(v.Metric.ROC14.ToString())}'" : "null")},
                         {(v.Metric?.RSI != null ? $"'{MySqlHelper.EscapeString(v.Metric.RSI.ToString())}'" : "null")},
 
                         {(v.Metric?.Stochastic?.Oscillator != null ? $"'{MySqlHelper.EscapeString(v.Metric.Stochastic.Oscillator.ToString())}'" : "null")},
@@ -816,11 +839,10 @@ namespace Marana {
                                     Asset, Symbol, Date, Open, High, Low, Close, Volume,
                                     SMA7, SMA20, SMA50, SMA100, SMA200,
                                     EMA7, EMA20, EMA50, DEMA7, DEMA20, DEMA50, TEMA7, TEMA20, TEMA50,
-
+                                    ROC7, ROC14, ROC50, ROC100, ROC200,
                                     BollingerBands_Center, BollingerBands_Upper, BollingerBands_Lower, BollingerBands_Percent, BollingerBands_ZScore, BollingerBands_Width,
                                     Choppiness,
                                     MACD, MACD_Histogram, MACD_Signal,
-                                    ROC14,
                                     RSI,
                                     Stochastic_Oscillator, Stochastic_Signal, Stochastic_PercentJ
                                     ) VALUES {values};",
@@ -831,7 +853,7 @@ namespace Marana {
                 await SetValidity($"Daily:{dataset.Asset.ID}");
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -842,7 +864,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -879,7 +901,7 @@ namespace Marana {
 
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -890,7 +912,7 @@ namespace Marana {
                 await connection.OpenAsync();
             } catch (Exception ex) {
                 Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
 
@@ -914,7 +936,7 @@ namespace Marana {
 
                 await connection.CloseAsync();
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
             }
         }
@@ -924,7 +946,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
             }
 
@@ -948,7 +970,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
 
@@ -962,7 +984,7 @@ namespace Marana {
                 await connection.CloseAsync();
                 return true;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
                 return false;
             }

@@ -89,6 +89,10 @@ namespace Marana {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"), GetOSStyling("config.cfg"));
         }
 
+        public static string GetErrorLogPath() {
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"), GetOSStyling("error.log"));
+        }
+
         private static DirectoryInfo CreateConfigDirectory() {
             if (!Directory.Exists(GetConfigDirectory()))
                 return Directory.CreateDirectory(GetConfigDirectory());
@@ -121,7 +125,7 @@ namespace Marana {
                 sw.Close();
                 return true;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return false;
             }
         }
@@ -210,7 +214,7 @@ namespace Marana {
 
                 return oc;
             } catch (Exception ex) {
-                await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new Settings();
             }
         }

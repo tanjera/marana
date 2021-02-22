@@ -45,9 +45,13 @@ namespace Marana {
             EmaResult[] tema20 = amount > 160 ? Indicator.GetTripleEma(dd.Prices, 20).ToArray() : null;
             EmaResult[] tema50 = amount > 250 ? Indicator.GetTripleEma(dd.Prices, 50).ToArray() : null;
 
-            RsiResult[] rsi = amount > 140 ? Indicator.GetRsi(dd.Prices).ToArray() : null;
+            RocResult[] roc7 = amount > 8 ? Indicator.GetRoc(dd.Prices, 7).ToArray() : null;
             RocResult[] roc14 = amount > 15 ? Indicator.GetRoc(dd.Prices, 14).ToArray() : null;
+            RocResult[] roc50 = amount > 51 ? Indicator.GetRoc(dd.Prices, 50).ToArray() : null;
+            RocResult[] roc100 = amount > 101 ? Indicator.GetRoc(dd.Prices, 100).ToArray() : null;
+            RocResult[] roc200 = amount > 201 ? Indicator.GetRoc(dd.Prices, 200).ToArray() : null;
 
+            RsiResult[] rsi = amount > 140 ? Indicator.GetRsi(dd.Prices).ToArray() : null;
             BollingerBandsResult[] bb = amount > 20 ? Indicator.GetBollingerBands(dd.Prices).ToArray() : null;
             MacdResult[] macd = amount > 140 ? Indicator.GetMacd(dd.Prices).ToArray() : null;
             StochResult[] stoch = amount > 20 ? Indicator.GetStoch(dd.Prices).ToArray() : null;
@@ -75,16 +79,21 @@ namespace Marana {
                     dd.Metrics[i].TEMA20 = tema20?[i].Ema;
                     dd.Metrics[i].TEMA50 = tema50?[i].Ema;
 
+                    dd.Metrics[i].ROC7 = roc7?[i].Roc;
+                    dd.Metrics[i].ROC14 = roc14?[i].Roc;
+                    dd.Metrics[i].ROC50 = roc50?[i].Roc;
+                    dd.Metrics[i].ROC100 = roc100?[i].Roc;
+                    dd.Metrics[i].ROC200 = roc200?[i].Roc;
+
                     dd.Metrics[i].Choppiness = chop?[i].Chop;
                     dd.Metrics[i].RSI = rsi?[i].Rsi;
-                    dd.Metrics[i].ROC14 = roc14?[i].Roc;
 
                     dd.Metrics[i].BB = bb?[i];
                     dd.Metrics[i].MACD = macd?[i];
                     dd.Metrics[i].Stochastic = stoch?[i];
                 } catch (Exception ex) {
                     Prompt.WriteLine($"Error casting indicators to dataset for {dd.Asset.Symbol}!", ConsoleColor.Red);
-                    await Error.Log($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                    await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 }
             }
 

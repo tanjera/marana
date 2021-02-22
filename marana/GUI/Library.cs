@@ -146,7 +146,9 @@ namespace Marana.GUI {
             if (gm.Library.Status == Marana.Library.Statuses.Inactive) {
                 window.RemoveAll();
 
-                Button btnCancel = new Button("Start Update") { X = Pos.Center(), Y = 1 };
+                int x1 = 1, x2 = 25;
+
+                Button btnCancel = new Button("Start Update") { X = x1, Y = 1 };
 
                 btnCancel.Clicked += async () => {
                     if (gm.Library.Status == Marana.Library.Statuses.Inactive) {
@@ -158,13 +160,17 @@ namespace Marana.GUI {
                     }
                 };
 
-                Label lblOutput = new Label() { X = 1, Y = 3, Width = Dim.Fill(), Height = Dim.Fill() };
-                window.Add(btnCancel, lblOutput);
+                TextView tvOutput = new TextView() {
+                    X = x2, Y = 1, Width = Dim.Fill(),
+                    Height = Dim.Fill(),
+                    ReadOnly = true
+                };
+                window.Add(btnCancel, tvOutput);
 
                 gm.Library.StatusUpdate += (sender, e) => {
-                    lblOutput.Text = String.Join(Environment.NewLine, e.Output.GetRange(
-                        e.Output.Count < lblOutput.Bounds.Height ? 0 : e.Output.Count - lblOutput.Bounds.Height,
-                        e.Output.Count < lblOutput.Bounds.Height ? e.Output.Count : lblOutput.Bounds.Height));
+                    tvOutput.Text = String.Join("\n", e.Output.GetRange(
+                        e.Output.Count < tvOutput.Bounds.Height ? 0 : e.Output.Count - tvOutput.Bounds.Height,
+                        e.Output.Count < tvOutput.Bounds.Height ? e.Output.Count : tvOutput.Bounds.Height));
 
                     Application.Refresh();
                 };

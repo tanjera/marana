@@ -56,12 +56,12 @@ namespace Marana {
                         DateTime day = DateTime.Today - new TimeSpan(Math.Abs(priordays), 0, 0, 0);
 
                         if (opt1 == "paper") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Paper, day);
+                            await new Trading().RunAutomation(settings, db, Data.Format.Paper, day);
                         } else if (opt1 == "live") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Live, day);
+                            await new Trading().RunAutomation(settings, db, Data.Format.Live, day);
                         } else if (opt1 == "all") {
-                            await Trade.RunAutomation(settings, db, Data.Format.Live, day);
-                            await Trade.RunAutomation(settings, db, Data.Format.Paper, day);
+                            await new Trading().RunAutomation(settings, db, Data.Format.Live, day);
+                            await new Trading().RunAutomation(settings, db, Data.Format.Paper, day);
                         }
                     }
                 } else {

@@ -68,9 +68,18 @@ namespace Marana {
                 public decimal? TEMA20 { get; set; }
                 public decimal? TEMA50 { get; set; }
 
+                // Rate of Change (ROC) %
+
+                public decimal? ROC7 { get; set; }
+                public decimal? ROC14 { get; set; }
+                public decimal? ROC50 { get; set; }
+                public decimal? ROC100 { get; set; }
+                public decimal? ROC200 { get; set; }
+
+                // Specific indicators
+
                 public decimal? Choppiness { get; set; }            // Choppiness Index
                 public decimal? RSI { get; set; }                   // Relative Strength Indicator (RSI)
-                public decimal? ROC14 { get; set; }                   // Rate of Change (ROC) aka Momentum Oscillator
 
                 public BollingerBandsResult BB { get; set; }        // Bollinger Bands
                 public MacdResult MACD { get; set; }                // Moving Average Convergence/Divergence (MACD)

@@ -12,6 +12,7 @@ namespace Marana.GUI {
     internal class Main {
         public Marana.Library Library = new Marana.Library();
         public Marana.Settings Settings = new Marana.Settings();
+        public Marana.Trading Trading = new Marana.Trading();
         public Marana.Database Database;
 
         private GUI.Settings guiSettings = new Settings();
@@ -27,7 +28,7 @@ namespace Marana.GUI {
             LibraryInformation,
             LibraryEraseDatabase,
             QueriesRun,
-            TradingEnterAutomation
+            TradingExecute
         }
 
         private static string[] WindowTitles = new string[] {
@@ -38,7 +39,7 @@ namespace Marana.GUI {
             "Data Library Information",
             "Erase Market Data from Library",
             "Test Strategy Queries",
-            "Enter Automated Trade",
+            "Execute Automated Trades",
         };
 
         public async Task Init(Marana.Settings settings, Database db) {
@@ -84,11 +85,10 @@ namespace Marana.GUI {
                 new MenuBarItem("S_trategies", new MenuItem[] {
                     new MenuItem ("_Test Queries", "", new Action(StrategiesTest)),
                 }),
-                /*  Needs GUI implementation
+
                 new MenuBarItem("Tra_ding", new MenuItem[] {
-                    new MenuItem("_Enter Automated Trade", "", new Action(TradingEnterAutomation)),
+                    new MenuItem("_Execute Trades", "", new Action(TradingExecute)),
                 })
-                */
             });
 
             Version version = Assembly.GetExecutingAssembly().GetName().Version;
@@ -130,7 +130,7 @@ namespace Marana.GUI {
         private async void StrategiesTest()
             => await guiStrategies.Test(this);
 
-        private async void TradingEnterAutomation()
-            => await guiTrading.EnterAutomation(this);
+        private async void TradingExecute()
+            => await guiTrading.Execute(this);
     }
 }
