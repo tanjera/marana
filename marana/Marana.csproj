@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>marana</AssemblyName>
-    <Version>0.2.7</Version>
-    <AssemblyVersion>0.2.7.0</AssemblyVersion>
+    <Version>0.3.0</Version>
+    <AssemblyVersion>0.3.0.0</AssemblyVersion>
     <Authors>Tanjera</Authors>
     <Product>Marana</Product>
     <Description>Market Analytics and Trading Tools</Description>

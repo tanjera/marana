@@ -106,13 +106,15 @@ namespace Marana {
 
         public class Strategy {
             public string Name { get; set; }
+            public string Description { get; set; }
             public string Entry { get; set; }
             public string ExitGain { get; set; }
-            public string ExitLoss { get; set; }
+            public string ExitStopLoss { get; set; }
         }
 
         public class Instruction {
             public bool Active { get; set; }
+            public string Name { get; set; }
             public string Description { get; set; }
             public Format Format { get; set; }
             public string Symbol { get; set; }
@@ -143,6 +145,38 @@ namespace Marana {
             public DateTime Timestamp { get; set; }
         }
 
+        public class Test {
+            public Asset Asset { get; set; }
+            public int Shares { get; set; }
+            public Strategy Strategy { get; set; }
+            public Instruction Instruction { get; set; }
+
+            public List<Trade> Trades { get; set; }
+            public decimal GainAmount { get; set; }
+            public decimal GainPercent { get; set; }
+
+            public Test() {
+                Trades = new List<Trade>();
+            }
+
+            public class Trade {
+                public DateTime Timestamp { get; set; }
+                public Direction Transaction { get; set; }
+                public decimal Price { get; set; }
+                public decimal Gain { get; set; }
+
+                public enum Sales {
+                    Gain,
+                    StopLoss
+                }
+
+                public enum Direction {
+                    Buy,
+                    Sell
+                }
+            }
+        }
+
         public enum Frequency {
             Daily,
             Intraday
@@ -150,7 +184,8 @@ namespace Marana {
 
         public enum Format {
             Paper,
-            Live
+            Live,
+            Test
         }
 
         public static void Select_Assets(ref List<Asset> assets, List<string> args) {

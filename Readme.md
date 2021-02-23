@@ -132,7 +132,7 @@ Although Marana aims to reduce barriers to data analysis for retail investors, *
          1) `Name` is a unique (cannot be repeated) name for the Strategy
          2) `Entry` is the SQL query to be triggered to initiate buying the asset
          3) `ExitGain` is the SQL query to be triggered to initiate selling the asset (to obtain gain)
-         4) `ExitLoss` is the SQL query to be triggered to intiate sellign the asset (to stop loss)
+         4) `ExitStopLoss` is the SQL query to be triggered to intiate sellign the asset (to stop loss)
       6) An example of strategy queries entered into the `Strategies` table.
          ![image](docs/workbench_strategies.png)
          *Sample `Strategies` table as seen in [MySQL Workbench](https://www.mysql.com/products/workbench/)*
@@ -144,7 +144,7 @@ Although Marana aims to reduce barriers to data analysis for retail investors, *
          1) If the table is not present, retrieving library information (`Main Menu > Library > Information`) will create the empty table.
       2) Automated instructions are self explanatory. For clarity:
          1) `ID` is a unique number (cannot be repeated)- it is auto-generated if not entered.
-         2) `Description` can be any description for the instruction- it can be left blank, named after the symbol, etc.
+         2) `Name` can be any description for the instruction- it can be left blank, named after the symbol, etc.
          3) `Active` is a boolean (true/false) flag of whether to run or skip the instruction.
          4) `Format` is either 'Paper' or 'Live', specifies whether to use the Paper account or Live trading account.
          5) `Symbol` is the ticker symbol to be queried and traded.

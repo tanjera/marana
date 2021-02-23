@@ -27,8 +27,20 @@ Options:
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
 
+    backtest list <days> <strategies> <quantity> <symbols>
+                                        Runs a backtest for amount of trading <days>
+                                        against <strategies> (list encapsulated by quotation marks)
+                                        for <quantity> of shares,
+                                        against <symbols> (list encapsulated by quotations)
+
+    backtest all <n>                    Run backtest against all trading instructions (live, paper, test)
+                                        <n>: (Required) Amount of trading days to test
+    backtest test <n>                   Run backtest against test instructions
+    backtest paper <n>                  Run backtest against paper instructions
+    backtest live <n>                   Run backtest against live instructions
+
     execute all [n]                     Execute all automated trading instructions (live and paper)
-                                        [n]: Use signals from [n] days ago (e.g. 1 for yesterday)
+                                        [n]: (Optional) Use signals from [n] days ago (e.g. 1 for yesterday)
     execute live [n]                    Execute automated trading instructions for live account
     execute paper [n]                   Execute automated trading instructions for paper account
 ");

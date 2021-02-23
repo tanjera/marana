@@ -167,7 +167,7 @@ namespace Marana {
                 Data.Position position = positions.Find(p => p.Symbol == instructions[i].Symbol);
                 Data.Order order = orders.Find(o => o.Symbol == instructions[i].Symbol && o.Quantity == instructions[i].Quantity);
 
-                WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Description} ({instructions[i].Format}): "
+                WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Name} ({instructions[i].Format}): "
                     + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency})");
 
                 if (strategy == null) {
@@ -218,10 +218,10 @@ namespace Marana {
 
             if (validity.CompareTo(lastMarketClose) > 0) {       // If validity is current, data is valid
                 bool toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
-                bool toSell = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day))
-                    || await db.ScalarQuery(await Strategy.Interpret(strategy.ExitLoss, instruction.Symbol, day));
+                bool toSellGain = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
+                bool toSellLoss = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
 
-                if (toBuy && toSell) {   // Cannot simultaneously buy and sell ... erroneous queries?
+                if (toBuy && (toSellGain || toSellLoss)) {   // Cannot simultaneously buy and sell ... erroneous queries?
                     WriteLine("Buy AND Sell triggers met- doing nothing. Check strategy for errors?");
                     return;
                 }
@@ -276,11 +276,13 @@ namespace Marana {
                                 break;
                         }
                     }
-                } else if (toSell) {
+                } else if (toSellGain || toSellLoss) {
+                    string msgSellQuery = toSellGain && toSellLoss ? "Both" : (toSellGain ? "Gain" : (toSellLoss ? "Stop-Loss" : ""));
+
                     if (position == null || position.Quantity <= 0) {
-                        WriteLine("  Sell trigger detected; no current position owned; doing nothing.");
+                        WriteLine($"  Sell trigger detected; {msgSellQuery}; no current position owned; doing nothing.");
                     } else if (position != null && position.Quantity > 0) {
-                        WriteLine("  Sell trigger detected; active position found; placing Sell order.");
+                        WriteLine($"  Sell trigger detected; {msgSellQuery}; active position found; placing Sell order.");
                         // Sell position.quantity in case position.Quantity != instruction.Quantity
                         switch (await API.Alpaca.PlaceOrder_SellMarket(settings, instruction.Format, instruction.Symbol, position.Quantity)) {
                             case OrderResult.Success:

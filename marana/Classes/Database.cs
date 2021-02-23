@@ -90,7 +90,7 @@ namespace Marana {
         };
 
         public enum ColumnsInstructions {
-            ID,
+            Name,
             Description,
             Active,
             Format,
@@ -102,9 +102,10 @@ namespace Marana {
 
         public enum ColumnsStrategy {
             Name,
+            Description,
             Entry,
             ExitGain,
-            ExitLoss
+            ExitStopLoss
         }
 
         public enum ColumnsValidity {
@@ -209,15 +210,16 @@ namespace Marana {
                             `Stochastic_Oscillator` DECIMAL(16, 6),
                             `Stochastic_Signal` DECIMAL(16, 6),
                             `Stochastic_PercentJ` DECIMAL(16, 6),
-                            INDEX(`Asset`));",
+                            INDEX(`Asset`),
+                            INDEX(`Symbol`));",
 
                         connection))
                     await cmd.ExecuteNonQueryAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `Instructions` (
-                            `ID` INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                            `Description` VARCHAR(1028),
+                            `Name` VARCHAR(32) PRIMARY KEY,
+                            `Description` VARCHAR (128),
                             `Active` BOOLEAN,
                             `Format` VARCHAR (16),
                             `Symbol` VARCHAR(10),
@@ -230,10 +232,11 @@ namespace Marana {
 
                 using (MySqlCommand cmd = new MySqlCommand(
                         $@"CREATE TABLE IF NOT EXISTS `Strategies` (
-                            `Name` VARCHAR(256) PRIMARY KEY,
+                            `Name` VARCHAR(32) PRIMARY KEY,
+                            `Description` VARCHAR (128),
                             `Entry` TEXT,
                             `ExitGain` TEXT,
-                            `ExitLoss` TEXT
+                            `ExitStopLoss` TEXT
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
@@ -401,6 +404,7 @@ namespace Marana {
                     while (rdr.Read()) {
                         Data.Instruction i = new Data.Instruction();
 
+                        i.Name = rdr.IsDBNull(ColumnsInstructions.Name.GetHashCode()) ? i.Name : rdr.GetString("Name");
                         i.Description = rdr.IsDBNull(ColumnsInstructions.Description.GetHashCode()) ? i.Description : rdr.GetString("Description");
                         i.Active = rdr.IsDBNull(ColumnsInstructions.Active.GetHashCode()) ? i.Active : rdr.GetBoolean("Active");
                         i.Format = rdr.IsDBNull(ColumnsInstructions.Format.GetHashCode()) ? i.Format : (Data.Format)Enum.Parse(typeof(Data.Format), rdr.GetString("Format"));
@@ -491,9 +495,10 @@ namespace Marana {
                         Data.Strategy s = new Data.Strategy();
 
                         s.Name = rdr.IsDBNull(ColumnsStrategy.Name.GetHashCode()) ? s.Name : rdr.GetString("Name");
+                        s.Description = rdr.IsDBNull(ColumnsStrategy.Description.GetHashCode()) ? s.Description : rdr.GetString("Description");
                         s.Entry = rdr.IsDBNull(ColumnsStrategy.Entry.GetHashCode()) ? s.Entry : rdr.GetString("Entry");
                         s.ExitGain = rdr.IsDBNull(ColumnsStrategy.ExitGain.GetHashCode()) ? s.ExitGain : rdr.GetString("ExitGain");
-                        s.ExitLoss = rdr.IsDBNull(ColumnsStrategy.ExitLoss.GetHashCode()) ? s.ExitLoss : rdr.GetString("ExitLoss");
+                        s.ExitStopLoss = rdr.IsDBNull(ColumnsStrategy.ExitStopLoss.GetHashCode()) ? s.ExitStopLoss : rdr.GetString("ExitStopLoss");
                         result.Add(s);
                     }
                 }

@@ -95,7 +95,7 @@ namespace Marana.GUI {
 
             results.Text = String.Concat(results.Text, $"Running Exit Loss query {Environment.NewLine}");
             result = await gm.Database.ValidateQuery(
-               await Strategy.Interpret(strategy.ExitLoss, "SPY", DateTime.Today));
+               await Strategy.Interpret(strategy.ExitStopLoss, "SPY", DateTime.Today));
             if (result is bool) {
                 results.Text = String.Concat(results.Text, $"Successful query! {Environment.NewLine}");
             } else if (result is string) {
