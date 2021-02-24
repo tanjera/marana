@@ -22,16 +22,17 @@ Warning: Use at your own risk. Please read and understand end-user license agree
 
 Command-line Usage:
 Options:
-    help, library, execute              Output this help menu
+    help                                Output this help menu
 
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
 
     backtest list <days> <strategies> <quantity> <symbols>
-                                        Runs a backtest for amount of trading <days>
-                                        against <strategies> (list encapsulated by quotation marks)
-                                        for <quantity> of shares,
-                                        against <symbols> (list encapsulated by quotations)
+                                        Runs a backtest for command line arguments:
+                                        <days>: # of days to test
+                                        <strategies>: 'all' or list in quotations
+                                        <quantity>: # of shares
+                                        <symbols> 'all', 'watchlist', or list in quotations
 
     backtest all <n>                    Run backtest against all trading instructions (live, paper, test)
                                         <n>: (Required) Amount of trading days to test

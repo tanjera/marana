@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Skender.Stock.Indicators;
 
 namespace Marana {
 
@@ -166,11 +169,25 @@ namespace Marana {
             }
 
             List<Data.Instruction> instructions = new List<Data.Instruction>();
-            List<string> lstrStrategies = argStrategies.Split(',', ' ', ')', '(', '\'').Where(s => !String.IsNullOrWhiteSpace(s)).ToList();
-            List<string> lstrAssets = argAssets.Split(',', ' ', ')', '(', '\'').Where(s => !String.IsNullOrWhiteSpace(s)).ToList();
 
-            List<Data.Strategy> strategies = allStrategies.Where(s => lstrStrategies.Contains(s.Name)).ToList();
-            List<Data.Asset> assets = allAssets.Where(a => lstrAssets.Contains(a.Symbol)).ToList();
+            List<Data.Strategy> strategies;
+            if (argStrategies.ToLower() == "all") {                   // Parse command-line input for strategies
+                strategies = allStrategies;
+            } else {
+                List<string> lstrStrategies = argStrategies.Split(',', ' ', ')', '(', '\'').Where(s => !String.IsNullOrWhiteSpace(s)).ToList();
+                strategies = allStrategies.Where(s => lstrStrategies.Contains(s.Name)).ToList();
+            }
+
+            List<Data.Asset> assets;
+            if (argAssets.ToLower() == "watchlist") {                 // Parse command-line input for assets
+                List<string> watchlist = await db.GetWatchlist();
+                assets = allAssets.Where(a => watchlist.Contains(a.Symbol)).ToList();
+            } else if (argAssets.ToLower() == "all") {
+                assets = allAssets;
+            } else {
+                List<string> lstrAssets = argAssets.Split(',', ' ', ')', '(', '\'').Where(s => !String.IsNullOrWhiteSpace(s)).ToList();
+                assets = allAssets.Where(a => lstrAssets.Contains(a.Symbol)).ToList();
+            }
 
             WriteLine($"Running library update to ensure data present for all requested symbols.");
             await new Library().Update_TSD(assets, settings, db);
@@ -230,24 +247,44 @@ namespace Marana {
 
             WriteLine($">>>>>>>>>> Summary <<<<<<<<<<");                                // Summary output beginning
 
-            WriteLine($"\n>>> Tests sorted by overall return percent:");               // Show tests sorted by return percent
+            int removed = tests.RemoveAll(t => t == null);
+            WriteLine($"\nRemoved {removed} invalid test results (see test output for errors)");
+
+            // Get Rate of Change for # of testing days
+            foreach (Data.Test test in tests) {
+                Data.Daily data = allData.Find(a => a.Asset.Symbol == test.Asset.Symbol);
+                if (data != null) {
+                    RocResult[] roc = data.Prices.Count > days + 1 ? Indicator.GetRoc(data.Prices, days).ToArray() : null;
+
+                    if (roc != null && roc.Length > 0) {
+                        test.RateOfChange = roc.Last().Roc ?? 0m;
+                        test.GainPerChange = test.RateOfChange != 0 ? (test.GainPercent / test.RateOfChange * 100) : 999m;
+                    }
+                }
+            }
+
+            WriteLine("\n  --------------------------------------------------------------------------------------------------------");
+            WriteLine($"  {"Gain %",10} \t {"% / ROC",10} \t {"Strategy",-20} {"Symbol",-10} {"ROC %",10}\t {"$ Gain",-12} / {"$ Entry",-10}");
+            WriteLine("  --------------------------------------------------------------------------------------------------------");
+
             foreach (Data.Test test in tests.OrderBy(o => -o.GainPercent)) {
-                WriteLine($"  {test.GainPercent:00.00}%\t{test.Strategy.Name} \t{test.Instruction.Symbol} \tt${test.GainAmount:n2} / {Math.Abs(test.Trades?.First()?.Gain ?? 0m):n2}");
+                decimal gain = test.Trades.Count > 0 ? Math.Abs(test.Trades.First()?.Gain ?? 0m) : 0m;
+                WriteLine($"  {test.GainPercent,8:00.00} %\t {test.GainPerChange,8:00.00} %\t {test.Strategy.Name,-20} {test.Instruction.Symbol,-10} {test.RateOfChange,8:00.00} %\t $ {test.GainAmount,-10:n2} / $ {gain,-10:n2}");
             }
 
-            WriteLine($"\n>>> Assets sorted by overall short-term rate of change (ROC-14):");     // Show assets sorted by rate of change
-            foreach (Data.Daily dd in allData.OrderBy(o => o.Metrics.Last()?.ROC14)) {
-                decimal roc14 = dd.Metrics.Count > 0 ? dd.Metrics.Last()?.ROC14 ?? 0m : 0m;
-                decimal roc50 = dd.Metrics.Count > 0 ? dd.Metrics.Last()?.ROC50 ?? 0m : 0m;
-                WriteLine($"  {dd.Asset.Symbol} \t\tROC14: {roc14:00.00}% \t\tROC50: {roc50:00.00}%");
+            WriteLine("\n");
+
+            // Export summary to CSV file in working directory
+            string csvPath = Path.Combine(settings.Directory_Working, $"{Settings.GetOSStyling("Backtest")} {Settings.GetOSStyling("Summary")} {DateTime.Now:yyyy-MM-dd HH-mm}, {days} days x {quantity} quantity.csv");
+            using StreamWriter sw = new StreamWriter(csvPath, false);
+            await sw.WriteLineAsync("Gain %, % / ROC, Strategy, Symbol, ROC %, $ Gain, $ Entry");
+
+            foreach (Data.Test test in tests.OrderBy(o => -o.GainPercent)) {
+                decimal gain = test.Trades.Count > 0 ? Math.Abs(test.Trades.First()?.Gain ?? 0m) : 0m;
+                await sw.WriteLineAsync($"{test.GainPercent:00.00}, {test.GainPerChange:00.00}, {test.Strategy.Name}, {test.Instruction.Symbol}, {test.RateOfChange:00.00}, {test.GainAmount:00.00}, {gain:00.00}");
             }
 
-            WriteLine($"\n>>> Assets sorted by overall long-term rate of change (ROC-200):");     // Show assets sorted by rate of change
-            foreach (Data.Daily dd in allData.OrderBy(o => o.Metrics.Last()?.ROC200)) {
-                decimal roc200 = dd.Metrics.Count > 0 ? dd.Metrics.Last()?.ROC200 ?? 0m : 0m;
-                decimal roc100 = dd.Metrics.Count > 0 ? dd.Metrics.Last()?.ROC100 ?? 0m : 0m;
-                WriteLine($"  {dd.Asset.Symbol} \t\tROC200: {roc200:00.00}% \t\tROC100: {roc100:00.00}%");
-            }
+            sw.Close();
         }
 
         public async Task<Data.Test> RunBacktest_Daily(Settings settings, Database db,
@@ -286,6 +323,7 @@ namespace Marana {
                 }
 
                 int counter = 1;
+                int weekdays = 1;
                 for (int i = allData.Prices.Count - days; i < allData.Prices.Count; i++) {
                     day = allData.Prices[i].Date;
 
@@ -297,8 +335,16 @@ namespace Marana {
                         continue;
                     }
 
+                    // Split output by weeks; account for holidays (missing days in dataset); skip weekends
+                    if (day.DayOfWeek == DayOfWeek.Monday || counter == 1 || weekdays > 4) {
+                        Write($"\n  {day:yyyy-MM-dd}  ");
+                        weekdays = 1;
+                    } else {
+                        weekdays++;
+                    }
+
                     if (!position && toBuy) {
-                        Write("buy......." + (counter % 7 == 0 ? $"  {day:yyyy-MM-dd}\n" : ""));        // Progress indicator
+                        Write("buy.......");        // Progress indicator
 
                         position = true;                                        // Buying a position
                         Data.Daily.Price price = allData.Prices.Find(p => p.Date.Date.CompareTo(day.Date) == 0);
@@ -310,9 +356,9 @@ namespace Marana {
                         });
                     } else if (position && (toSellGain || toSellLoss)) {
                         if (toSellGain) {
-                            Write("sale-gain." + (counter % 7 == 0 ? $"  {day:yyyy-MM-dd}\n" : ""));        // Progress indicator
+                            Write("sale-gain.");        // Progress indicator
                         } else if (toSellLoss) {
-                            Write("sale-loss." + (counter % 7 == 0 ? $"  {day:yyyy-MM-dd}\n" : ""));        // Progress indicator
+                            Write("sale-loss.");        // Progress indicator
                         }
 
                         position = false;                                       // Selling the position
@@ -324,7 +370,7 @@ namespace Marana {
                             Gain = price.Close * instruction.Quantity
                         });
                     } else {
-                        Write(".........." + (counter % 7 == 0 ? $"  {day:yyyy-MM-dd}\n" : ""));        // Progress indicator
+                        Write("..........");        // Progress indicator
                     }
 
                     counter++;

@@ -154,6 +154,8 @@ namespace Marana {
             public List<Trade> Trades { get; set; }
             public decimal GainAmount { get; set; }
             public decimal GainPercent { get; set; }
+            public decimal RateOfChange { get; set; }
+            public decimal GainPerChange { get; set; }
 
             public Test() {
                 Trades = new List<Trade>();

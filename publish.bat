@@ -1,4 +1,11 @@
-cd marana
+cd marana\bin
+
+del /q /s *
+rmdir /q /s Debug
+rmdir /q /s Release
+
+cd ..
+
 dotnet clean
 dotnet build -c Release
 dotnet publish -c Release -r win-x64

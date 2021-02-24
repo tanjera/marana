@@ -105,7 +105,10 @@ namespace Marana {
                                 return;
                             }
 
-                            await new Backtest().RunBacktest(settings, db, days, _args[1], quantity, _args[3]);
+                            string strategies = _args.Count > 1 ? _args[1] : "";
+                            string symbols = _args.Count > 3 ? _args[3] : "";
+
+                            await new Backtest().RunBacktest(settings, db, days, strategies, quantity, symbols);
                         }
                     }
                 } else {

@@ -1,7 +1,8 @@
 {
   "profiles": {
     "Marana": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "backtest list 100 all 10 \"AAPL, MSFT, SPY\""
     }
   }
 }

@@ -77,11 +77,11 @@ Although Marana aims to reduce barriers to data analysis for retail investors, *
    *`marana.exe help`*
 
 ### 5) Access Marana's Data Library
-   2) Accessing Marana's MySQL database directly allows you to run queries directly against raw market data, which is useful for:
+   1) Accessing Marana's MySQL database directly allows you to run queries directly against raw market data, which is useful for:
       1) Screening stocks based on specific values and indicators
       2) Selecting stocks for further research
       3) Developing queries to function as entry and exit queries for automated strategies
-   3) Some sample queries include:
+   2) Some sample queries include:
       1) Selecting all stocks whose [Moving Average Convergence/Divergence (MACD)](https://www.investopedia.com/terms/m/macd.asp) is over the MACD Signal
          ```
          SELECT             
@@ -108,9 +108,9 @@ Although Marana aims to reduce barriers to data analysis for retail investors, *
             today.Date = CURDATE()
             AND today.Stochastic_Oscillator < 25               
          ;
-
          ```
-### 6) Using Automated Trading (Live and Paper)   
+
+### 7) Using Automated Trading (Live and Paper)   
    1) Insert strategies (custom SQL queries) into the MySQL database's `Strategies` table
       1) The `Strategies` table is automatically created when Marana accesses the database (e.g. for library updates)
          1) If the table is not present, retrieving library information (`Main Menu > Library > Information`) will create the empty table.
