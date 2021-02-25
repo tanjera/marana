@@ -7,100 +7,57 @@ using System.Threading.Tasks;
 namespace Marana {
 
     public class Library {
-        /* Status and Output variables, handler, and event triggering
-         * For updating GUI with status and output text in an asynchronous manner
-         */
+        private Program Program;
+        private Settings Settings => Program.Settings;
+        private Database Database => Program.Database;
 
-        public Statuses Status;
-        public List<string> Output;
-        public bool CancelUpdate = false;
+        private API.Alpaca Alpaca => Program.Alpaca;
+        private API.AlphaVantage AlphaVantage => Program.AlphaVantage;
 
-        public enum Statuses {
-            Inactive,
-            Updating
-        };
-
-        public enum ExitCode {
-            Completed,
-            Cancelled
+        public Library(Program p) {
+            Program = p;
         }
 
-        public event StatusUpdateHandler StatusUpdate;
+        public async Task Erase() {
+            Prompt.Write("Are you sure you want to erase market data from the Database?");
 
-        public delegate void StatusUpdateHandler(object sender, StatusEventArgs e);
+            bool confirm = Prompt.YesNo();
 
-        public class StatusEventArgs : EventArgs {
-            public Statuses Status { get; set; }
-            public List<string> Output { get; set; }
+            if (confirm) {
+                bool wipeResult = await Database.Erase();
+                Prompt.WriteLine(wipeResult
+                    ? "Operation completed. Market data erased from Database."
+                    : "Operation failed. Attempt cancelled.");
+            } else {
+                Prompt.WriteLine("Operation cancelled.");
+            }
         }
 
-        public Library() {
-            Status = Statuses.Inactive;
-            Output = new List<string>();
-        }
+        public async Task Update(List<string> args) {
+            Prompt.WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            Prompt.WriteLine(">>> Library update starting\n");
 
-        private void OnStatusUpdate()
-            => StatusUpdate?.Invoke(this, new StatusEventArgs() {
-                Status = Status,
-                Output = Output
-            });
+            Prompt.WriteLine("Initializing Database.\n");
+            await Database.Init();
 
-        /* Utility methods
-         * For messaging
-         */
-
-        public void Write(string message, ConsoleColor color = ConsoleColor.Gray) {
-            if (Output.Count == 0)
-                Output.Add("");
-
-            Output[^1] = $"{Output[^1]}{message}";
-            OnStatusUpdate();
-
-            Prompt.Write(message, color);
-        }
-
-        public void WriteLine(string message, ConsoleColor color = ConsoleColor.Gray) {
-            if (Output.Count == 0)
-                Output.Add("");
-
-            Output[^1] = $"{Output[^1]}{message}";
-            Output.Add("");
-            OnStatusUpdate();
-
-            Prompt.WriteLine(message, color);
-        }
-
-        /* Library functionality:
-         * Updating the data library, setting, and getting data
-         */
-
-        public async Task Update(List<string> args, Settings settings, Database database) {
-            Status = Statuses.Updating;
-
-            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
-            WriteLine(">>> Library update starting\n");
-
-            WriteLine("Initializing database.\n");
-            await database.Init();
-
-            // Gets all available assets; updates database as needed
-            WriteLine("Querying database for list of ticker symbols.\n");
-            List<Data.Asset> allAssets = await GetAssets(database);
+            // Gets all available assets; updates Database as needed
+            Prompt.WriteLine("Querying Database for list of ticker symbols.\n");
+            List<Data.Asset> allAssets = await GetAssets();
 
             // Select assets to update data for
             // If args are used, they manually override the Library Settings
-            WriteLine("Updating Time Series Dailies (TSD).\n");
+            Prompt.WriteLine("Updating Time Series Dailies (TSD).\n");
 
-            // Get assets to update based on command-line arguments and options/settings
+            // Get assets to update based on command-line arguments and options/Settings
             List<Data.Asset> updateAssets = new List<Data.Asset>();
             if (args.Count > 0) {                                                       // Update re: CLI args
                 updateAssets = allAssets;
                 Data.Select_Assets(ref updateAssets, args);
-                WriteLine("\nPer command-line arguments, updating range.\n");
+                Prompt.WriteLine("\nPer command-line arguments, updating range.\n");
             } else {
                 // Update assets used in automated instructions
                 List<Data.Asset> instructionAssets = new List<Data.Asset>();
-                List<Data.Instruction> instructions = await database.GetInstructions();
+                List<Data.Instruction> instructions = await Database.GetInstructions();
 
                 if (instructions != null && instructions.Count > 0) {
                     foreach (Data.Instruction instruction in instructions) {            // Collect the symbols
@@ -110,187 +67,172 @@ namespace Marana {
                     instructionAssets = instructionAssets.Distinct().ToList();          // Remove duplicates
 
                     if (instructionAssets.Count > 0) {                                  // Update library
-                        WriteLine($"Updating assets with active automated trading instructions (live and paper).\n");
-
-                        if (await Update_TSD(instructionAssets, settings, database) == ExitCode.Cancelled) {
-                            await Update_Cancel();
-                            return;
-                        }
+                        Prompt.WriteLine($"Updating assets with active automated trading instructions (live and paper).\n");
+                        await Update_TSD(instructionAssets);
                     }
                 }
 
-                switch (settings.Library_DownloadSymbols) {
+                switch (Settings.Library_DownloadSymbols) {
                     default: break;
 
                     case Settings.Option_DownloadSymbols.Watchlist:                     // (Option) Update watchlist only
-                        List<string> wl = await database.GetWatchlist();
+                        List<string> wl = await Database.GetWatchlist();
                         if (wl == null) {
-                            WriteLine("Unable to retrieve Watchlist from database. Aborting.\n");
-                            await Update_Cancel();
+                            Prompt.WriteLine("Unable to retrieve Watchlist from Database. Aborting.\n");
                             return;
                         }
 
                         updateAssets = allAssets.Where(a => wl.Contains(a.Symbol)).ToList();
 
-                        WriteLine("\nPer options, updating watchlist only.\n");
+                        Prompt.WriteLine("\nPer options, updating watchlist only.\n");
                         break;
 
                     case Settings.Option_DownloadSymbols.All:                           // (Option) Update all symbols
                         updateAssets = allAssets;
-                        WriteLine("\nPer options, updating all symbols.\n");
+                        Prompt.WriteLine("\nPer options, updating all symbols.\n");
                         break;
                 }
             }
 
-            if (await Update_TSD(updateAssets, settings, database) == ExitCode.Cancelled) {
-                await Update_Cancel();
-                return;
-            }
+            await Update_TSD(updateAssets);
 
-            await Update_Complete();
+            Prompt.WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
+            Prompt.WriteLine(">>> Library update complete\n");
         }
 
-        public async Task Update_Cancel() {
-            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
-            WriteLine(">>> Library update cancelled\n");
-            Status = Statuses.Inactive;
-            CancelUpdate = false;
-        }
-
-        public async Task Update_Complete() {
-            WriteLine($"\n{DateTime.Now.ToShortDateString()} {DateTime.Now.ToShortTimeString()}");
-            WriteLine(">>> Library update complete\n");
-            Status = Statuses.Inactive;
-        }
-
-        public async Task<Data.Asset> GetAsset(Database db, string symbol) {
-            List<Data.Asset> assets = await GetAssets(db);
+        public async Task<Data.Asset> GetAsset(string symbol) {
+            List<Data.Asset> assets = await GetAssets();
             return assets.Find(a => a.Symbol == symbol);
         }
 
-        public async Task<List<Data.Asset>> GetAssets(Database db) {
+        public async Task<List<Data.Asset>> GetAssets() {
             // Update ticker symbols weekly
-            if (DateTime.UtcNow - db.GetValidity_Assets().Result > new TimeSpan(7, 0, 0, 0))
-                await Update_Symbols(db);
+            if (DateTime.UtcNow - Database.GetValidity_Assets().Result > new TimeSpan(7, 0, 0, 0)) {
+                await Update_Symbols();
+            }
 
-            return await db.GetAssets();
+            return await Database.GetAssets();
         }
 
-        public async Task<Data.Daily.Price> GetLastPrice(Settings settings, Database db, Data.Asset asset) {
+        public async Task<Data.Daily.Price> GetLastPrice(Data.Asset asset) {
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
-            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
+            object result = await Alpaca.GetTime_LastMarketClose();
 
             if (result is DateTime dt) {
                 lastMarketClose = dt;
             } else {
-                WriteLine("Unable to access market schedule/times via Alpaca API");
+                Prompt.WriteLine("Unable to access market schedule/times via Alpaca API");
             }
 
-            DateTime validity = await db.GetValidity_Daily(asset);
+            DateTime validity = await Database.GetValidity_Daily(asset);
             if (validity.CompareTo(lastMarketClose) < 0) {
-                await Update_TSD(new List<Data.Asset>() { asset }, settings, db);
-                await Task.Delay(2000);                 // Allow database update thread to get ahead
+                await Update_TSD(new List<Data.Asset>() { asset });
+                await Task.Delay(2000);                 // Allow Database update thread to get ahead
             }
 
-            Data.Daily dd = await db.GetData_Daily(asset);
+            Data.Daily dd = await Database.GetData_Daily(asset);
             return dd.Prices.Last();
         }
 
         /// <summary>
-        /// Gets the latest prices from the database (and updating per validity) of a list of assets
+        /// Gets the latest prices from the Database (and updating per validity) of a list of assets
         /// </summary>
-        /// <param name="settings"></param>
+        /// <param name="Settings"></param>
         /// <param name="db"></param>
         /// <param name="assets">List of assets to get prices for</param>
         /// <returns>Dictionary of asset ID, closing price</returns>
-        public async Task<Dictionary<string, decimal?>> GetLastPrices(Settings settings, Database db, List<Data.Asset> assets) {
+        public async Task<Dictionary<string, decimal?>> GetLastPrices(List<Data.Asset> assets) {
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
-            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
+            object result = await Alpaca.GetTime_LastMarketClose();
 
             if (result is DateTime dt) {
                 lastMarketClose = dt;
             } else {
-                WriteLine("Unable to access market schedule/times via Alpaca API");
+                Prompt.WriteLine("Unable to access market schedule/times via Alpaca API");
             }
 
-            Dictionary<string, DateTime> validities = await db.GetValidities();
+            Dictionary<string, DateTime> validities = await Database.GetValidities();
 
             for (int i = 0; i < assets.Count; i++) {
-                string validityKey = await db.GetValidityKey_Daily(assets[i]);
+                string validityKey = await Database.GetValidityKey_Daily(assets[i]);
                 DateTime validity = validities.ContainsKey(validityKey) ? validities[validityKey] : new DateTime();
                 if (validity.CompareTo(lastMarketClose) < 0) {
-                    await Update_TSD(new List<Data.Asset>() { assets[i] }, settings, db);
+                    await Update_TSD(new List<Data.Asset>() { assets[i] });
                 }
             }
 
-            await Task.Delay(2000);                 // Allow database update thread to get ahead
+            await Task.Delay(2000);                 // Allow Database update thread to get ahead
 
-            return await db.GetPrices_Daily_Latest(assets);
+            return await Database.GetPrices_Daily_Latest(assets);
         }
 
-        public async Task<ExitCode> Update_Symbols(Database db) {
-            Write("Updating list of ticker symbols. ");
+        public async Task GetInfo() {
+            Prompt.WriteLine("Connecting to Database...");
 
-            object output = await API.Alpaca.GetAssets(db._Settings);
+            // Connect to Database, post results
+
+            decimal size = await Database.GetSize();
+            Prompt.WriteLine($"Database Size: {size} MB\n");
+        }
+
+        public async Task Update_Symbols() {
+            Prompt.Write("Updating list of ticker symbols. ");
+
+            object output = await Alpaca.GetAssets();
             if (output is List<Data.Asset> list) {
-                await db.SetAssets(list);
-                WriteLine("Completed", ConsoleColor.Green);
-                return ExitCode.Completed;
+                await Database.SetAssets(list);
+                Prompt.WriteLine("Completed", ConsoleColor.Green);
             } else {
-                WriteLine("Error", ConsoleColor.Red);
-                return ExitCode.Completed;
+                Prompt.WriteLine("Error", ConsoleColor.Red);
             }
         }
 
-        public async Task<ExitCode> Update_TSD(List<Data.Asset> assets, Settings settings, Database db) {
+        public async Task Update_TSD(List<Data.Asset> assets) {
             List<Task> threads = new List<Task>();
 
             DateTime lastMarketClose = DateTime.UtcNow - new TimeSpan(1, 0, 0, 0);
-            object result = await API.Alpaca.GetTime_LastMarketClose(settings);
+            object result = await Alpaca.GetTime_LastMarketClose();
             if (result is DateTime dt) {
                 lastMarketClose = dt;
             } else {
-                WriteLine("Unable to access market schedule/times via Alpaca API");
+                Prompt.WriteLine("Unable to access market schedule/times via Alpaca API");
             }
 
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
-                if (CancelUpdate)
-                    return ExitCode.Cancelled;
-
-                Write($"  [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
+                Prompt.Write($"  [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
 
                 /* Check validity timestamp against last known market close
                  */
 
-                DateTime validity = await db.GetValidity_Daily(assets[i]);
+                DateTime validity = await Database.GetValidity_Daily(assets[i]);
                 if (validity.CompareTo(lastMarketClose) > 0) {
                     await Task.Delay(10);               // Allows GUI responsiveness
-                    WriteLine("Database current. Skipping.");
+                    Prompt.WriteLine("Database current. Skipping.");
                     continue;
                 }
 
-                Write("Requesting data. ");
+                Prompt.Write("Requesting data. ");
 
                 object output = null;
                 Data.Daily dd = new Data.Daily();
 
-                if (settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca)
-                    output = await API.Alpaca.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
-                else if (settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage)
-                    output = await API.AlphaVantage.GetData_Daily(settings, assets[i], settings.Library_LimitDailyEntries);
+                if (Settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca)
+                    output = await Alpaca.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
+                else if (Settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage)
+                    output = await AlphaVantage.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
 
                 if (output is Data.Daily pmdd)
                     dd = pmdd;
                 else if (output is string pms) {
                     if (pms == "Too Many Requests"                  // Alpaca's return message for exceeding API calls
                             || pms == "ERROR:EXCEEDEDCALLS") {      // Alpha Vantage's return message for exceeding API calls
-                        WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
+                        Prompt.WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
                         await Task.Delay(30000);
                         i--;
                         continue;
                     } else {
-                        WriteLine($"Error: {output}");
+                        Prompt.WriteLine($"Error: {output}");
                         continue;
                     }
                 }
@@ -299,16 +241,16 @@ namespace Marana {
 
                 /* Calculate metrics, stock indicators
                  */
-                Write("Calculating indicators. ");
+                Prompt.Write("Calculating indicators. ");
                 dd = await Calculate.Metrics(dd);
 
-                /* Save to database
+                /* Save to Database
                  * Use threading for highly improved speed!
                  */
 
-                WriteLine("Updating database.", ConsoleColor.Green);
+                Prompt.WriteLine("Updating Database.", ConsoleColor.Green);
 
-                Task thread = new Task(async () => { await db.SetData_Daily(dd); });
+                Task thread = new Task(async () => { await Database.SetData_Daily(dd); });
                 thread.Start();
                 threads.Add(thread);
 
@@ -319,13 +261,11 @@ namespace Marana {
 
             int finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             if (finishing > 0) {
-                WriteLine($"  Completing {finishing} remaining background database tasks.");
+                Prompt.WriteLine($"  Completing {finishing} remaining background Database tasks.");
                 await Task.Delay(5000);
 
                 finishing = threads.FindAll(t => t.Status == TaskStatus.Running).Count;
             }
-
-            return ExitCode.Completed;
         }
     }
 }

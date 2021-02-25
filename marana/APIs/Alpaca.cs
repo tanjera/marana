@@ -11,23 +11,29 @@ using Alpaca.Markets;
 namespace Marana.API {
 
     public class Alpaca {
+        private Program Program;
+        private Settings Settings => Program.Settings;
 
-        public static async Task ClearOrders(Settings settings, Data.Format format) {
+        public Alpaca(Program p) {
+            Program = p;
+        }
+
+        public async Task ClearOrders(Data.Format format) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 await trading.DeleteAllOrdersAsync();
@@ -38,14 +44,14 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetAssets(Settings settings) {
+        public async Task<object> GetAssets() {
             try {
                 IAlpacaTradingClient trading = null;
 
-                if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                } else if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
+                } else if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 } else {
                     return new ArgumentNullException();
                 }
@@ -73,22 +79,22 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetTradeableCash(Settings settings, Data.Format format) {
+        public async Task<object> GetTradeableCash(Data.Format format) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return null;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return null;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 var account = await trading.GetAccountAsync();
@@ -100,14 +106,14 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetData_Daily(Settings settings, Data.Asset asset, int limit = 500) {
+        public async Task<object> GetData_Daily(Data.Asset asset, int limit = 500) {
             try {
                 IAlpacaDataClient data = null;
 
-                if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                } else if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
+                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
+                } else if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
+                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 } else {
                     return new ArgumentNullException();
                 }
@@ -137,22 +143,22 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetPositions(Settings settings, Data.Format format) {
+        public async Task<object> GetPositions(Data.Format format) {
             IAlpacaTradingClient client = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return false;
                     }
 
-                    client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    client = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return false;
                     }
 
-                    client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 if (client == null)
@@ -171,14 +177,14 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetTime_LastMarketClose(Settings settings) {
+        public async Task<object> GetTime_LastMarketClose() {
             IAlpacaTradingClient client = null;
 
             try {
-                if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
-                    client = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                } else if (!String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
-                    client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
+                    client = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
+                } else if (!String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) && !String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
+                    client = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 } else {
                     return new ArgumentNullException();
                 }
@@ -191,25 +197,25 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<object> GetOrders_OpenBuy(Settings settings, Data.Format format) {
+        public async Task<object> GetOrders_OpenBuy(Data.Format format) {
             IAlpacaTradingClient trading = null;
             IAlpacaDataClient data = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return null;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
+                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return null;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
-                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
+                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 return (await trading.ListOrdersAsync(
@@ -223,27 +229,26 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<Trading.OrderResult> PlaceOrder_BuyMarket(Settings settings, Database db, Data.Format format, string symbol, int shares,
-
-            TimeInForce timeInForce = TimeInForce.Gtc, bool useMargin = false) {
+        public async Task<Trading.OrderResult> PlaceOrder_BuyMarket(
+            Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc, bool useMargin = false) {
             IAlpacaTradingClient trading = null;
             IAlpacaDataClient data = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
-                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
+                    data = Environments.Live.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
-                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
+                    data = Environments.Paper.GetAlpacaDataClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 var account = await trading.GetAccountAsync();
@@ -261,23 +266,23 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<Trading.OrderResult> PlaceOrder_SellMarket(Settings settings, Data.Format format, string symbol, int shares,
-            TimeInForce timeInForce = TimeInForce.Gtc) {
+        public async Task<Trading.OrderResult> PlaceOrder_SellMarket(
+            Data.Format format, string symbol, int shares, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 // Prevents exceptions or unwanted behavior with Alpaca API
@@ -304,23 +309,23 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<Trading.OrderResult> PlaceOrder_SellLimit(Settings settings, Data.Format format, string symbol, int shares, decimal limitPrice,
-            TimeInForce timeInForce = TimeInForce.Gtc) {
+        public async Task<Trading.OrderResult> PlaceOrder_SellLimit(
+            Data.Format format, string symbol, int shares, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 // Prevents exceptions or unwanted behavior with Alpaca API
@@ -347,23 +352,23 @@ namespace Marana.API {
             }
         }
 
-        public static async Task<Trading.OrderResult> PlaceOrder_SellStopLimit(Settings settings, Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice,
-            TimeInForce timeInForce = TimeInForce.Gtc) {
+        public async Task<Trading.OrderResult> PlaceOrder_SellStopLimit(
+            Data.Format format, string symbol, int shares, decimal stopPrice, decimal limitPrice, TimeInForce timeInForce = TimeInForce.Gtc) {
             IAlpacaTradingClient trading = null;
 
             try {
                 if (format == Data.Format.Live) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Live_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Live_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Live_Key, settings.API_Alpaca_Live_Secret));
+                    trading = Environments.Live.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Live_Key, Settings.API_Alpaca_Live_Secret));
                 } else if (format == Data.Format.Paper) {
-                    if (String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(settings.API_Alpaca_Paper_Secret)) {
+                    if (String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Key) || String.IsNullOrWhiteSpace(Settings.API_Alpaca_Paper_Secret)) {
                         return Trading.OrderResult.Fail;
                     }
 
-                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(settings.API_Alpaca_Paper_Key, settings.API_Alpaca_Paper_Secret));
+                    trading = Environments.Paper.GetAlpacaTradingClient(new SecretKey(Settings.API_Alpaca_Paper_Key, Settings.API_Alpaca_Paper_Secret));
                 }
 
                 // Prevents exceptions or unwanted behavior with Alpaca API

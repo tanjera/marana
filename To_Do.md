@@ -2,9 +2,10 @@
 
 
 ### Short-Term To-Do: For Programming
-- Add technical indicators
-  - ROC long-term? 100? 300?
-  - MFI
+1) GUI -> CLI
+   1) Test strategy queries   
+   3) Library information
+2) Add default color to Settings/config.cfg
 
 
 ### Goals

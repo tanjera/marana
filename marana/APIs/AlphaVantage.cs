@@ -12,6 +12,12 @@ using CsvHelper;
 namespace Marana.API {
 
     public class AlphaVantage {
+        private Program Program;
+        private Settings Settings => Program.Settings;
+
+        public AlphaVantage(Program p) {
+            Program = p;
+        }
 
         public static async Task<bool> Validate_Error(string text) {
             // Returns true if the returned JSON data (error data always in JSON format) has an "Error Message"
@@ -29,9 +35,9 @@ namespace Marana.API {
             return text.Contains("Note") || text.Contains("Information");
         }
 
-        public static async Task<object> GetData_Daily(Settings settings, Data.Asset asset, int limit = 500) {
+        public async Task<object> GetData_Daily(Data.Asset asset, int limit = 500) {
             string output;
-            output = await RequestData_Daily(settings.API_AlphaVantage_Key, asset.Symbol);
+            output = await RequestData_Daily(asset.Symbol);
 
             if (output == "ERROR:INVALID" || output == "ERROR:INVALIDKEY"
                 || output == "ERROR:EXCEEDEDCALLS") {
@@ -41,10 +47,10 @@ namespace Marana.API {
             }
         }
 
-        private static async Task<string> RequestData_Daily(string apiKey, string symbol, bool fulldata = true) {
+        private async Task<string> RequestData_Daily(string symbol, bool fulldata = true) {
             HttpWebRequest request = WebRequest.Create(
             String.Format("https://www.alphavantage.co/query?function={0}&symbol={1}&outputsize={2}&datatype=csv&apikey={3}",
-            "TIME_SERIES_DAILY_ADJUSTED", symbol, (fulldata ? "full" : "compact"), apiKey)) as HttpWebRequest;
+            "TIME_SERIES_DAILY_ADJUSTED", symbol, (fulldata ? "full" : "compact"), Settings.API_AlphaVantage_Key)) as HttpWebRequest;
             HttpWebResponse response = request.GetResponse() as HttpWebResponse;
             StreamReader reader = new StreamReader(response.GetResponseStream());
             string rte = reader.ReadToEnd();
@@ -62,7 +68,7 @@ namespace Marana.API {
             }
         }
 
-        private static async Task<object> ParseData_Daily(string data, int maxrecords = -1) {
+        private async Task<object> ParseData_Daily(string data, int maxrecords = -1) {
             Data.Daily dd = new Data.Daily();
 
             using (StringReader sr = new StringReader(data)) {

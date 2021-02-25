@@ -130,7 +130,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
@@ -256,12 +256,37 @@ namespace Marana {
             }
         }
 
+        public async Task<bool> Erase() {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync(); ;
+            } catch (Exception ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return false;
+            }
+
+            try {
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"DROP TABLE IF EXISTS Validity, Assets, Daily;",
+                        connection))
+                    await cmd.ExecuteNonQueryAsync();
+
+                await Init();
+                await connection.CloseAsync();
+                return true;
+            } catch (Exception ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await connection.CloseAsync();
+                return false;
+            }
+        }
+
         public async Task<List<Data.Asset>> GetAssets() {
             using MySqlConnection connection = new MySqlConnection(ConnectionStr);
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
@@ -302,7 +327,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
@@ -391,7 +416,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Instruction>();
             }
@@ -431,7 +456,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
@@ -481,7 +506,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new List<Data.Strategy>();
             }
@@ -517,7 +542,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new DateTime();
             }
@@ -555,7 +580,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return new Dictionary<string, DateTime>();
             }
@@ -588,7 +613,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return null;
             }
@@ -624,7 +649,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return 0;
             }
@@ -705,7 +730,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
@@ -764,7 +789,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
@@ -868,7 +893,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
@@ -916,7 +941,7 @@ namespace Marana {
             try {
                 await connection.OpenAsync();
             } catch (Exception ex) {
-                Console.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return;
             }
@@ -968,31 +993,6 @@ namespace Marana {
 
             await connection.CloseAsync();
             return true;
-        }
-
-        public async Task<bool> Wipe() {
-            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
-            try {
-                await connection.OpenAsync(); ;
-            } catch (Exception ex) {
-                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                return false;
-            }
-
-            try {
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"DROP TABLE IF EXISTS Validity, Assets, Daily;",
-                        connection))
-                    await cmd.ExecuteNonQueryAsync();
-
-                await Init();
-                await connection.CloseAsync();
-                return true;
-            } catch (Exception ex) {
-                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                await connection.CloseAsync();
-                return false;
-            }
         }
     }
 }

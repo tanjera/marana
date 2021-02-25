@@ -20,7 +20,7 @@ namespace Marana {
                 await sw.WriteLineAsync($"{Environment.NewLine}{Environment.NewLine}{message}");
                 sw.Close();
             } catch (Exception ex) {
-                Console.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                Prompt.WriteLine($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}\n{ex}");
             }
         }
     }

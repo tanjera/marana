@@ -46,7 +46,7 @@ Marana is currently under development. Here are running lists of implemented fea
 - Additional technical analysis indicators and metrics
 - Intra-day market data and trading
 
-## Instructions for Use
+## Instructions for Use (As of [version 0.3.0](https://github.com/tanjera/marana/tree/bdac8ae9d76866f18e600cd92a53f592cef51d43))
 Although Marana aims to reduce barriers to data analysis for retail investors, **using Marana still requires a fair amount of computing skills, especially writing database queries** including a minimum ability to use the command prompt, install a MySQL database service, and be able to write basic SQL (database) queries. Although using Marana and its connected services are all free, it is not a turnkey operation.
 
 ### 1) Install a [MySQL Server](https://dev.mysql.com/downloads/mysql/)

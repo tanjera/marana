@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Marana": {
-      "commandName": "Project",
-      "commandLineArgs": " backtest list all \"ACTC\" 60 2021-02-24"
+      "commandName": "Project"
     }
   }
 }

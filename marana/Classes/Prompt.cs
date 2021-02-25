@@ -10,33 +10,32 @@ namespace Marana {
 
         public static List<string> Args() {
             NewLine();
-            Write("Marana > ", ConsoleColor.Blue);
+            Write($"{Settings.GetOSStyling("Marana")} > ", ConsoleColor.Blue);
             string input = Console.ReadLine().Trim();
             return new List<string>(input.Split(' '));
         }
 
         public static void Key() {
-            Console.WriteLine();
-            Console.WriteLine("Press any key to continue...");
+            Prompt.WriteLine("\nPress any key to continue...");
             Console.ReadKey();
         }
 
         public static bool YesNo() {
             while (true) {
-                Console.Write(" [y/n] ");
+                Prompt.Write(" [yes / no] ");
 
                 string input = Console.ReadLine().Trim().ToLower();
 
-                if (input == "y")
+                if (input == "y" || input == "yes")
                     return true;
-                else if (input == "n")
+                else
                     return false;
             }
         }
 
         public static void NewLine(int Lines = 1) {
             for (int i = 0; i < Lines; i++)
-                Console.WriteLine();
+                Prompt.WriteLine("");
         }
 
         public static void Write(string Message, ConsoleColor ForeColor = ConsoleColor.Gray) {
