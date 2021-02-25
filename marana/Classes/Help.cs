@@ -27,12 +27,12 @@ Options:
     library update                      Run library data update (update all symbol data)
     library update [start] [end]        Run library data update from symbol [start] to symbol [end]
 
-    backtest list <days> <strategies> <quantity> <symbols>
+    backtest list <stra> <symb> <days> [endd]
                                         Runs a backtest for command line arguments:
+                                        <stra>: 'all' or list in quotations
+                                        <symb> 'all', 'watchlist', or list in quotations
                                         <days>: # of days to test
-                                        <strategies>: 'all' or list in quotations
-                                        <quantity>: # of shares
-                                        <symbols> 'all', 'watchlist', or list in quotations
+                                        [endd]: (Optional) date to end simulation (format yyyy-MM-dd). Default is today
 
     backtest all <n>                    Run backtest against all trading instructions (live, paper, test)
                                         <n>: (Required) Amount of trading days to test

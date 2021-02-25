@@ -130,7 +130,9 @@ namespace Marana.API {
 
                 return ds;
             } catch (Exception ex) {
-                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                if (ex.Message != "Too Many Requests") {                    // This is handled elsewhere- does not need to be error logged
+                    await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                }
                 return ex.Message;
             }
         }

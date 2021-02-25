@@ -672,13 +672,13 @@ namespace Marana {
             }
         }
 
-        public async Task<bool> ScalarQuery(string query) {
+        public async Task<bool?> ScalarQuery(string query) {
             using MySqlConnection connection = new MySqlConnection(ConnectionStr);
             try {
                 await connection.OpenAsync(); ;
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                return false;
+                return null;
             }
 
             try {
@@ -688,7 +688,7 @@ namespace Marana {
                     result = await cmd.ExecuteScalarAsync() != null;
                 } catch (Exception ex) {
                     await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                    return false;
+                    return null;
                 }
 
                 await connection.CloseAsync();
@@ -696,7 +696,7 @@ namespace Marana {
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
-                return false;
+                return null;
             }
         }
 

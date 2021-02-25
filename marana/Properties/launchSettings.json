@@ -2,7 +2,7 @@
   "profiles": {
     "Marana": {
       "commandName": "Project",
-      "commandLineArgs": "backtest list 100 all 10 \"AAPL, MSFT, SPY\""
+      "commandLineArgs": " backtest list all \"ACTC\" 60 2021-02-24"
     }
   }
 }

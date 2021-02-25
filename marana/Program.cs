@@ -71,44 +71,65 @@ namespace Marana {
                         string opt1 = TrimArgs(ref _args);
 
                         if (opt1 == "paper" || opt1 == "live" || opt1 == "test" || opt1 == "all") {
-                            int priordays;      // For executing instructions to process signals from previous days
-                            int.TryParse(TrimArgs(ref _args), out priordays);
+                            int days;
+                            if (_args.Count < 1 || !int.TryParse(_args[0], out days)) {
+                                Console.WriteLine($"Invalid arguments for 'backtest {opt1} <n>'");
+                                return;
+                            }
+
+                            DateTime ending;
+                            if (_args.Count < 2) {
+                                ending = DateTime.Today;
+                            } else if (!DateTime.TryParse(_args[1], out ending)) {
+                                Console.WriteLine("Invalid ending date provided. Unable to parse.");
+                                return;
+                            }
 
                             switch (opt1) {
                                 case "paper":
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Paper, priordays);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Paper, days, ending);
                                     break;
 
                                 case "live":
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Live, priordays);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Live, days, ending);
                                     break;
 
                                 case "test":
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Test, priordays);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Test, days, ending);
                                     break;
 
                                 case "all":
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Live, priordays);
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Paper, priordays);
-                                    await new Backtest().RunBacktest(settings, db, Data.Format.Test, priordays);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Live, days, ending);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Paper, days, ending);
+                                    await new Backtest().RunBacktest(settings, db, Data.Format.Test, days, ending);
                                     break;
                             }
                         } else if (opt1 == "list") {
+                            if (_args.Count < 3) {
+                                Console.WriteLine("Insufficient arguments for 'backtest list <strategies> <symbols> <days>'");
+                                return;
+                            }
+
+                            // Process command line arguments
+                            string strategies = _args.Count > 0 ? _args[0] : "";
+                            string symbols = _args.Count > 1 ? _args[1] : "";
+
+                            int days;
+                            if (!int.TryParse(_args[2], out days)) {
+                                Console.WriteLine("Invalid arguments for 'backtest list <strategies> <symbols> <days>'");
+                                return;
+                            }
+
+                            DateTime ending;
                             if (_args.Count < 4) {
-                                Console.WriteLine("Insufficient arguments for 'backtest list <days> <strategy> <quantity> <symbols>'");
+                                ending = DateTime.Today;
+                            } else if (!DateTime.TryParse(_args[3], out ending)) {
+                                Console.WriteLine("Invalid ending date provided. Unable to parse.");
                                 return;
                             }
 
-                            int days, quantity;
-                            if (!int.TryParse(_args[0], out days) || !int.TryParse(_args[2], out quantity)) {
-                                Console.WriteLine("Invalid arguments for 'backtest list <days> <strategy> <quantity> <symbols>'");
-                                return;
-                            }
-
-                            string strategies = _args.Count > 1 ? _args[1] : "";
-                            string symbols = _args.Count > 3 ? _args[3] : "";
-
-                            await new Backtest().RunBacktest(settings, db, days, strategies, quantity, symbols);
+                            // Call the actual backtest
+                            await new Backtest().RunBacktest(settings, db, strategies, symbols, days, ending);
                         }
                     }
                 } else {

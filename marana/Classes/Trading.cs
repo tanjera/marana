@@ -217,16 +217,21 @@ namespace Marana {
             }
 
             if (validity.CompareTo(lastMarketClose) > 0) {       // If validity is current, data is valid
-                bool toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
-                bool toSellGain = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
-                bool toSellLoss = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
+                bool? toBuy = await db.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
+                bool? toSellGain = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
+                bool? toSellLoss = await db.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
 
-                if (toBuy && (toSellGain || toSellLoss)) {   // Cannot simultaneously buy and sell ... erroneous queries?
+                if (!toBuy.HasValue || !toSellGain.HasValue || !toSellLoss.HasValue) {
+                    WriteLine($"Error detected in SQL query. Please validate queries. Skipping.");
+                    return;
+                }
+
+                if (toBuy.Value && (toSellGain.Value || toSellLoss.Value)) {   // Cannot simultaneously buy and sell ... erroneous queries?
                     WriteLine("Buy AND Sell triggers met- doing nothing. Check strategy for errors?");
                     return;
                 }
 
-                if (toBuy) {
+                if (toBuy.Value) {
                     // Warning: API buy/sell orders use negative quantity to indicate short positions
                     // And/or may just throw exceptions when attempting to sell to negative
 
@@ -276,8 +281,8 @@ namespace Marana {
                                 break;
                         }
                     }
-                } else if (toSellGain || toSellLoss) {
-                    string msgSellQuery = toSellGain && toSellLoss ? "Both" : (toSellGain ? "Gain" : (toSellLoss ? "Stop-Loss" : ""));
+                } else if (toSellGain.Value || toSellLoss.Value) {
+                    string msgSellQuery = toSellGain.Value && toSellLoss.Value ? "Both" : (toSellGain.Value ? "Gain" : (toSellLoss.Value ? "Stop-Loss" : ""));
 
                     if (position == null || position.Quantity <= 0) {
                         WriteLine($"  Sell trigger detected; {msgSellQuery}; no current position owned; doing nothing.");
