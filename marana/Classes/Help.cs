@@ -63,13 +63,22 @@ Options:
                                         {SYMBOL} is interpreted to the symbol being queried
                                         {DATE} is interpreted to the current date
 
-    test parallel <stra> <symb> <days> [date]
-                                        Runs a parallel backtest:
-                                        <stra>: 'all' or list in quotations
-                                        <symb> 'all', 'watchlist', or list in quotations
+    test discrete <stra> <symb> <days> [date]
+                                        Runs a discrete test ((1 strategy x 1 symbol) / days)
+                                        Note: Accounts for weekends and holidays
+
+    test parallel <stra> <symb> <days> [date] [$tot] [$per]
+                                        Runs a parallel test ((1 strategy x all symbols) / days)
+                                        Note: Accounts for weekends, not holidays
+
+                                        Test arguments:
+                                        <stra>: Strategies; 'all' or list in quotations
+                                        <symb> Symbols; 'all', 'watchlist', or list in quotations
                                         <days>: # of days to test
                                         [date]: (Optional) date to end simulation (format yyyy-MM-dd).
                                                 Default is today
+                                        [$tot]: (Optional) total dollar limit to buying. Default is unlimited.
+                                        [$per]: (Optional) dollar limit per asset purchase. Default is 1 share
 
 ");
         }

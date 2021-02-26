@@ -60,6 +60,16 @@ namespace Marana {
                 return false;
             }
 
+            // Consolidate args list based on quoted items (e.g. "AAPL, MSFT"
+            for (int i = args.Count - 1; i > 0; i--) {
+                if (args[i].EndsWith('\"') && !args[i].StartsWith('\"')) {
+                    args[i - 1] = $"{args[i - 1]} {args[i]}";
+                    args.RemoveAt(i);
+                } else if (args[i].EndsWith('\"') && args[i].StartsWith('\"')) {
+                    args[i] = args[i].Replace('\"', ' ').Trim();
+                }
+            }
+
             // Parse command options for program functionality
 
             // "library"
@@ -100,7 +110,7 @@ namespace Marana {
             } else if (args.Count > 0 && args[0] == "test") {
                 if (args.Count > 1 && args[1] == "strategies") {
                     await Strategy.Validate();
-                } else if (args.Count > 1 && args[1] == "parallel") {
+                } else if (args.Count > 1 && (args[1] == "discrete" || args[1] == "parallel")) {
                     if (args.Count < 5) {
                         Prompt.WriteLine("Insufficient arguments.");
                         return true;
@@ -116,18 +126,29 @@ namespace Marana {
                         return true;
                     }
 
-                    DateTime ending;
-                    if (args.Count > 5) {
-                        if (!DateTime.TryParse(args[5], out ending)) {
-                            Prompt.WriteLine("Invalid ending date provided. Unable to parse.");
-                            return true;
-                        }
-                    } else {
-                        ending = DateTime.Today;
+                    DateTime ending = DateTime.Today;
+                    if (args.Count > 5 && !DateTime.TryParse(args[5], out ending)) {
+                        Prompt.WriteLine("Invalid ending date provided. Unable to parse.");
+                        return true;
                     }
 
-                    // Call the actual backtest
-                    await Test.RunBacktest(strategies, symbols, days, ending);
+                    decimal dollars = 0m;
+                    if (args.Count > 6 && !decimal.TryParse(args[6], out dollars)) {
+                        Prompt.WriteLine("Invalid dollar limit provided. Unable to parse.");
+                        return true;
+                    }
+
+                    decimal dollarsPer = 0m;
+                    if (args.Count > 7 && !decimal.TryParse(args[7], out dollarsPer)) {
+                        Prompt.WriteLine("Invalid dollar per stock limit provided. Unable to parse.");
+                        return true;
+                    }
+
+                    switch (args[1]) {
+                        default: break;
+                        case "discrete": await Test.RunDiscrete(strategies, symbols, days, ending); break;
+                        case "parallel": await Test.RunParallel(strategies, symbols, days, ending, dollars, dollarsPer); break;
+                    }
                 } else {
                     Help.Test();
                 }

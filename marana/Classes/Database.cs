@@ -451,7 +451,43 @@ namespace Marana {
             }
         }
 
-        public async Task<Dictionary<string, decimal?>> GetPrices_Daily_Latest(List<Data.Asset> assets) {
+        public async Task<Dictionary<string, decimal?>> GetPrices_Daily(List<Data.Asset> assets, DateTime date) {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync(); ;
+            } catch (Exception ex) {
+                Prompt.WriteLine("Unable to connect to database. Please check your settings and your connection.");
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return null;
+            }
+
+            try {
+                Dictionary<string, decimal?> output = new Dictionary<string, decimal?>();
+
+                using (MySqlCommand cmd = new MySqlCommand(
+                        $@"SELECT `Asset`, `Close`
+                                FROM `Daily` WHERE `Date` = '{date:yyyy-MM-dd}';",
+                        connection)) {
+                    using MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read()) {
+                        string asset = rdr.IsDBNull(ColumnsDaily.Asset.GetHashCode()) ? "" : rdr.GetString("Asset");
+                        if (assets.Any(a => a.ID == asset)) {
+                            decimal? close = rdr.IsDBNull(1) ? null : rdr.GetDecimal("Close");
+                            output.Add(asset, close);
+                        }
+                    }
+                }
+
+                await connection.CloseAsync();
+                return output;
+            } catch (Exception ex) {
+                await connection.CloseAsync();
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return null;
+            }
+        }
+
+        public async Task<Dictionary<string, decimal?>> GetPrices_Daily_Last(List<Data.Asset> assets) {
             using MySqlConnection connection = new MySqlConnection(ConnectionStr);
             try {
                 await connection.OpenAsync(); ;
@@ -474,21 +510,7 @@ namespace Marana {
                         return null;
                 }
 
-                Dictionary<string, decimal?> output = new Dictionary<string, decimal?>();
-
-                using (MySqlCommand cmd = new MySqlCommand(
-                        $@"SELECT `Asset`, `Close`
-                                FROM `Daily` WHERE `Date` = '{latest:yyyy-MM-dd}';",
-                        connection)) {
-                    using MySqlDataReader rdr = cmd.ExecuteReader();
-                    while (rdr.Read()) {
-                        string asset = rdr.IsDBNull(ColumnsDaily.Asset.GetHashCode()) ? "" : rdr.GetString("Asset");
-                        if (assets.Any(a => a.ID == asset)) {
-                            decimal? close = rdr.IsDBNull(1) ? null : rdr.GetDecimal("Close");
-                            output.Add(asset, close);
-                        }
-                    }
-                }
+                Dictionary<string, decimal?> output = await GetPrices_Daily(assets, latest);
 
                 await connection.CloseAsync();
                 return output;

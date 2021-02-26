@@ -163,7 +163,7 @@ namespace Marana {
 
             await Task.Delay(2000);                 // Allow Database update thread to get ahead
 
-            return await Database.GetPrices_Daily_Latest(assets);
+            return await Database.GetPrices_Daily_Last(assets);
         }
 
         public async Task GetInfo() {

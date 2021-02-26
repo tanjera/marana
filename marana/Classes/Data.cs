@@ -147,15 +147,21 @@ namespace Marana {
 
         public class Test {
             public Asset Asset { get; set; }
-            public int Shares { get; set; }
             public Strategy Strategy { get; set; }
             public Instruction Instruction { get; set; }
 
             public List<Trade> Trades { get; set; }
+
+            public int Shares { get; set; }
+
+            public decimal AssetRateOfChange { get; set; }
+
+            public int DaysHeld { get; set; }
+            public decimal DollarDays { get; set; }
+
             public decimal GainAmount { get; set; }
             public decimal GainPercent { get; set; }
-            public decimal RateOfChange { get; set; }
-            public decimal GainPerChange { get; set; }
+            public decimal GainPercentPerDay { get; set; }
 
             public Test() {
                 Trades = new List<Trade>();
@@ -166,6 +172,7 @@ namespace Marana {
                 public Direction Transaction { get; set; }
                 public decimal Price { get; set; }
                 public decimal Gain { get; set; }
+                public int Quantity { get; set; }
 
                 public enum Sales {
                     Gain,
