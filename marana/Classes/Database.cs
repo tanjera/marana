@@ -105,7 +105,8 @@ namespace Marana {
             Description,
             Entry,
             ExitGain,
-            ExitStopLoss
+            ExitStopLoss,
+            SortBy
         }
 
         public enum ColumnsValidity {
@@ -236,7 +237,8 @@ namespace Marana {
                             `Description` VARCHAR (128),
                             `Entry` TEXT,
                             `ExitGain` TEXT,
-                            `ExitStopLoss` TEXT
+                            `ExitStopLoss` TEXT,
+                            `SortBy` TEXT
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
@@ -546,6 +548,7 @@ namespace Marana {
                         s.Entry = rdr.IsDBNull(ColumnsStrategy.Entry.GetHashCode()) ? s.Entry : rdr.GetString("Entry");
                         s.ExitGain = rdr.IsDBNull(ColumnsStrategy.ExitGain.GetHashCode()) ? s.ExitGain : rdr.GetString("ExitGain");
                         s.ExitStopLoss = rdr.IsDBNull(ColumnsStrategy.ExitStopLoss.GetHashCode()) ? s.ExitStopLoss : rdr.GetString("ExitStopLoss");
+                        s.SortBy = rdr.IsDBNull(ColumnsStrategy.SortBy.GetHashCode()) ? s.SortBy : rdr.GetString("SortBy");
                         result.Add(s);
                     }
                 }
@@ -719,7 +722,7 @@ namespace Marana {
             }
         }
 
-        public async Task<bool?> ScalarQuery(string query) {
+        public async Task<bool?> QueryStrategy_Scalar(string query) {
             using MySqlConnection connection = new MySqlConnection(ConnectionStr);
             try {
                 await connection.OpenAsync(); ;
@@ -740,6 +743,39 @@ namespace Marana {
 
                 await connection.CloseAsync();
                 return result;
+            } catch (Exception ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                await connection.CloseAsync();
+                return null;
+            }
+        }
+
+        public async Task<List<string>> QueryStrategy_SortBy(string snippet, DateTime date) {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync(); ;
+            } catch (Exception ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return null;
+            }
+
+            List<String> symbols = new List<String>();
+
+            try {
+                string query = await Strategy.Interpret(
+                    $@"SELECT `Symbol` FROM `Daily` WHERE `Date` = '{{DATE}}'
+                        ORDER BY {MySqlHelper.EscapeString(snippet)};",
+                    date);
+
+                using (MySqlCommand cmd = new MySqlCommand(query, connection)) {
+                    using MySqlDataReader rdr = cmd.ExecuteReader();
+                    while (rdr.Read()) {
+                        symbols.Add(rdr.IsDBNull(0) ? "" : rdr.GetString("Symbol"));
+                    }
+                }
+
+                await connection.CloseAsync();
+                return symbols;
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 await connection.CloseAsync();
@@ -1003,6 +1039,34 @@ namespace Marana {
             }
 
             try {
+                using MySqlCommand cmd = new MySqlCommand(query, connection);
+                using MySqlDataReader rdr = cmd.ExecuteReader();
+                // No need to read anything... just dispose/close and return
+            } catch (Exception ex) {
+                // We expect lots of exceptions here, since this function tests user-written SQL queries for validity,
+                // and if invalid, cmd.ExecuteReader will throw an Exception- this will return the message to display
+                // for the user.
+                return ex.Message;
+            }
+
+            await connection.CloseAsync();
+            return true;
+        }
+
+        public async Task<object> ValidateQuery_SortBy(string snippet) {
+            using MySqlConnection connection = new MySqlConnection(ConnectionStr);
+            try {
+                await connection.OpenAsync(); ;
+            } catch (Exception ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return ex.Message;
+            }
+
+            try {
+                string query = await Strategy.Interpret(
+                    $@"SELECT `Symbol` FROM `Daily` WHERE `Date` = '{{DATE}}'
+                        ORDER BY {MySqlHelper.EscapeString(snippet)};", DateTime.Today);
+
                 using MySqlCommand cmd = new MySqlCommand(query, connection);
                 using MySqlDataReader rdr = cmd.ExecuteReader();
                 // No need to read anything... just dispose/close and return

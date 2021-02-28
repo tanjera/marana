@@ -94,7 +94,7 @@ namespace Marana {
             if (testType == Test.Discrete) {                        // Discrete testing tests one instruction at a time
                 tests = await TestDiscrete_Daily(instructions, strategies, assets, argDays, argEndDate);
             } else if (testType == Test.Parallel) {                 // Parallel testing tests all instructions in the same setting
-                DateTime startDate = argEndDate - new TimeSpan(((argDays / 5) * 7), 0, 0, 0);
+                DateTime startDate = argEndDate - new TimeSpan((int)((argDays / 5m) * 7m), 0, 0, 0);
                 tests = await TestParallel_Daily(instructions, strategies, assets, startDate, argEndDate, argDollars, argDollarsPer);
             }
 
@@ -103,7 +103,7 @@ namespace Marana {
             int counter = 1;
             Data.Daily data;
             foreach (Data.Asset asset in assets) {                  // Get each daily dataset, calculate ROC, place metric in tests
-                Prompt.Write("." + (counter % 50 == 0 ? $"  ${counter:00000}\n" : ""));
+                Prompt.Write("." + (counter % 50 == 0 ? $"  {counter,6:0}\n" : ""));
                 counter++;
 
                 data = await Database.GetData_Daily(asset);
@@ -164,9 +164,9 @@ namespace Marana {
                 for (int i = indexEnd - days; i <= indexEnd; i++) {
                     DateTime day = allData.Prices[i].Date;
 
-                    bool? toBuy = await Database.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
-                    bool? toSellGain = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
-                    bool? toSellLoss = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
+                    bool? toBuy = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
+                    bool? toSellGain = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
+                    bool? toSellLoss = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
 
                     if (!toBuy.HasValue || !toSellGain.HasValue || !toSellLoss.HasValue) {
                         Prompt.WriteLine($"Error detected in SQL query. Please validate queries. Skipping.");
@@ -254,7 +254,6 @@ namespace Marana {
 
                 if (test.Trades.Count > 0) {
                     decimal begin = Math.Abs(test.Trades.First().Gain);
-                    test.DollarDays = begin * test.DaysHeld;
                     test.GainPercent = test.GainAmount / begin * 100;
                     test.GainPercentPerDay = test.DaysHeld > 0 ? (test.GainPercent / test.DaysHeld) : 0m;
                 }
@@ -303,11 +302,26 @@ namespace Marana {
                         continue;
                     } else {
                         if (dollarLimit) {
-                            Prompt.Write($"\n  {day:yyyy-MM-dd}  ${dollars,6:0}  ");
+                            Prompt.Write($"\n  {day:yyyy-MM-dd}  ${dollars,-7:0}  ");
                         } else {
                             Prompt.Write($"\n  {day:yyyy-MM-dd}  ");
                         }
                     }
+
+                    // Sort instructions by strategy's SortBy query
+                    List<string> sortedAssets = await Database.QueryStrategy_SortBy(strategy.SortBy, day);
+                    List<string> selectedAssets = assets.Select(s => s.Symbol).ToList();                // Obtain list of assets selected for testing
+                    sortedAssets.RemoveAll(s => !selectedAssets.Contains(s));                           // Remove assets not selected for testing
+                    for (int newIndex = 0; newIndex < sortedAssets.Count; newIndex++) {                 // Iterate the sorting list
+                        int oldIndex = runInstructions.FindIndex(r => r.Symbol == sortedAssets[newIndex]);
+                        Data.Instruction moving = runInstructions[oldIndex];                            // Get item to move
+                        if (oldIndex != newIndex) {
+                            runInstructions.RemoveAt(oldIndex);                                         // Remove from old position
+                            runInstructions.Insert(newIndex, moving);                                   // Insert at new index per sorting query outcomes
+                        }
+                    }
+
+                    string[] sortedInstructions = runInstructions.Select(r => r.Symbol).ToArray();
 
                     Dictionary<string, decimal?> allPrices = await Database.GetPrices_Daily(assets, day);
 
@@ -315,9 +329,9 @@ namespace Marana {
                         Data.Instruction instruction = runInstructions[iInstruction];
                         Data.Test testData = splitTests[iInstruction];
 
-                        bool? toBuy = await Database.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
-                        bool? toSellGain = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
-                        bool? toSellLoss = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
+                        bool? toBuy = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
+                        bool? toSellGain = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
+                        bool? toSellLoss = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
 
                         if (!toBuy.HasValue || !toSellGain.HasValue || !toSellLoss.HasValue) {
                             Prompt.WriteLine($"Error detected in SQL query. Please validate queries. Skipping.");
@@ -339,6 +353,7 @@ namespace Marana {
                                 // If position is held at the end of the test- liquidate shares into gains for calculations
                                 Prompt.Write("^");
 
+                                dollars += price.Value * testData.Shares;
                                 testData.Trades.Add(new Data.Test.Trade() {
                                     Timestamp = day,
                                     Transaction = Data.Test.Trade.Direction.Sell,
@@ -360,7 +375,11 @@ namespace Marana {
                                 int quantity = 1;
                                 if (dollarPerLimit) {
                                     quantity = (int)Math.Floor(Math.Min(dollars / price.Value, argDollarsPer / price.Value));
-                                    Prompt.Write($"{quantity}");
+                                    if (quantity == 0) {
+                                        Prompt.Write("b");
+                                    } else {
+                                        Prompt.Write("B");
+                                    }
                                 } else {
                                     Prompt.Write("B");
                                 }
@@ -382,6 +401,7 @@ namespace Marana {
                                 Prompt.Write("L");
                             }
 
+                            dollars += price.Value * testData.Shares;
                             testData.Trades.Add(new Data.Test.Trade() {
                                 Timestamp = day,
                                 Transaction = Data.Test.Trade.Direction.Sell,
@@ -389,7 +409,6 @@ namespace Marana {
                                 Price = price.Value,
                                 Gain = price.Value * testData.Shares
                             });
-                            dollars += price.Value * testData.Shares;
                             testData.Shares = 0;                                       // Selling the position
                         } else {
                             if (testData.Shares > 0) {
@@ -408,7 +427,6 @@ namespace Marana {
                         test.GainAmount += test.Trades[i].Gain;
 
                         if (test.Trades[i].Transaction == Data.Test.Trade.Direction.Sell) {
-                            test.DollarDays += Math.Abs(test.Trades[i - 1].Gain) * test.DaysHeld;
                             test.GainPercent = test.GainAmount / Math.Abs(test.Trades[0].Gain) * 100;
                             test.GainPercentPerDay = test.DaysHeld > 0 ? (test.GainPercent / test.DaysHeld) : 0m;
                         }
@@ -416,17 +434,20 @@ namespace Marana {
                 }
 
                 int positions = splitTests.Select(s => s.Trades.Count).Sum() / 2;
-                int daysHeld = splitTests.Select(s => s.DaysHeld).Sum();
-                decimal gainAmount = splitTests.Select(s => s.GainAmount).Sum();
-                decimal gainPercent = splitTests.Select(s => s.GainPercent).Sum();
-                decimal gainPercentPerDay = daysHeld > 0 ? (gainPercent / daysHeld) : 0m;
+                int daysHeld = splitTests.Select(s => s.DaysHeld).Max();
+                decimal gainAmount = splitTests.Where(s => s.Trades.Count > 0).Select(s => s.GainAmount).Sum();
+                decimal gainPercent = splitTests.Where(s => s.Trades.Count > 0).Select(s => s.GainPercent).Average();
+                decimal gainPercentPerDay = splitTests.Where(s => s.Trades.Count > 0).Select(s => s.GainPercentPerDay).Average();
 
                 // Display individual metrics
 
+                if (dollarLimit) {
+                    Prompt.WriteLine($"\n\nStarting funds ${argDollars:0} -> Ending funds ${dollars:0}");
+                }
                 Prompt.WriteLine("\n");
                 Prompt.WriteLine($"{startDate.Date:yyyy-MM-dd} to {endDate.Date:yyyy-MM-dd}");
                 Prompt.WriteLine($"{positions} positions held; {daysHeld} days in holding position");
-                Prompt.WriteLine($"Total gain ${gainAmount:n2}; Total gain {gainPercent:0.00}%; Gain per day {gainPercentPerDay:0.00}%");
+                Prompt.WriteLine($"Total gain ${gainAmount:n2}; Average gain {gainPercent:0.00}%; Gain per day {gainPercentPerDay:0.00}%");
                 Prompt.WriteLine("\n");
 
                 listTests.AddRange(splitTests);
@@ -465,28 +486,25 @@ namespace Marana {
             Prompt.WriteLine("\n  --------------------------------------------------------------------------------------------------------");
             Prompt.WriteLine("     Mean Metrics per Strategy");
             Prompt.WriteLine("  --------------------------------------------------------------------------------------------------------");
-            Prompt.WriteLine($"     {"Strategy",-20} {"Mean Gain %",14}\t {"Days Held",10}\t {"Mean Gain % / Day",10}\t {"Gain / $1K / Day"}");
+            Prompt.WriteLine($"     {"Strategy",-20} {"Mean Gain %",14}\t {"Days Held",10}\t {"Mean Gain % / Day",10}");
             Prompt.WriteLine("  --------------------------------------------------------------------------------------------------------");
 
             foreach (Data.Strategy s in strategies) {
                 int sumDaysHeld = 0;
-                decimal sumDollarDays = 0;
                 decimal sumGain = 0m;
                 decimal sumGainPercent = 0m;
 
                 List<Data.Test> lt = tests.Where(w => w.Strategy == s).ToList();
                 foreach (Data.Test t in lt) {
                     sumGain += t.GainAmount;
-                    sumDollarDays += t.DollarDays;
                     sumDaysHeld += t.DaysHeld;
                     sumGainPercent += t.GainPercent;
                 }
 
                 decimal meanGainPercent = lt.Count > 0 ? (sumGainPercent / lt.Count) : 0m;
                 decimal meanGainPercentPerDay = sumDaysHeld > 0 ? (meanGainPercent / sumDaysHeld) : 0m;
-                decimal gainPerDollarDays = (sumDollarDays > 0 ? (sumGain / sumDollarDays) : 0m) * 1000 * days;
 
-                Prompt.WriteLine($"     {s.Name,-20} {meanGainPercent,12:00.00} %\t {sumDaysHeld,10:0}\t {meanGainPercentPerDay,14:00.000} %\t ${gainPerDollarDays,10:n2}");
+                Prompt.WriteLine($"     {s.Name,-20} {meanGainPercent,12:00.00} %\t {sumDaysHeld,10:0}\t {meanGainPercentPerDay,14:00.000}");
             }
 
             Prompt.WriteLine("\n");
@@ -524,28 +542,16 @@ namespace Marana {
             Prompt.WriteLine("\n  --------------------------------------------------------------------------------------------------------");
             Prompt.WriteLine("     Mean Metrics per Strategy");
             Prompt.WriteLine("  --------------------------------------------------------------------------------------------------------");
-            Prompt.WriteLine($"     {"Strategy",-20} {"Mean Gain %",14}\t {"Days Held",10}\t {"Mean Gain % / Day",10}\t {"Gain / $1K / Day"}");
+            Prompt.WriteLine($"     {"Strategy",-20} {"Mean Gain %",14}\t {"Max Days Held",14}\t{"Mean Gain % / Day",20}");
             Prompt.WriteLine("  --------------------------------------------------------------------------------------------------------");
 
             foreach (Data.Strategy s in strategies) {
-                int sumDaysHeld = 0;
-                decimal sumDollarDays = 0;
-                decimal sumGain = 0m;
-                decimal sumGainPercent = 0m;
+                List<Data.Test> lt = tests.Where(w => w.Strategy == s && w.Trades.Count > 0).ToList();
 
-                List<Data.Test> lt = tests.Where(w => w.Strategy == s).ToList();
-                foreach (Data.Test t in lt) {
-                    sumGain += t.GainAmount;
-                    sumDollarDays += t.DollarDays;
-                    sumDaysHeld += t.DaysHeld;
-                    sumGainPercent += t.GainPercent;
-                }
-
-                decimal meanGainPercent = lt.Count > 0 ? (sumGainPercent / lt.Count) : 0m;
-                decimal meanGainPercentPerDay = sumDaysHeld > 0 ? (meanGainPercent / sumDaysHeld) : 0m;
-                decimal gainPerDollarDays = (sumDollarDays > 0 ? (sumGain / sumDollarDays) : 0m) * 1000;
-
-                Prompt.WriteLine($"     {s.Name,-20} {meanGainPercent,12:00.00} %\t {sumDaysHeld,10:0}\t {meanGainPercentPerDay,14:00.000} %%\t ${gainPerDollarDays:n2}");
+                int maxDaysHeld = lt.Select(t => t.DaysHeld).Max();
+                decimal meanGainPercent = lt.Where(t => t.Trades.Count > 0).Select(t => t.GainPercent).Average();
+                decimal meanGainPercentPerDay = lt.Where(t => t.Trades.Count > 0).Select(t => t.GainPercentPerDay).Average();
+                Prompt.WriteLine($"     {s.Name,-20} {meanGainPercent,12:00.00} %\t {maxDaysHeld,14:0}\t{meanGainPercentPerDay,18:00.00} %");
             }
 
             Prompt.WriteLine("\n");

@@ -154,6 +154,7 @@ namespace Marana {
                 }
             } else if (args.Count > 0 && args[0] == "exit") {
                 return false;
+                //} else if (args.Count > 0 && args[0] == "debug") {
             } else {
                 Help.Default();                     // "help"
             }

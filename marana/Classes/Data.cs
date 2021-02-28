@@ -110,6 +110,7 @@ namespace Marana {
             public string Entry { get; set; }
             public string ExitGain { get; set; }
             public string ExitStopLoss { get; set; }
+            public string SortBy { get; set; }
         }
 
         public class Instruction {
@@ -157,7 +158,6 @@ namespace Marana {
             public decimal AssetRateOfChange { get; set; }
 
             public int DaysHeld { get; set; }
-            public decimal DollarDays { get; set; }
 
             public decimal GainAmount { get; set; }
             public decimal GainPercent { get; set; }

@@ -103,31 +103,59 @@ namespace Marana {
                 return;
             }
 
-            for (int i = 0; i < instructions.Count; i++) {
-                Data.Strategy strategy = strategies.Find(s => s.Name == instructions[i].Strategy);
-                Data.Asset asset = assets.Find(a => a.Symbol == instructions[i].Symbol);
-                Data.Position position = positions.Find(p => p.Symbol == instructions[i].Symbol);
-                Data.Order order = orders.Find(o => o.Symbol == instructions[i].Symbol && o.Quantity == instructions[i].Quantity);
+            // Iterate by strategy to implement strategy's SortBy query functionality
+            int instructionCounter = 1;
+            for (int i = 0; i < strategies.Count; i++) {
+                Data.Strategy strategy = strategies[i];
+                List<Data.Instruction> setInstructions = instructions.Where(s => s.Strategy == strategy.Name).ToList();
 
-                Prompt.WriteLine($"\n[{i + 1:0000} / {instructions.Count:0000}] {instructions[i].Name} ({instructions[i].Format}): "
-                    + $"{instructions[i].Symbol} x {instructions[i].Quantity} @ {instructions[i].Strategy} ({instructions[i].Frequency})");
+                Prompt.WriteLine($"\n[Strategy: {i + 1:0000} / {strategies.Count:0000}] Processing Strategy: {strategy.Name}");
 
-                if (strategy == null) {
-                    Prompt.WriteLine($"Strategy '{instructions[i].Strategy}' not found in database. Aborting.\n");
+                if (setInstructions.Count == 0) {
+                    Prompt.WriteLine($"No Instructions found with this Strategy.");
                     continue;
                 }
 
-                if (asset == null) {
-                    Prompt.WriteLine($"Asset '{instructions[i].Symbol}' not found in database. Aborting.\n");
-                    continue;
-                }
-
-                if (instructions[i].Frequency == Data.Frequency.Daily) {
-                    if (!instructions[i].Active) {
-                        Prompt.WriteLine($"Instruction marked as 'Inactive'. Skipping.\n");
-                    } else if (instructions[i].Active) {
-                        await RunAutomation_Daily(format, instructions[i], strategy, day, asset, position, order);
+                // Sort instructions by strategy's SortBy query
+                List<string> sortedAssets = await Database.QueryStrategy_SortBy(strategy.SortBy, day);
+                List<string> selectedAssets = setInstructions.Select(s => s.Symbol).ToList();   // Obtain list of assets selected for trading
+                sortedAssets.RemoveAll(s => !selectedAssets.Contains(s));                       // Remove assets not selected for trading
+                for (int newIndex = 0; newIndex < sortedAssets.Count; newIndex++) {             // Iterate the sorting list
+                    int oldIndex = setInstructions.FindIndex(r => r.Symbol == sortedAssets[newIndex]);
+                    Data.Instruction moving = setInstructions[oldIndex];                        // Get item to move
+                    if (oldIndex != newIndex) {
+                        setInstructions.RemoveAt(oldIndex);                                     // Remove from old position
+                        setInstructions.Insert(newIndex, moving);                               // Insert at new index per sorting query outcomes
                     }
+                }
+
+                for (int j = 0; j < setInstructions.Count; j++) {
+                    Data.Asset asset = assets.Find(a => a.Symbol == setInstructions[j].Symbol);
+                    Data.Position position = positions.Find(p => p.Symbol == setInstructions[j].Symbol);
+                    Data.Order order = orders.Find(o => o.Symbol == setInstructions[j].Symbol && o.Quantity == setInstructions[j].Quantity);
+
+                    Prompt.WriteLine($"\n[Instruction: {instructionCounter:0000} / {instructions.Count:0000}] {setInstructions[j].Name} ({setInstructions[j].Format}): "
+                        + $"{setInstructions[j].Symbol} x {setInstructions[j].Quantity} @ {setInstructions[j].Strategy} ({setInstructions[j].Frequency})");
+
+                    if (strategy == null) {
+                        Prompt.WriteLine($"Strategy '{setInstructions[j].Strategy}' not found in database. Aborting.\n");
+                        continue;
+                    }
+
+                    if (asset == null) {
+                        Prompt.WriteLine($"Asset '{setInstructions[j].Symbol}' not found in database. Aborting.\n");
+                        continue;
+                    }
+
+                    if (setInstructions[j].Frequency == Data.Frequency.Daily) {
+                        if (!setInstructions[j].Active) {
+                            Prompt.WriteLine($"Instruction marked as 'Inactive'. Skipping.\n");
+                        } else if (setInstructions[j].Active) {
+                            await RunAutomation_Daily(format, setInstructions[j], strategy, day, asset, position, order);
+                        }
+                    }
+
+                    instructionCounter++;
                 }
             }
 
@@ -158,9 +186,9 @@ namespace Marana {
             }
 
             if (validity.CompareTo(lastMarketClose) > 0) {       // If validity is current, data is valid
-                bool? toBuy = await Database.ScalarQuery(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
-                bool? toSellGain = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
-                bool? toSellLoss = await Database.ScalarQuery(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
+                bool? toBuy = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.Entry, instruction.Symbol, day));
+                bool? toSellGain = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitGain, instruction.Symbol, day));
+                bool? toSellLoss = await Database.QueryStrategy_Scalar(await Strategy.Interpret(strategy.ExitStopLoss, instruction.Symbol, day));
 
                 if (!toBuy.HasValue || !toSellGain.HasValue || !toSellLoss.HasValue) {
                     Prompt.WriteLine($"Error detected in SQL query. Please validate queries. Skipping.");

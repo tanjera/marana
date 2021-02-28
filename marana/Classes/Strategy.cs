@@ -14,6 +14,24 @@ namespace Marana {
             Program = p;
         }
 
+        /// <summary>
+        /// Interprets a SQL query to replace {DATE}
+        /// </summary>
+        /// <param name="query">SQL query</param>
+        /// <param name="day">Date to interpret {DATE} to</param>
+        /// <returns></returns>
+        public static async Task<string> Interpret(string query, DateTime day) {
+            return query?
+                .Replace("{DATE}", day.ToString("yyyy-MM-dd"));
+        }
+
+        /// <summary>
+        /// Interprets a SQL query to replace {SYMBOL}, {DATE}
+        /// </summary>
+        /// <param name="query">SQL query</param>
+        /// <param name="symbol">Symbol to interpret {SYMBOL} to</param>
+        /// <param name="day">Date to interpret {DATE} to</param>
+        /// <returns></returns>
         public static async Task<string> Interpret(string query, string symbol, DateTime day) {
             return query?
                 .Replace("{SYMBOL}", symbol)
@@ -56,6 +74,14 @@ namespace Marana {
                 Prompt.Write($"  Running Stop Loss query: \t");
                 result = await Database.ValidateQuery(
                    await Strategy.Interpret(strategy.ExitStopLoss, "SPY", DateTime.Today));
+                if (result is bool) {
+                    Prompt.WriteLine($"Successful!", ConsoleColor.Green);
+                } else if (result is string) {
+                    Prompt.WriteLine($"\n{result}\n");
+                }
+
+                Prompt.Write($"  Running Sort By query: \t");
+                result = await Database.ValidateQuery_SortBy(strategy.SortBy);
                 if (result is bool) {
                     Prompt.WriteLine($"Successful!", ConsoleColor.Green);
                 } else if (result is string) {
