@@ -132,6 +132,12 @@ namespace Marana {
         public class Order {
             public string Symbol { get; set; }
             public int Quantity { get; set; }
+            public Direction Transaction { get; set; }
+
+            public enum Direction {
+                Buy,
+                Sell
+            }
         }
 
         public class Position {

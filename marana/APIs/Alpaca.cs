@@ -197,7 +197,7 @@ namespace Marana.API {
             }
         }
 
-        public async Task<object> GetOrders_OpenBuy(Data.Format format) {
+        public async Task<object> GetOrders_Open(Data.Format format) {
             IAlpacaTradingClient trading = null;
             IAlpacaDataClient data = null;
 
@@ -220,12 +220,35 @@ namespace Marana.API {
 
                 return (await trading.ListOrdersAsync(
                     new ListOrdersRequest() { OrderStatusFilter = OrderStatusFilter.Open, LimitOrderNumber = 1000 }))
-                    .Where(o => o.OrderSide == OrderSide.Buy)
-                    .Select<IOrder, Data.Order>((q) => { return new Data.Order() { Symbol = q.Symbol, Quantity = (int)q.Quantity }; })
+                    .Select<IOrder, Data.Order>((q) => {
+                        return new Data.Order() {
+                            Symbol = q.Symbol,
+                            Transaction = q.OrderSide == OrderSide.Buy ? Data.Order.Direction.Buy : Data.Order.Direction.Sell,
+                            Quantity = (int)q.Quantity
+                        };
+                    })
                     .ToList();
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return ex.Message;
+            }
+        }
+
+        public async Task<object> GetOrders_OpenBuy(Data.Format format) {
+            object result = await GetOrders_Open(format);
+            if (result is List<Data.Order> pmldo) {
+                return pmldo.Where(o => o.Transaction == Data.Order.Direction.Buy).ToList();
+            } else {
+                return result;
+            }
+        }
+
+        public async Task<object> GetOrders_OpenSell(Data.Format format) {
+            object result = await GetOrders_Open(format);
+            if (result is List<Data.Order> pmldo) {
+                return pmldo.Where(o => o.Transaction == Data.Order.Direction.Sell).ToList();
+            } else {
+                return result;
             }
         }
 

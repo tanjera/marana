@@ -68,10 +68,6 @@ namespace Marana {
                 assets = allAssets.Where(a => lstrAssets.Contains(a.Symbol)).ToList();
             }
 
-            // Run library update prior to test; ensures all data is up to date
-            Prompt.WriteLine($"Running library update to ensure data present for all requested symbols.");
-            await Library.Update_TSD(assets);
-
             Prompt.WriteLine("\n\n\nAssembling test instructions.\n");
 
             foreach (Data.Strategy s in strategies) {

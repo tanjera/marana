@@ -80,7 +80,7 @@ namespace Marana {
                 return;
             }
 
-            result = await Alpaca.GetOrders_OpenBuy(format);
+            result = await Alpaca.GetOrders_Open(format);
             if (result is List<Data.Order> pmldo) {
                 orders = pmldo;
             } else {
@@ -102,6 +102,12 @@ namespace Marana {
                 Prompt.WriteLine("No automation strategies found in database. Aborting.\n");
                 return;
             }
+
+            // Run library update prior to test; ensures all data is up to date
+            Prompt.WriteLine($"Running library update to ensure data present for all requested symbols.");
+            List<string> instructionSymbols = instructions.Select(ins => ins.Symbol).ToList();
+            List<Data.Asset> instructionAssets = assets.Where(a => instructionSymbols.Contains(a.Symbol)).ToList();
+            await Library.Update_TSD(instructionAssets);
 
             // Iterate by strategy to implement strategy's SortBy query functionality
             int instructionCounter = 1;
@@ -132,7 +138,6 @@ namespace Marana {
                 for (int j = 0; j < setInstructions.Count; j++) {
                     Data.Asset asset = assets.Find(a => a.Symbol == setInstructions[j].Symbol);
                     Data.Position position = positions.Find(p => p.Symbol == setInstructions[j].Symbol);
-                    Data.Order order = orders.Find(o => o.Symbol == setInstructions[j].Symbol && o.Quantity == setInstructions[j].Quantity);
 
                     Prompt.WriteLine($"\n[Instruction: {instructionCounter:0000} / {instructions.Count:0000}] {setInstructions[j].Name} ({setInstructions[j].Format}): "
                         + $"{setInstructions[j].Symbol} x {setInstructions[j].Quantity} @ {setInstructions[j].Strategy} ({setInstructions[j].Frequency})");
@@ -151,7 +156,7 @@ namespace Marana {
                         if (!setInstructions[j].Active) {
                             Prompt.WriteLine($"Instruction marked as 'Inactive'. Skipping.\n");
                         } else if (setInstructions[j].Active) {
-                            await RunAutomation_Daily(format, setInstructions[j], strategy, day, asset, position, order);
+                            await RunAutomation_Daily(format, setInstructions[j], strategy, day, asset, position, orders);
                         }
                     }
 
@@ -165,7 +170,7 @@ namespace Marana {
 
         public async Task RunAutomation_Daily(
                 Data.Format format, Data.Instruction instruction, Data.Strategy strategy,
-                DateTime day, Data.Asset asset, Data.Position position, Data.Order order,
+                DateTime day, Data.Asset asset, Data.Position position, List<Data.Order> orders,
                 bool useMargin = false) {
             // Get last market close to ensure most up-to-date data exists
             // And that today's potential data exists (since SQL query interprets to query for today's prices!)
@@ -204,12 +209,17 @@ namespace Marana {
                     // Warning: API buy/sell orders use negative quantity to indicate short positions
                     // And/or may just throw exceptions when attempting to sell to negative
 
+                    bool existsBuyOrder = orders.Any(
+                        o => o.Symbol == instruction.Symbol
+                        && o.Transaction == Data.Order.Direction.Buy
+                        && o.Quantity == instruction.Quantity);
+
                     if (position != null && position.Quantity > 0) {
                         Prompt.WriteLine("  Buy trigger detected; active position already exists; doing nothing.");
-                    } else if (order != null) {
+                    } else if (existsBuyOrder) {
                         Prompt.WriteLine("  Buy trigger detected; identical open buy order already exists; doing nothing.");
-                    } else if (order == null && (position == null || position.Quantity <= 0)) {
-                        Prompt.WriteLine("  Buy trigger detected; no current position owned; placing Buy order.");
+                    } else if (!existsBuyOrder && (position == null || position.Quantity <= 0)) {
+                        Prompt.WriteLine("  Buy trigger detected; no current orders or position owned; placing Buy order.");
 
                         // If not using margin trading
                         // Ensure there is (as best as can be approximated) enough cash in account for transaction
@@ -253,9 +263,16 @@ namespace Marana {
                 } else if (toSellGain.Value || toSellLoss.Value) {
                     string msgSellQuery = toSellGain.Value && toSellLoss.Value ? "Both" : (toSellGain.Value ? "Gain" : (toSellLoss.Value ? "Stop-Loss" : ""));
 
+                    bool existsSellOrder = orders.Any(
+                        o => o.Symbol == instruction.Symbol
+                        && o.Transaction == Data.Order.Direction.Sell
+                        && o.Quantity == instruction.Quantity);
+
                     if (position == null || position.Quantity <= 0) {
                         Prompt.WriteLine($"  Sell trigger detected; {msgSellQuery}; no current position owned; doing nothing.");
-                    } else if (position != null && position.Quantity > 0) {
+                    } else if (existsSellOrder) {
+                        Prompt.WriteLine($"  Sell trigger detected; identical open sell order already exists; doing nothing.");
+                    } else if (!existsSellOrder && position != null && position.Quantity > 0) {
                         Prompt.WriteLine($"  Sell trigger detected; {msgSellQuery}; active position found; placing Sell order.");
                         // Sell position.quantity in case position.Quantity != instruction.Quantity
                         switch (await Alpaca.PlaceOrder_SellMarket(instruction.Format, instruction.Symbol, position.Quantity)) {

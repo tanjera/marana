@@ -10,7 +10,7 @@ namespace Marana {
 
         public static List<string> Args() {
             NewLine();
-            Write($"{Settings.GetOSStyling("Marana")} > ", ConsoleColor.Blue);
+            Write($"{Settings.GetOSStyling("Marana")} > ", ConsoleColor.Cyan);
             string input = Console.ReadLine().Trim();
             return new List<string>(input.Split(' '));
         }
@@ -38,7 +38,7 @@ namespace Marana {
                 Prompt.WriteLine("");
         }
 
-        public static void Write(string Message, ConsoleColor ForeColor = ConsoleColor.Gray) {
+        public static void Write(string Message, ConsoleColor ForeColor = ConsoleColor.White) {
             if (String.IsNullOrEmpty(Message))
                 return;
 
@@ -47,7 +47,7 @@ namespace Marana {
             Console.ResetColor();
         }
 
-        public static void WriteLine(string Message, ConsoleColor ForeColor = ConsoleColor.Gray) {
+        public static void WriteLine(string Message, ConsoleColor ForeColor = ConsoleColor.White) {
             Console.ForegroundColor = ForeColor;
             Console.WriteLine(Message);
             Console.ResetColor();
