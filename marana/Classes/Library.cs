@@ -198,6 +198,8 @@ namespace Marana {
                 Prompt.WriteLine("Unable to access market schedule/times via Alpaca API");
             }
 
+            int retryCounter = 0;
+
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
                 Prompt.Write($"  [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
@@ -222,19 +224,43 @@ namespace Marana {
                 else if (Settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage)
                     output = await AlphaVantage.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
 
-                if (output is Data.Daily pmdd)
+                if (output is Data.Daily pmdd) {
                     dd = pmdd;
-                else if (output is string pms) {
+                    retryCounter = 0;
+                } else if (output is string pms) {
                     if (pms == "Too Many Requests"                  // Alpaca's return message for exceeding API calls
                             || pms == "ERROR:EXCEEDEDCALLS") {      // Alpha Vantage's return message for exceeding API calls
                         Prompt.WriteLine("Exceeded API calls per minute- pausing for 30 seconds.");
+
                         await Task.Delay(30000);
+
                         i--;
+                        retryCounter = 0;
                         continue;
+                    } else if (pms.StartsWith("ERROR:WEBEXCEPTION:")) {
+                        int code;
+                        bool parsed = int.TryParse(pms.Substring("ERROR:WEBEXCEPTION:".Length), out code);
+
+                        if (parsed && code >= 500 && retryCounter < 4) {
+                            i--;
+                            retryCounter++;
+
+                            Prompt.WriteLine($"Error, Attempt #{retryCounter}");
+                            continue;
+                        } else {
+                            Prompt.WriteLine($"Error: {output}");
+                            retryCounter = 0;
+                            continue;
+                        }
                     } else {
                         Prompt.WriteLine($"Error: {output}");
+                        retryCounter = 0;
                         continue;
                     }
+                } else if (output == null) {
+                    Prompt.WriteLine($"Error: See Error Log.");
+                    retryCounter = 0;
+                    continue;
                 }
 
                 dd.Asset = assets[i];

@@ -20,6 +20,11 @@ namespace Marana.API {
             Program = p;
         }
 
+        public static async Task<bool> Validate_CSV(string text) {
+            // Returns true if the returned CSV data starts with the proper headers
+            return text.StartsWith("timestamp,open,high,low,close,adjusted_close,volume,dividend_amount,split_coefficient");
+        }
+
         public static async Task<bool> Validate_Error(string text) {
             // Returns true if the returned JSON data (error data always in JSON format) has an "Error Message"
             return text.Contains("Error Message");
@@ -40,16 +45,14 @@ namespace Marana.API {
             string output;
             output = await RequestData_Daily(asset.Symbol);
 
-            try {
-                if (output == "ERROR:INVALID" || output == "ERROR:INVALIDKEY"
-                    || output == "ERROR:EXCEEDEDCALLS") {
-                    return output;
-                } else {
-                    return await ParseData_Daily(output, limit);
-                }
-            } catch (Exception ex) {
-                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                return null;
+            if (output == "ERROR:INVALID"
+                || output == "ERROR:INVALIDKEY"
+                || output == "ERROR:EXCEEDEDCALLS"
+                || output == "ERROR:EXCEPTION"
+                || output.StartsWith("ERROR:WEBEXCEPTION:")) {
+                return output;
+            } else {
+                return await ParseData_Daily(output, limit);
             }
         }
 
@@ -70,12 +73,17 @@ namespace Marana.API {
                     return "ERROR:INVALIDKEY";
                 } else if (await Validate_Error(rte)) {
                     return "ERROR:INVALID";
-                } else {
+                } else if (await Validate_CSV(rte)) {
                     return rte;
+                } else {
+                    return "ERROR:INVALID";
                 }
+            } catch (WebException ex) {
+                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                return $"ERROR:WEBEXCEPTION:{((HttpWebResponse)ex.Response).StatusCode.GetHashCode()}";
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                return ex.Message;
+                return "ERROR:EXCEPTION";
             }
         }
 
