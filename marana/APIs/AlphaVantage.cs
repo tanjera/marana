@@ -56,14 +56,14 @@ namespace Marana.API {
             }
         }
 
-        private async Task<string> RequestData_Daily(string symbol, bool fulldata = true) {
+        public async Task<string> RequestData_Daily(string symbol, bool fulldata = true) {
             try {
                 HttpWebRequest request = WebRequest.Create(
                 String.Format("https://www.alphavantage.co/query?function={0}&symbol={1}&outputsize={2}&datatype=csv&apikey={3}",
                 "TIME_SERIES_DAILY_ADJUSTED", symbol, (fulldata ? "full" : "compact"), Settings.API_AlphaVantage_Key)) as HttpWebRequest;
-                HttpWebResponse response = request.GetResponse() as HttpWebResponse;
+                HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse;
                 StreamReader reader = new StreamReader(response.GetResponseStream());
-                string rte = reader.ReadToEnd();
+                string rte = await reader.ReadToEndAsync();
                 response.Dispose();
                 reader.Dispose();
 
@@ -87,7 +87,7 @@ namespace Marana.API {
             }
         }
 
-        private async Task<object> ParseData_Daily(string data, int maxrecords = -1) {
+        public async Task<object> ParseData_Daily(string data, int maxrecords = -1) {
             Data.Daily dd = new Data.Daily();
 
             try {

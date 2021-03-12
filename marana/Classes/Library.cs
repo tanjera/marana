@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Marana {
@@ -219,10 +221,23 @@ namespace Marana {
                 object output = null;
                 Data.Daily dd = new Data.Daily();
 
-                if (Settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca)
+                if (Settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca) {
                     output = await Alpaca.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
-                else if (Settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage)
-                    output = await AlphaVantage.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
+                } else if (Settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage) {
+                    string apiOutput;
+                    apiOutput = await AlphaVantage.RequestData_Daily(assets[i].Symbol);
+
+                    if (apiOutput == "ERROR:INVALID"
+                        || apiOutput == "ERROR:INVALIDKEY"
+                        || apiOutput == "ERROR:EXCEEDEDCALLS"
+                        || apiOutput == "ERROR:EXCEPTION"
+                        || apiOutput.StartsWith("ERROR:WEBEXCEPTION:")) {
+                        output = apiOutput;
+                    } else {
+                        Prompt.Write("Parsing. ");
+                        output = await AlphaVantage.ParseData_Daily(apiOutput, Settings.Library_LimitDailyEntries);
+                    }
+                }
 
                 if (output is Data.Daily pmdd) {
                     dd = pmdd;
@@ -250,6 +265,14 @@ namespace Marana {
                         } else {
                             Prompt.WriteLine($"Error: {output}");
                             retryCounter = 0;
+                            continue;
+                        }
+                    } else if (pms == "ERROR:TIMEOUT") {
+                        if (retryCounter < 4) {
+                            i--;
+                            retryCounter++;
+
+                            Prompt.WriteLine($"Error, Attempt #{retryCounter}");
                             continue;
                         }
                     } else {

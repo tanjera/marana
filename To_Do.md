@@ -1,7 +1,15 @@
 ﻿### Bugs
-
+- Hangs on "Requesting Data" on library update from Alphavantage...
+  - Attampted to create Task timeout race condition using Task.WhenAny()
+    - Fails because AlphaVantage.GetData_Daily() is return type Task<object> but WhenAny returns Task<void>
+      - Cannot differentiate return types of Task<> using traditional methods
+  - Attempted to create Task timeout race condition using Task.Start
+    - Manually started the Tasks, used a while(no tasks completed) { await Task.Delay(); }
+    - Fails because cannot call Task.Start on a Task<object>; only on Task<void>
 
 ### Short-Term To-Do: For Programming
+- Track success or failure of batch scripts to check for hanging on library update
+
 - Add default color to Settings/config.cfg
   
 - Add volume indicators!!!

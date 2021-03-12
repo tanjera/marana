@@ -13,6 +13,9 @@ namespace Marana {
         public static async Task Error(string methodInfo, Exception ex)
             => await Error($"[{DateTime.Now:yyyy-MM-dd HH:mm}]  {methodInfo}{Environment.NewLine}{ex.Message} {Environment.NewLine}{ex.StackTrace}");
 
+        public static async Task Error(string methodInfo, string message)
+            => await Error($"[{DateTime.Now:yyyy-MM-dd HH:mm}]  {methodInfo}{Environment.NewLine}{message}");
+
         public static async Task Error(string message) {
             try {
                 using StreamWriter sw = new StreamWriter(Settings.GetErrorLogPath(), true);
