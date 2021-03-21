@@ -56,11 +56,33 @@ namespace Marana.API {
             }
         }
 
-        public async Task<string> RequestData_Daily(string symbol, bool fulldata = true) {
+        public async Task CacheData_Daily(string symbol, string fpCache, string fpLockout, bool fullData = true) {
+            string requestData = await RequestData_Daily(symbol, fullData);
+
+            if (!Directory.Exists(Path.GetDirectoryName(fpCache)))
+                Directory.CreateDirectory(Path.GetDirectoryName(fpCache));
+
+            if (!Directory.Exists(Path.GetDirectoryName(fpLockout)))
+                Directory.CreateDirectory(Path.GetDirectoryName(fpLockout));
+
+            StreamWriter sw;
+
+            sw = new StreamWriter(fpCache);
+            await sw.WriteAsync(requestData);
+            await sw.FlushAsync();
+            sw.Close();
+            await sw.DisposeAsync();
+
+            sw = new StreamWriter(fpLockout);
+            sw.Close();
+            await sw.DisposeAsync();
+        }
+
+        private async Task<string> RequestData_Daily(string symbol, bool fullData = true) {
             try {
                 HttpWebRequest request = WebRequest.Create(
                 String.Format("https://www.alphavantage.co/query?function={0}&symbol={1}&outputsize={2}&datatype=csv&apikey={3}",
-                "TIME_SERIES_DAILY_ADJUSTED", symbol, (fulldata ? "full" : "compact"), Settings.API_AlphaVantage_Key)) as HttpWebRequest;
+                "TIME_SERIES_DAILY_ADJUSTED", symbol, (fullData ? "full" : "compact"), Settings.API_AlphaVantage_Key)) as HttpWebRequest;
                 HttpWebResponse response = await request.GetResponseAsync() as HttpWebResponse;
                 StreamReader reader = new StreamReader(response.GetResponseStream());
                 string rte = await reader.ReadToEndAsync();
@@ -78,9 +100,6 @@ namespace Marana.API {
                 } else {
                     return "ERROR:INVALID";
                 }
-            } catch (WebException ex) {
-                await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
-                return $"ERROR:WEBEXCEPTION:{((HttpWebResponse)ex.Response).StatusCode.GetHashCode()}";
             } catch (Exception ex) {
                 await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
                 return "ERROR:EXCEPTION";

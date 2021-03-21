@@ -202,6 +202,8 @@ namespace Marana {
 
             int retryCounter = 0;
 
+            await Settings.ClearCache();                // Routine emptying of cache directory
+
             // Iterate all symbols in list (assets), call API to download data, write to files in library
             for (int i = 0; i < assets.Count; i++) {
                 Prompt.Write($"  [{i + 1:0000} / {assets.Count:0000}]  {assets[i].Symbol,-8}  ");
@@ -224,13 +226,46 @@ namespace Marana {
                 if (Settings.Library_DataProvider == Settings.Option_DataProvider.Alpaca) {
                     output = await Alpaca.GetData_Daily(assets[i], Settings.Library_LimitDailyEntries);
                 } else if (Settings.Library_DataProvider == Settings.Option_DataProvider.AlphaVantage) {
-                    string apiOutput;
-                    apiOutput = await AlphaVantage.RequestData_Daily(assets[i].Symbol);
+                    string apiOutput = "";
+                    string apiFilePath = Path.Combine(Settings.GetCacheDirectory(), Path.GetRandomFileName());
+                    string apiCache = $"{apiFilePath}.cache";
+                    string apiLockout = $"{apiFilePath}.lockout";
+
+                    DateTime timeoutTime = DateTime.Now + new TimeSpan(0, 1, 0);        // 1 minute timeout
+                    _ = AlphaVantage.CacheData_Daily(assets[i].Symbol, apiCache, apiLockout);
+
+                    while (!File.Exists(apiLockout) && DateTime.Now <= timeoutTime) {
+                        await Task.Delay(500);
+                    }
+
+                    if (File.Exists(apiLockout)) {
+                        if (!File.Exists(apiCache)) {
+                            apiOutput = "ERROR:TIMEOUT";
+                        } else {
+                            StreamReader sr = new StreamReader(apiCache);
+                            apiOutput = await sr.ReadToEndAsync();
+                            sr.Close();
+                            sr.Dispose();
+                        }
+
+                        try {
+                            if (File.Exists(apiCache))
+                                File.Delete(apiCache);
+
+                            if (File.Exists(apiLockout))
+                                File.Delete(apiLockout);
+                        } catch (Exception ex) {
+                            await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                        }
+                    } else {
+                        apiOutput = "ERROR:TIMEOUT";
+                    }
 
                     if (apiOutput == "ERROR:INVALID"
                         || apiOutput == "ERROR:INVALIDKEY"
                         || apiOutput == "ERROR:EXCEEDEDCALLS"
                         || apiOutput == "ERROR:EXCEPTION"
+                        || apiOutput == "ERROR:TIMEOUT"
                         || apiOutput.StartsWith("ERROR:WEBEXCEPTION:")) {
                         output = apiOutput;
                     } else {
@@ -252,29 +287,19 @@ namespace Marana {
                         i--;
                         retryCounter = 0;
                         continue;
-                    } else if (pms.StartsWith("ERROR:WEBEXCEPTION:")) {
-                        int code;
-                        bool parsed = int.TryParse(pms.Substring("ERROR:WEBEXCEPTION:".Length), out code);
+                    } else if (pms == "ERROR:EXCEPTION" || pms == "ERROR:TIMEOUT") {
+                        if (pms == "ERROR:EXCEPTION")
+                            Prompt.WriteLine($"Error, Attempt #{retryCounter + 1}");
+                        else if (pms == "ERROR:TIMEOUT")
+                            Prompt.WriteLine($"Timeout, Attempt #{retryCounter + 1}");
 
-                        if (parsed && code >= 500 && retryCounter < 4) {
-                            i--;
-                            retryCounter++;
-
-                            Prompt.WriteLine($"Error, Attempt #{retryCounter}");
-                            continue;
-                        } else {
-                            Prompt.WriteLine($"Error: {output}");
-                            retryCounter = 0;
-                            continue;
-                        }
-                    } else if (pms == "ERROR:TIMEOUT") {
                         if (retryCounter < 4) {
                             i--;
                             retryCounter++;
+                        } else
+                            retryCounter = 0;
 
-                            Prompt.WriteLine($"Error, Attempt #{retryCounter}");
-                            continue;
-                        }
+                        continue;
                     } else {
                         Prompt.WriteLine($"Error: {output}");
                         retryCounter = 0;

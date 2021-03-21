@@ -81,6 +81,10 @@ namespace Marana {
             return input;
         }
 
+        public static string GetCacheDirectory() {
+            return Path.Combine(GetConfigDirectory(), GetOSStyling("Cache"));
+        }
+
         public static string GetConfigDirectory() {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"));
         }
@@ -91,6 +95,21 @@ namespace Marana {
 
         public static string GetErrorLogPath() {
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), GetOSStyling("Marana"), GetOSStyling("error.log"));
+        }
+
+        public async Task ClearCache() {
+            if (!Directory.Exists(GetCacheDirectory()))
+                Directory.CreateDirectory(GetCacheDirectory());
+
+            string[] files = Directory.GetFiles(GetCacheDirectory());
+
+            foreach (string file in files) {
+                try {
+                    File.Delete(file);
+                } catch (Exception ex) {
+                    await Log.Error($"{MethodBase.GetCurrentMethod().DeclaringType}: {MethodBase.GetCurrentMethod().Name}", ex);
+                }
+            }
         }
 
         private static DirectoryInfo CreateConfigDirectory() {
