@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>marana</AssemblyName>
-    <Version>0.3.9</Version>
-    <AssemblyVersion>0.3.9.0</AssemblyVersion>
+    <Version>0.4.0</Version>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
     <Authors>Tanjera</Authors>
     <Product>Marana</Product>
     <Description>Market Analytics and Trading Tools</Description>
@@ -15,6 +15,7 @@
     <RepositoryUrl>https://github.com/tanjera/marana</RepositoryUrl>
     <RepositoryType>GitHub</RepositoryType>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <FileVersion>0.4.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

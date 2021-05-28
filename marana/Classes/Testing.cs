@@ -78,7 +78,7 @@ namespace Marana {
                         Symbol = a.Symbol,
                         Strategy = s.Name,
                         Quantity = 1,
-                        Active = true,
+                        Enabled = true,
                         Format = Data.Format.Test,
                         Frequency = Data.Frequency.Daily
                     });

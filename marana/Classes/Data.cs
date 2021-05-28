@@ -114,19 +114,29 @@ namespace Marana {
         }
 
         public class Instruction {
-            public bool Active { get; set; }
             public string Name { get; set; }
             public string Description { get; set; }
             public Format Format { get; set; }
+            public Frequency Frequency { get; set; }
             public string Symbol { get; set; }
             public string Strategy { get; set; }
             public int Quantity { get; set; }
-            public Frequency Frequency { get; set; }
+
+            public bool Enabled { get; set; }           // Flag: whether the instruction should run at all.
+            public bool Buy { get; set; }               // Flag: whether to place buy orders? False to allow for liquidation.
+            public bool Sell { get; set; }              // Flag: whether to place sell orders? False to hold trade position.
 
             public Instruction() {
-                Active = false;
+                Enabled = false;
+                Buy = false;
+                Sell = false;
+
                 Format = Format.Paper;
             }
+
+            public bool IsEnabled { get { return Enabled; } }
+            public bool ToBuy { get { return Buy; } }
+            public bool ToSell { get { return Sell; } }
         }
 
         public class Order {

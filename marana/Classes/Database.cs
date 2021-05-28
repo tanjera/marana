@@ -92,12 +92,16 @@ namespace Marana {
         public enum ColumnsInstructions {
             Name,
             Description,
-            Active,
             Format,
+            Frequency,
+
             Symbol,
             Strategy,
             Quantity,
-            Frequency
+
+            Enabled,
+            Buy,
+            Sell
         };
 
         public enum ColumnsStrategy {
@@ -221,12 +225,16 @@ namespace Marana {
                         $@"CREATE TABLE IF NOT EXISTS `Instructions` (
                             `Name` VARCHAR(32) PRIMARY KEY,
                             `Description` VARCHAR (128),
-                            `Active` BOOLEAN,
                             `Format` VARCHAR (16),
+                            `Frequency` VARCHAR (16),
+
                             `Symbol` VARCHAR(10),
                             `Strategy` VARCHAR(256),
                             `Quantity` INTEGER,
-                            `Frequency` VARCHAR (16)
+
+                            `Enabled` BOOLEAN,
+                            `Buy` BOOLEAN,
+                            `Sell` BOOLEAN
                             );",
                         connection))
                     await cmd.ExecuteNonQueryAsync();
@@ -433,12 +441,16 @@ namespace Marana {
 
                         i.Name = rdr.IsDBNull(ColumnsInstructions.Name.GetHashCode()) ? i.Name : rdr.GetString("Name");
                         i.Description = rdr.IsDBNull(ColumnsInstructions.Description.GetHashCode()) ? i.Description : rdr.GetString("Description");
-                        i.Active = rdr.IsDBNull(ColumnsInstructions.Active.GetHashCode()) ? i.Active : rdr.GetBoolean("Active");
                         i.Format = rdr.IsDBNull(ColumnsInstructions.Format.GetHashCode()) ? i.Format : (Data.Format)Enum.Parse(typeof(Data.Format), rdr.GetString("Format"));
+                        i.Frequency = rdr.IsDBNull(ColumnsInstructions.Frequency.GetHashCode()) ? i.Frequency : (Data.Frequency)Enum.Parse(typeof(Data.Frequency), rdr.GetString("Frequency"));
+
                         i.Symbol = rdr.IsDBNull(ColumnsInstructions.Symbol.GetHashCode()) ? "" : rdr.GetString("Symbol");
                         i.Strategy = rdr.IsDBNull(ColumnsInstructions.Strategy.GetHashCode()) ? i.Strategy : rdr.GetString("Strategy");
                         i.Quantity = rdr.IsDBNull(ColumnsInstructions.Quantity.GetHashCode()) ? i.Quantity : rdr.GetInt16("Quantity");
-                        i.Frequency = rdr.IsDBNull(ColumnsInstructions.Frequency.GetHashCode()) ? i.Frequency : (Data.Frequency)Enum.Parse(typeof(Data.Frequency), rdr.GetString("Frequency"));
+
+                        i.Enabled = rdr.IsDBNull(ColumnsInstructions.Enabled.GetHashCode()) ? i.Enabled : rdr.GetBoolean("Enabled");
+                        i.Buy = rdr.IsDBNull(ColumnsInstructions.Buy.GetHashCode()) ? i.Buy : rdr.GetBoolean("Buy");
+                        i.Sell = rdr.IsDBNull(ColumnsInstructions.Sell.GetHashCode()) ? i.Sell : rdr.GetBoolean("Sell");
 
                         result.Add(i);
                     }

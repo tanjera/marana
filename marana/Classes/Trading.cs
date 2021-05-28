@@ -153,9 +153,9 @@ namespace Marana {
                     }
 
                     if (setInstructions[j].Frequency == Data.Frequency.Daily) {
-                        if (!setInstructions[j].Active) {
-                            Prompt.WriteLine($"Instruction marked as 'Inactive'. Skipping.\n");
-                        } else if (setInstructions[j].Active) {
+                        if (!setInstructions[j].Enabled) {
+                            Prompt.WriteLine($"Instruction not Enabled. Skipping.\n");
+                        } else if (setInstructions[j].Enabled) {
                             await RunAutomation_Daily(format, setInstructions[j], strategy, day, asset, position, orders);
                         }
                     }
@@ -214,10 +214,15 @@ namespace Marana {
                         && o.Transaction == Data.Order.Direction.Buy
                         && o.Quantity == instruction.Quantity);
 
-                    if (position != null && position.Quantity > 0) {
+                    if (!instruction.ToBuy) {
+                        Prompt.WriteLine("  Buy trigger detected; instruction disabled buying; doing nothing.");
+                        return;
+                    } else if (position != null && position.Quantity > 0) {
                         Prompt.WriteLine("  Buy trigger detected; active position already exists; doing nothing.");
+                        return;
                     } else if (existsBuyOrder) {
                         Prompt.WriteLine("  Buy trigger detected; identical open buy order already exists; doing nothing.");
+                        return;
                     } else if (!existsBuyOrder && (position == null || position.Quantity <= 0)) {
                         Prompt.WriteLine("  Buy trigger detected; no current orders or position owned; placing Buy order.");
 
@@ -259,6 +264,7 @@ namespace Marana {
                                 Prompt.WriteLine(">> Order placement unsuccessful; Insufficient available funds.", ConsoleColor.Red);
                                 break;
                         }
+                        return;
                     }
                 } else if (toSellGain.Value || toSellLoss.Value) {
                     string msgSellQuery = toSellGain.Value && toSellLoss.Value ? "Both" : (toSellGain.Value ? "Gain" : (toSellLoss.Value ? "Stop-Loss" : ""));
@@ -268,10 +274,15 @@ namespace Marana {
                         && o.Transaction == Data.Order.Direction.Sell
                         && o.Quantity == instruction.Quantity);
 
-                    if (position == null || position.Quantity <= 0) {
+                    if (!instruction.ToSell) {
+                        Prompt.WriteLine($"  Sell trigger detected; instruction disabled selling; doing nothing.");
+                        return;
+                    } else if (position == null || position.Quantity <= 0) {
                         Prompt.WriteLine($"  Sell trigger detected; {msgSellQuery}; no current position owned; doing nothing.");
+                        return;
                     } else if (existsSellOrder) {
                         Prompt.WriteLine($"  Sell trigger detected; identical open sell order already exists; doing nothing.");
+                        return;
                     } else if (!existsSellOrder && position != null && position.Quantity > 0) {
                         Prompt.WriteLine($"  Sell trigger detected; {msgSellQuery}; active position found; placing Sell order.");
                         // Sell position.quantity in case position.Quantity != instruction.Quantity
@@ -284,9 +295,11 @@ namespace Marana {
                                 Prompt.WriteLine(">> Order placement unsuccessful.", ConsoleColor.Red);
                                 break;
                         }
+                        return;
                     }
                 } else {
                     Prompt.WriteLine("  No triggers detected.");
+                    return;
                 }
             }
         }
